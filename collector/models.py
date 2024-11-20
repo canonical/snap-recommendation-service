@@ -17,7 +17,7 @@ class Snap(Base):
     website = mapped_column(String, nullable=True)
     contact = mapped_column(String, nullable=True)
     publisher = mapped_column(String)
-    revision = mapped_column(Integer)
+    revision = mapped_column(Integer)  # Latest revision
     links = mapped_column(String)
     media = mapped_column(String)
     developer_validation = mapped_column(String)

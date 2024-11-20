@@ -5,14 +5,12 @@ import datetime
 import json
 from sqlalchemy.orm import Session
 from models import Snap
-from db import init_db
+from db import engine
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
 )
-
-engine = init_db()
 
 FIELDS = (
     "snap_id",
@@ -112,10 +110,8 @@ def insert_snaps():
     return total_snaps
 
 
-if __name__ == "__main__":
+def collect_initial_snap_data():
     logger.info("Starting the snap data ingestion process.")
     snaps_count = insert_snaps()
-    logger.info(
-        f"Snap data ingestion process completed. {snaps_count} snaps inserted."
-    )
+    logger.info(f"Snap data ingestion process completed. {snaps_count} snaps inserted.")
     SystemExit(0)

@@ -3,9 +3,7 @@ from sqlalchemy import func, case
 from models import Snap, ALL_MEDIA_TYPES
 import datetime
 
-from db import init_db
-
-engine = init_db()
+from db import engine
 
 
 def snap_meets_minimum_criteria_query():
@@ -70,7 +68,7 @@ def calculate_dev_score_query():
     )
 
 
-if __name__ == "__main__":
+def process_snaps_meeting_min_criteria():
     with Session(bind=engine) as session:
         snaps_meeting_criteria_query = session.query(Snap).filter(
             *snap_meets_minimum_criteria_query()

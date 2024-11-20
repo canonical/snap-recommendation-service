@@ -15,3 +15,6 @@ def init_db():
 
     logger.info("Database initialized")
     return engine
+
+
+engine = init_db()

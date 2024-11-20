@@ -1,10 +1,15 @@
 from models import Snap
 import os
 from sqlalchemy.orm import Session
-from db import init_db
+from db import engine
 import datetime
 import requests
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
+
+BATCH_SIZE = 20
 
 logging.basicConfig(
     level=logging.INFO,
@@ -12,8 +17,6 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("collector")
-
-engine = init_db()
 
 
 macroon = os.environ.get("MACAROON")
@@ -63,7 +66,7 @@ start = start.strftime("%Y-%m-%d")
 
 def get_metrics_for_snaps(snaps: list):
     session = Session(bind=engine)
-    for snaps_batch in batched(snaps, 20):
+    for snaps_batch in batched(snaps, BATCH_SIZE):
         body = {
             "filters": [
                 {
@@ -87,22 +90,17 @@ def get_metrics_for_snaps(snaps: list):
             logger.error(f"Error fetching metrics: {res.text}")
         else:
             data = res.json()
-            devices_by_snap = {}
             for i, snap in enumerate(snaps_batch):
                 snap_metrics = data["metrics"][i]
                 active_devices = get_number_latest_active_devices(snap_metrics)
-                devices_by_snap[snap.snap_id] = active_devices
+                snap.active_devices = active_devices
             # update the database with the active devices
-            for snap in snaps_batch:
-                snap.active_devices = devices_by_snap.get(snap.snap_id, 0)
             session.commit()
             logger.info(f"Updated active devices for {len(snaps_batch)} snaps")
 
 
-if __name__ == "__main__":
-    # do this for all snaps in db
+def fetch_extra_fields():
     with Session(bind=engine) as session:
-
         snaps = session.query(Snap).filter(Snap.reaches_min_threshold).all()
         logger.info(f"Fetching active devices for {len(snaps)} snaps")
         get_metrics_for_snaps(snaps)
