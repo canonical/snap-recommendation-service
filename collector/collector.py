@@ -41,7 +41,6 @@ logger = logging.getLogger("collector")
 
 
 def upsert_snap(session, snap):
-
     # website can be either a list of multiple websites or one string
     website = snap["links"].get("website", [""])
     website = website[0] if website else None
@@ -113,5 +112,7 @@ def insert_snaps():
 def collect_initial_snap_data():
     logger.info("Starting the snap data ingestion process.")
     snaps_count = insert_snaps()
-    logger.info(f"Snap data ingestion process completed. {snaps_count} snaps inserted.")
+    logger.info(
+        f"Snap data ingestion process completed. {snaps_count} snaps inserted."
+    )
     SystemExit(0)

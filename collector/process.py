@@ -12,7 +12,8 @@ def snap_meets_minimum_criteria_query():
 
     # Check if `media` and `links` are non-empty JSON fields
     return (
-        func.json_array_length(Snap.media) > 0,  # Ensure media exists and has items
+        func.json_array_length(Snap.media)
+        > 0,  # Ensure media exists and has items
         Snap.description.isnot(None),
         func.length(Snap.description) > 0,
         Snap.contact.isnot(None),
@@ -39,7 +40,10 @@ def calculate_links_score_query():
     """Defines a SQL expression to calculate the links score."""
     return func.sum(
         case(
-            [(func.length(Snap.links[key]) > 0, 1) for key in Snap.links.keys()],
+            [
+                (func.length(Snap.links[key]) > 0, 1)
+                for key in Snap.links.keys()
+            ],
             else_=0,
         )
     )
@@ -82,4 +86,6 @@ def process_snaps_meeting_min_criteria():
 
         session.commit()
 
-        print(f"Snaps meeting criteria updated: {snaps_meeting_criteria_query.count()}")
+        print(
+            f"Snaps meeting criteria updated: {snaps_meeting_criteria_query.count()}"
+        )
