@@ -1,0 +1,1 @@
+\ls | entr -r go run main.go
