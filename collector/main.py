@@ -6,11 +6,11 @@ logging.basicConfig(
 )
 
 from collector import collect_initial_snap_data
-from process import process_snaps_meeting_min_criteria
+from filter import filter_snaps_meeting_minimum_criteria
 from more_fields import fetch_extra_fields
 
 
 if __name__ == "__main__":
     collect_initial_snap_data()
-    process_snaps_meeting_min_criteria()
+    filter_snaps_meeting_minimum_criteria()
     fetch_extra_fields()
