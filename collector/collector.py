@@ -42,12 +42,12 @@ logger = logging.getLogger("collector")
 
 def upsert_snap(session, snap):
     # website can be either a list of multiple websites or one string
-    website = snap["links"].get("website", [""])
-    website = website[0] if website else None
+    website = snap["links"].get("website", [])
+    website = website[0] if len(website) else None
 
     # same for contact
-    contact = snap["links"].get("contact", [""])
-    contact = contact[0] if contact else None
+    contact = snap["links"].get("contact", [])
+    contact = contact[0] if len(contact) else None
 
     snap_object = Snap(
         snap_id=snap["snap_id"],
@@ -116,3 +116,7 @@ def collect_initial_snap_data():
         f"Snap data ingestion process completed. {snaps_count} snaps inserted."
     )
     SystemExit(0)
+
+
+if __name__ == "__main__":
+    collect_initial_snap_data()
