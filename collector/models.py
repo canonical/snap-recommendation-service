@@ -17,6 +17,7 @@ class Snap(Base):
     version: Mapped[str] = mapped_column(String)
     summary: Mapped[str] = mapped_column(String)
     description: Mapped[str] = mapped_column(String)
+    icon: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     website: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     contact: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     publisher: Mapped[str] = mapped_column(String)

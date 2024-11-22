@@ -49,9 +49,12 @@ def upsert_snap(session, snap):
     contact = snap["links"].get("contact", [])
     contact = contact[0] if len(contact) else None
 
+    icon = next(filter(lambda x: x["type"] == "icon", snap["media"]), None)
+
     snap_object = Snap(
         snap_id=snap["snap_id"],
         name=snap["package_name"],
+        icon=icon["url"] if icon else None,
         summary=snap["summary"],
         description=snap["description"],
         title=snap["title"],
