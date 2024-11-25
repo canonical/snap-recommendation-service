@@ -6,10 +6,11 @@ import datetime
 import requests
 import logging
 from dotenv import load_dotenv
+from auth import get_auth_header
 
 load_dotenv()
 
-BATCH_SIZE = 20
+BATCH_SIZE = 15
 
 logging.basicConfig(
     level=logging.INFO,
@@ -81,7 +82,7 @@ def get_metrics_for_snaps(snaps: list):
         res = requests.post(
             metrics_url,
             headers={
-                "Authorization": macroon,
+                "Authorization": get_auth_header(macroon),
                 "Content-Type": "application/json",
             },
             json=body,
@@ -104,3 +105,7 @@ def fetch_extra_fields():
         snaps = session.query(Snap).filter(Snap.reaches_min_threshold).all()
         logger.info(f"Fetching active devices for {len(snaps)} snaps")
         get_metrics_for_snaps(snaps)
+
+
+if __name__ == "__main__":
+    fetch_extra_fields()
