@@ -1,86 +1,86 @@
 package main
 
 import (
-	"database/sql"
-	"encoding/json"
 	"fmt"
-	"log"
-	"net/http"
-
-	_ "github.com/lib/pq"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/gin-gonic/gin"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"time"
 )
 
-type Config struct {
-	Driver  string
-	ConnStr string
+var db *gorm.DB
+
+type Snap struct {
+	SnapID              string    `json:"snap_id"`
+	Title               string    `json:"title"`
+	Name                string    `json:"name"`
+	Version             string    `json:"version"`
+	Summary             string    `json:"summary"`
+	Description         string    `json:"description"`
+	Icon                *string   `json:"icon"`
+	Website             *string   `json:"website"`
+	Contact             *string   `json:"contact"`
+	Publisher           string    `json:"publisher"`
+	Revision            int       `json:"revision"`
+	Links               string    `json:"links"`
+	Media               string    `json:"media"`
+	DeveloperValidation string    `json:"developer_validation"`
+	License             string    `json:"license"`
+	LastUpdated         time.Time `json:"last_updated"`
+	ActiveDevices       int       `json:"active_devices"`
+	ReachesMinThreshold bool      `json:"reaches_min_threshold"`
 }
 
-type Item struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
+type Score struct {
+	SnapID          string  `json:"snap_id"`
+	PopularityScore float64 `json:"popularity_score"`
+	RecencyScore    float64 `json:"recency_score"`
+	TrendingScore   float64 `json:"trending_score"`
 }
 
-type DatabaseHandler struct {
-	DB *sql.DB
-}
-
-func NewDatabaseHandler(config Config) (*DatabaseHandler, error) {
-	db, err := sql.Open(config.Driver, config.ConnStr)
+func init() {
+	var err error
+	// Open SQLite database
+	db, err = gorm.Open(sqlite.Open("../db.sqlite"), &gorm.Config{})
 	if err != nil {
-		return nil, err
+		fmt.Print(err)
+		panic("failed to connect to the database")
 	}
-
-	if err = db.Ping(); err != nil {
-		return nil, err
-	}
-	return &DatabaseHandler{DB: db}, nil
+	// Auto-migrate the models
+	db.AutoMigrate(&Snap{}, &Score{})
 }
 
-func (dh *DatabaseHandler) GetItems() ([]Item, error) {
-	rows, err := dh.DB.Query("SELECT snap_id, name FROM snap")
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	var items []Item
-	for rows.Next() {
-		var item Item
-		if err := rows.Scan(&item.ID, &item.Name); err != nil {
-			return nil, err
+// Reusable function to get top snaps based on a dynamic order field
+func getTopSnapsByField(orderField string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		var snaps []struct {
+			SnapID string `json:"snap_id"`
+			Name   string `json:"name"`
 		}
-		items = append(items, item)
+
+		err := db.Table("scores").
+			Select("snap.snap_id, snap.title, snap.name, snap.version, snap.publisher, snap.revision, scores." + orderField).
+			Joins("INNER JOIN snap ON snap.snap_id = scores.snap_id").
+			Order("scores." + orderField + " DESC").
+			Limit(100).
+			Find(&snaps).Error
+
+		if err != nil {
+			c.JSON(500, gin.H{"error": "Failed to fetch snaps"})
+			return
+		}
+
+		// Return the snaps as a JSON response
+		c.JSON(200, snaps)
 	}
-	return items, nil
 }
 
 func main() {
-
-	config := Config{
-		Driver:  "sqlite3",
-		ConnStr: "../db.sqlite",
-	}
-
-	dbHandler, err := NewDatabaseHandler(config)
-	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
-	}
-	defer dbHandler.DB.Close()
-
-	http.HandleFunc("/items", func(w http.ResponseWriter, r *http.Request) {
-		items, err := dbHandler.GetItems()
-		if err != nil {
-
-			log.Printf("Failed to retrieve items: %v", err)
-			http.Error(w, "Failed to retrieve items", http.StatusInternalServerError)
-			return
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(items)
-	})
-
-	port := 8080
-	log.Printf("Server running on port %d...", port)
-	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
+	r := gin.Default()
+	// Use the reusable function for each endpoint
+	r.GET("/popular", getTopSnapsByField("popularity_score"))
+	r.GET("/recent", getTopSnapsByField("recency_score"))
+	r.GET("/trending", getTopSnapsByField("trending_score"))
+	r.Run(":8080") // Run the server on port 8080
 }
+
