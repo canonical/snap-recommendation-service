@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from sqlalchemy import Boolean, Integer, String, DateTime, ForeignKey
+from sqlalchemy import Boolean, Integer, Float, String, DateTime, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -37,9 +37,10 @@ class Scores(Base):
     snap_id: Mapped[str] = mapped_column(
         String, ForeignKey("snap.snap_id"), primary_key=True
     )
-    popularity_score: Mapped[int] = mapped_column(Integer)
-    recency_score: Mapped[int] = mapped_column(Integer)
-    trending_score: Mapped[int] = mapped_column(Integer)
+
+    popularity_score: Mapped[float] = mapped_column(Float)
+    recency_score: Mapped[float] = mapped_column(Float)
+    trending_score: Mapped[float] = mapped_column(Float)
 
 
 ALL_MEDIA_TYPES: List[str] = ["icon", "screenshot", "video", "banner", "logo"]

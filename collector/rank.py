@@ -7,17 +7,16 @@ from sqlalchemy.dialects.postgresql import insert
 from db import engine
 
 
-def normalize_field(session, field, filter_condition=None):
+def normalize_field(session: Session, field: str, filter_condition=None):
     query = session.query(func.min(field), func.max(field))
     if filter_condition is not None:
         query = query.filter(filter_condition)
     return query.one()
 
 
-def calculate_media_score(snap):
+def calculate_media_score(snap: Snap):
     """Calculate the media quality score for a snap."""
     media = json.loads(snap.media)
-    # [{"height": 498, "type": "icon", "url": "https://dashboard.snapcraft.io/site_media/appmedia/2024/06/core-icon-large_Di4xmvQ.png", "width": 498}, {"height": 932, "type": "screenshot", "url": "https://dashboard.snapcraft.io/site_media/appmedia/2024/06/core-01-1718724250.png", "width": 568}, {"height": 932, "type": "screenshot", "url": "https://dashboard.snapcraft.io/site_media/appmedia/2024/06/core-02-1718724250.png", "width": 568}, {"height": 932, "type": "screenshot", "url": "https://dashboard.snapcraft.io/site_media/appmedia/2024/06/core-03-1718724250.png", "width": 568}]
 
     media_types = [item["type"] for item in media]
     media_counter = Counter(media_types)
@@ -27,13 +26,11 @@ def calculate_media_score(snap):
     )
 
 
-def calculate_metadata_score(snap):
+def calculate_metadata_score(snap: Snap):
     """Calculate the metadata quality score for a snap."""
     links = json.loads(snap.links)
     # only count non empty links
-    num_of_links = min(
-        5, sum(1 for link in links.values() if link)
-    )  # max 5 links
+    num_of_links = min(5, sum(1 for link in links.values() if link))  # max 5 links
     set_license = snap.license != "unset"
     media_quality = calculate_media_score(snap)
     links_quality = (set_license + num_of_links) / 6
@@ -41,7 +38,7 @@ def calculate_metadata_score(snap):
     return (media_quality + links_quality) / 2
 
 
-def calculate_dev_score(snap):
+def calculate_dev_score(snap: Snap):
     """Calculate the developer score for a snap."""
     score = 0
     if snap.developer_validation == "starred":
@@ -51,45 +48,28 @@ def calculate_dev_score(snap):
     return score / 2
 
 
-def calculate_popularity_score(
-    active_devices_normalized, metadata_score, dev_score
-):
+def calculate_popularity_score(active_devices_normalized, metadata_score, dev_score):
     """Calculate the popularity score for a snap."""
-    return (
-        active_devices_normalized * 0.5
-        + metadata_score * 0.3
-        + dev_score * 0.2
-    )
+    return active_devices_normalized * 0.5 + metadata_score * 0.3 + dev_score * 0.2
 
 
-def calculate_recency_score(
-    last_updated_normalized, metadata_score, dev_score
-):
+def calculate_recency_score(last_updated_normalized, metadata_score, dev_score):
     """Calculate the recency score for a snap."""
-    return (
-        last_updated_normalized * 0.5 + metadata_score * 0.3 + dev_score * 0.2
-    )
+    return last_updated_normalized * 0.5 + metadata_score * 0.3 + dev_score * 0.2
 
 
-def calculate_trending_score(
-    active_devices_normalized, metadata_score, dev_score
-):
+def calculate_trending_score(active_devices_normalized, metadata_score, dev_score):
     """Calculate the trending score for a snap."""
-    return (
-        active_devices_normalized * 0.5
-        + metadata_score * 0.3
-        + dev_score * 0.2
-    )
+    return active_devices_normalized * 0.5 + metadata_score * 0.3 + dev_score * 0.2
 
 
 def calculate_scores(session):
-    """Pre-compute and update scores for snaps meeting the threshold."""
+    """Calculate the scores for all recommendable snaps."""
 
     clear_old_scores(session)
 
     filter_condition = Snap.reaches_min_threshold.is_(True)
 
-    # Pre-compute normalization ranges for filtered snaps
     min_active_devices, max_active_devices = normalize_field(
         session, Snap.active_devices, filter_condition=filter_condition
     )
@@ -99,7 +79,6 @@ def calculate_scores(session):
 
     scores_to_insert = []
 
-    # Query snaps that meet the threshold
     snaps = session.query(Snap).filter(filter_condition).all()
 
     for snap in snaps:
@@ -117,11 +96,9 @@ def calculate_scores(session):
             else 1
         )
 
-        # Calculate individual scores
         metadata_score = calculate_metadata_score(snap)
         dev_score = calculate_dev_score(snap)
 
-        # Calculate composite scores
         popularity_score = calculate_popularity_score(
             active_devices_normalized, metadata_score, dev_score
         )
@@ -132,7 +109,6 @@ def calculate_scores(session):
             active_devices_normalized, metadata_score, dev_score
         )
 
-        # Prepare row for insertion
         scores_to_insert.append(
             {
                 "snap_id": snap.snap_id,
@@ -142,7 +118,6 @@ def calculate_scores(session):
             }
         )
 
-    # Batch insert or update
     if scores_to_insert:
         insert_stmt = insert(Scores).values(scores_to_insert)
         update_stmt = insert_stmt.on_conflict_do_update(
