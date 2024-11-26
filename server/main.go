@@ -40,17 +40,14 @@ type Score struct {
 
 func init() {
 	var err error
-	// Open SQLite database
 	db, err = gorm.Open(sqlite.Open("../db.sqlite"), &gorm.Config{})
 	if err != nil {
 		fmt.Print(err)
 		panic("failed to connect to the database")
 	}
-	// Auto-migrate the models
 	db.AutoMigrate(&Snap{}, &Score{})
 }
 
-// Reusable function to get top snaps based on a dynamic order field
 func getTopSnapsByField(orderField string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var snaps []struct {
@@ -70,17 +67,15 @@ func getTopSnapsByField(orderField string) gin.HandlerFunc {
 			return
 		}
 
-		// Return the snaps as a JSON response
 		c.JSON(200, snaps)
 	}
 }
 
 func main() {
 	r := gin.Default()
-	// Use the reusable function for each endpoint
 	r.GET("/popular", getTopSnapsByField("popularity_score"))
 	r.GET("/recent", getTopSnapsByField("recency_score"))
 	r.GET("/trending", getTopSnapsByField("trending_score"))
-	r.Run(":8080") // Run the server on port 8080
+	r.Run(":8080") 
 }
 
