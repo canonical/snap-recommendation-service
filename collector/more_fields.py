@@ -8,7 +8,7 @@ import logging
 from dotenv import load_dotenv
 from auth import get_auth_header
 
-load_dotenv()
+load_dotenv(override=True)
 
 BATCH_SIZE = 15
 
@@ -65,8 +65,7 @@ start = datetime.datetime.now() - datetime.timedelta(days=30)
 start = start.strftime("%Y-%m-%d")
 
 
-def get_metrics_for_snaps(snaps: list):
-    session = Session(bind=engine)
+def get_metrics_for_snaps(snaps: list, session: Session):
     for snaps_batch in batched(snaps, BATCH_SIZE):
         body = {
             "filters": [
@@ -87,24 +86,34 @@ def get_metrics_for_snaps(snaps: list):
             },
             json=body,
         )
+        # TODO: Rate limiting, retry on failure
         if res.status_code != 200:
             logger.error(f"Error fetching metrics: {res.text}")
+            error = res.json()
+            if (
+                error.get("error_list")[0].get("code")
+                == "macaroon-needs-refresh"
+            ):
+                logger.error("Macaroon needs to be refreshed")
+                print(
+                    "Please look at the README for instructions"
+                    "on how to refresh the macaroon"
+                )
+                break
         else:
             data = res.json()
             for i, snap in enumerate(snaps_batch):
                 snap_metrics = data["metrics"][i]
                 active_devices = get_number_latest_active_devices(snap_metrics)
                 snap.active_devices = active_devices
-            # update the database with the active devices
             session.commit()
-            logger.info(f"Updated active devices for {len(snaps_batch)} snaps")
 
 
 def fetch_extra_fields():
     with Session(bind=engine) as session:
         snaps = session.query(Snap).filter(Snap.reaches_min_threshold).all()
         logger.info(f"Fetching active devices for {len(snaps)} snaps")
-        get_metrics_for_snaps(snaps)
+        get_metrics_for_snaps(snaps, session)
 
 
 if __name__ == "__main__":
