@@ -3,7 +3,7 @@ import logging
 from models import Snap
 
 # create a new logger for the db module
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("db")
 
 
 def init_db():

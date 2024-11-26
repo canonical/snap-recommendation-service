@@ -17,7 +17,7 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
 )
 
-logger = logging.getLogger("collector")
+logger = logging.getLogger("more_fields")
 
 
 macroon = os.environ.get("MACAROON")
