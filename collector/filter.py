@@ -6,6 +6,11 @@ import datetime
 
 from db import engine
 
+import logging
+
+logger = logging.getLogger("collector")
+
+
 # TODO: It would be nice to have the criteria configured through UI.
 # i.e, consider having a config table in the database
 MINIMUM_DESCRIPTION_LENGTH = 50
@@ -30,9 +35,7 @@ def snap_meets_minimum_criteria_query():
     has_issues_link = issues.isnot(None) & (func.json_array_length(issues) > 0)
 
     contact = func.json_extract(Snap.links, "$.contact")
-    has_contact_link = contact.isnot(None) & (
-        func.json_array_length(contact) > 0
-    )
+    has_contact_link = contact.isnot(None) & (func.json_array_length(contact) > 0)
 
     author_can_be_reached = has_issues_link | has_contact_link
 
@@ -53,19 +56,15 @@ def snap_meets_minimum_criteria_query():
 
 def filter_snaps_meeting_minimum_criteria():
     with Session(bind=engine) as session:
-        query = session.query(Snap).filter(
-            *snap_meets_minimum_criteria_query()
-        )
+        query = session.query(Snap).filter(*snap_meets_minimum_criteria_query())
 
         snaps = query.all()
 
-        query.update(
-            {Snap.reaches_min_threshold: True}, synchronize_session=False
-        )
+        query.update({Snap.reaches_min_threshold: True}, synchronize_session=False)
 
         session.commit()
 
-        print(f"Snaps meeting criteria updated: {len(snaps)}")
+        logger.info(f"Found {len(snaps)} snaps meeting the minimum criteria")
 
 
 if __name__ == "__main__":

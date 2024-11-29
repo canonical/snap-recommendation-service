@@ -1,120 +1,150 @@
 from models import Snap
-import os
 from sqlalchemy.orm import Session
 from db import engine
+from dotenv import load_dotenv
+from auth import get_auth_header
 import datetime
 import requests
 import logging
-from dotenv import load_dotenv
-from auth import get_auth_header
+import os
+from typing import List
 
 load_dotenv(override=True)
 
+ACTIVE_DEVICES_TIMEFRAME = 30
+
 BATCH_SIZE = 15
+RELEASES_URL = "http://api.snapcraft.io/api/v1/snaps/search?fields=revision"
+METRICS_URL = "https://dashboard.snapcraft.io/dev/api/snaps/metrics"
+MACAROON = os.environ.get("MACAROON")
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
 )
-
-logger = logging.getLogger("more_fields")
-
-
-macroon = os.environ.get("MACAROON")
+logger = logging.getLogger("snap_metrics")
 
 
-def batched(iterable, n=1):
-    size = len(iterable)
-    for idx in range(0, size, n):
-        yield iterable[idx : min(idx + n, size)]
-
-
-releases_url = "http://api.snapcraft.io/api/v1/snaps/search?fields=revision"
-
-metrics_url = "https://dashboard.snapcraft.io/dev/api/snaps/metrics"
-
-
-def get_number_latest_active_devices(obj):
-    """Get the number of latest active devices from the list of
-    active devices.
-
-    :returns The number of lastest active devices
+def batched(iterable: list, batch_size: int = 1):
     """
-    latest_active_devices = 0
-
-    for series_index, series in enumerate(obj["series"]):
-        for index, value in enumerate(series["values"]):
-            if value is None:
-                obj["series"][series_index]["values"][index] = 0
-        values = series["values"]
-        if len(values) == len(obj["buckets"]):
-            # the max of the last 3 values:
-            # This is a hack to deal with active devices restting to 0 at
-            # the start of the day
-            if len(values) >= 3:
-                latest_active_devices += max(values[-3:])
-
-    return latest_active_devices
+    Yields successive chunks of a specified size from the input iterable.
+    """
+    for i in range(0, len(iterable), batch_size):
+        yield iterable[i : i + batch_size]
 
 
-# end time is the current date
-end = datetime.datetime.now().strftime("%Y-%m-%d")
+def calculate_latest_active_devices(metrics_data: dict) -> int:
+    """
+    Calculates the latest number of active devices from metrics data.
+    """
+    total_active_devices = 0
+    for series in metrics_data.get("series", []):
+        series["values"] = [value or 0 for value in series["values"]]
+        # This is a hack to deal with active devices restting to 0 at
+        # the start of the day
+        if len(series["values"]) >= 3:
+            total_active_devices += max(series["values"][-3:])
+    return total_active_devices
 
-# start time is 30 days before the end time
-start = datetime.datetime.now() - datetime.timedelta(days=30)
-start = start.strftime("%Y-%m-%d")
 
+def fetch_metrics_from_api(snaps: List[Snap], start_date: str, end_date: str) -> dict:
+    """
+    Fetches metrics data for a batch of snaps from the API.
+    """
+    request_body = {
+        "filters": [
+            {
+                "start": start_date,
+                "end": end_date,
+                "metric_name": "weekly_installed_base_by_version",
+                "snap_id": snap.snap_id,
+            }
+            for snap in snaps
+        ]
+    }
 
-def get_metrics_for_snaps(snaps: list, session: Session):
-    for snaps_batch in batched(snaps, BATCH_SIZE):
-        body = {
-            "filters": [
-                {
-                    "start": start,
-                    "end": end,
-                    "metric_name": "weekly_installed_base_by_version",
-                    "snap_id": snap.snap_id,
-                }
-                for snap in snaps_batch
-            ]
-        }
-        res = requests.post(
-            metrics_url,
+    try:
+        response = requests.post(
+            METRICS_URL,
             headers={
-                "Authorization": get_auth_header(macroon),
+                "Authorization": get_auth_header(MACAROON),
                 "Content-Type": "application/json",
             },
-            json=body,
+            json=request_body,
         )
-        # TODO: Rate limiting, retry on failure
-        if res.status_code != 200:
-            logger.error(f"Error fetching metrics: {res.text}")
-            error = res.json()
-            if (
-                error.get("error_list")[0].get("code")
-                == "macaroon-needs-refresh"
-            ):
-                logger.error("Macaroon needs to be refreshed")
-                print(
-                    "Please look at the README for instructions"
-                    "on how to refresh the macaroon"
-                )
-                break
-        else:
-            data = res.json()
-            for i, snap in enumerate(snaps_batch):
-                snap_metrics = data["metrics"][i]
-                active_devices = get_number_latest_active_devices(snap_metrics)
-                snap.active_devices = active_devices
-            session.commit()
+        response.raise_for_status()
+        return response.json()
+    except requests.HTTPError as http_err:
+        logger.error(f"HTTP error occurred: {http_err}")
+        raise
+    except requests.RequestException as req_err:
+        logger.error(f"Request error occurred: {req_err}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error occurred during API call: {e}")
+        raise
 
 
-def fetch_extra_fields():
-    with Session(bind=engine) as session:
-        snaps = session.query(Snap).filter(Snap.reaches_min_threshold).all()
-        logger.info(f"Fetching active devices for {len(snaps)} snaps")
-        get_metrics_for_snaps(snaps, session)
+def process_and_update_snap_metrics(
+    snaps: List[Snap], metrics_data: dict, db_session: Session
+):
+    """
+    Processes API response data and updates the database with active device counts.
+    """
+    try:
+        for snap, snap_metrics in zip(snaps, metrics_data.get("metrics", [])):
+            active_devices = calculate_latest_active_devices(snap_metrics)
+            snap.active_devices = active_devices
+        db_session.commit()
+        logger.info(f"Updated metrics for {len(snaps)} snaps successfully.")
+    except KeyError as key_err:
+        logger.error(f"Missing expected data in metrics response: {key_err}")
+    except Exception as ex:
+        logger.error(f"Unexpected error during metrics processing: {ex}")
+
+
+def fetch_and_update_metrics_for_snaps(snaps: List[Snap], db_session: Session):
+    """
+    Fetches and updates metrics for a list of snaps in batches.
+    """
+    start_date, end_date = get_metrics_time_range()
+    for snap_batch in batched(snaps, BATCH_SIZE):
+        try:
+            metrics_data = fetch_metrics_from_api(snap_batch, start_date, end_date)
+            process_and_update_snap_metrics(snap_batch, metrics_data, db_session)
+        except Exception as ex:
+            logger.error(f"Failed to process batch of snaps: {ex}")
+
+
+def get_metrics_time_range() -> tuple[str, str]:
+    end_date = datetime.datetime.now().strftime("%Y-%m-%d")
+    start_date = (
+        datetime.datetime.now() - datetime.timedelta(days=ACTIVE_DEVICES_TIMEFRAME)
+    ).strftime("%Y-%m-%d")
+    return start_date, end_date
+
+
+def fetch_eligible_snaps(db_session: Session) -> List[Snap]:
+    """
+    Fetches snaps from the database that meet the minimum threshold.
+    """
+    try:
+        snaps = db_session.query(Snap).filter(Snap.reaches_min_threshold).all()
+        logger.info(f"Found {len(snaps)} eligible snaps for metrics collection.")
+        return snaps
+    except Exception as e:
+        logger.error(f"Error querying eligible snaps: {e}")
+        raise
+
+
+def update_snap_metrics():
+    with Session(bind=engine) as db_session:
+        try:
+            eligible_snaps = fetch_eligible_snaps(db_session)
+            fetch_and_update_metrics_for_snaps(eligible_snaps, db_session)
+        except Exception as e:
+            logger.error(f"Error during metrics update process: {e}")
 
 
 if __name__ == "__main__":
-    fetch_extra_fields()
+    update_snap_metrics()

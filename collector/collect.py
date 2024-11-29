@@ -7,11 +7,6 @@ from sqlalchemy.orm import Session
 from models import Snap
 from db import engine
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-)
-
 FIELDS = (
     "snap_id",
     "package_name",
@@ -30,8 +25,6 @@ FIELDS = (
 
 URL = f"http://api.snapcraft.io/api/v1/snaps/search?fields={','.join(FIELDS)}"
 
-BATCH_SIZE = 100
-
 logging.basicConfig(
     level=logging.DEBUG,
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -40,7 +33,14 @@ logging.basicConfig(
 logger = logging.getLogger("collector")
 
 
-def upsert_snap(session, snap):
+def upsert_snap(session: Session, snap):
+    """
+    Upserts a snap into the database.
+
+    :param session: The database session.
+    :param snap: The snap to upsert (from the API response)
+    """
+
     # website can be either a list of multiple websites or one string
     website = snap["links"].get("website", [])
     website = website[0] if len(website) else None
