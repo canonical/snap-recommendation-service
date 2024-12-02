@@ -3,8 +3,11 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"os"
+	"os/exec"
 	"time"
 )
 
@@ -72,10 +75,30 @@ func getTopSnapsByField(orderField string) gin.HandlerFunc {
 	}
 }
 
+func setupCron() {
+	c := cron.New()
+	c.AddFunc("@weekly", func() {
+		fmt.Println("Updating scores")
+
+		cmd := exec.Command("python3", "../collector/main.py")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		err := cmd.Run()
+		if err != nil {
+			fmt.Println(err)
+		}
+	})
+
+	c.Start()
+}
+
 func main() {
+	setupCron()
+
 	r := gin.Default()
 	r.GET("/popular", getTopSnapsByField("popularity_score"))
 	r.GET("/recent", getTopSnapsByField("recency_score"))
 	r.GET("/trending", getTopSnapsByField("trending_score"))
 	r.Run(":8080")
+
 }
