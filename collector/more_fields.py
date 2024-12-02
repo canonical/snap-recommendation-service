@@ -146,5 +146,10 @@ def update_snap_metrics():
             logger.error(f"Error during metrics update process: {e}")
 
 
-if __name__ == "__main__":
+def fetch_extra_fields():
+    # Might add more fields in the future
     update_snap_metrics()
+
+
+if __name__ == "__main__":
+    fetch_extra_fields()

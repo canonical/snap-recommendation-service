@@ -63,8 +63,10 @@ def calculate_trending_score(active_devices_normalized, metadata_score, dev_scor
     return active_devices_normalized * 0.5 + metadata_score * 0.3 + dev_score * 0.2
 
 
-def calculate_scores(session):
+def calculate_scores():
     """Calculate the scores for all recommendable snaps."""
+
+    session = Session(bind=engine)
 
     clear_old_scores(session)
 
@@ -139,5 +141,4 @@ def clear_old_scores(session):
 
 
 if __name__ == "__main__":
-    with Session(bind=engine) as session:
-        calculate_scores(session)
+    calculate_scores()
