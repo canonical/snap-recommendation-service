@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/glebarez/sqlite"
 	"github.com/robfig/cron/v3"
-	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"os"
 	"os/exec"
@@ -44,7 +44,7 @@ type Score struct {
 
 func init() {
 	var err error
-	db, err = gorm.Open(sqlite.Open("../db.sqlite"), &gorm.Config{})
+	db, err = gorm.Open(sqlite.Open("./db.sqlite"), &gorm.Config{})
 	if err != nil {
 		fmt.Print(err)
 		panic("failed to connect to the database")
