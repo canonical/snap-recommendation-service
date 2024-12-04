@@ -80,7 +80,7 @@ func setupCron() {
 	c.AddFunc("@weekly", func() {
 		fmt.Println("Updating scores")
 
-		cmd := exec.Command("python3", "../collector/main.py")
+		cmd := exec.Command("python3", "./collector/main.py")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		err := cmd.Run()
