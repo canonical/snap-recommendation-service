@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"os"
 	"os/exec"
@@ -44,12 +44,18 @@ type Score struct {
 
 func init() {
 	var err error
-	db, err = gorm.Open(sqlite.Open("../db.sqlite"), &gorm.Config{})
-	if err != nil {
-		fmt.Print(err)
-		panic("failed to connect to the database")
+	postgresqlURL := os.Getenv("POSTGRESQL_DB_CONNECT_STRING")
+
+	if postgresqlURL == "" {
+		panic("POSTGRESQL_DB_CONNECT_STRING is not set")
 	}
-	db.AutoMigrate(&Snap{}, &Score{})
+
+	db, err = gorm.Open(postgres.Open(postgresqlURL), &gorm.Config{})
+
+	if err != nil {
+		panic(err)
+	}
+
 }
 
 func getTopSnapsByField(orderField string) gin.HandlerFunc {
