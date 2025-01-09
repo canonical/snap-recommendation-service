@@ -1,14 +1,14 @@
 import logging
 
+from collector.collect import collect_initial_snap_data
+from collector.filter import filter_snaps_meeting_minimum_criteria
+from collector.more_fields import fetch_extra_fields
+from collector.score import calculate_scores
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
 )
-
-from collect import collect_initial_snap_data
-from filter import filter_snaps_meeting_minimum_criteria
-from more_fields import fetch_extra_fields
-from rank import calculate_scores
 
 
 if __name__ == "__main__":

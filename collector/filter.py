@@ -1,10 +1,7 @@
-from sqlalchemy.orm import Session
 from sqlalchemy import func
-from models import Snap
+from app.models import Snap
 import datetime
-
-
-from db import engine
+from app import db
 
 import logging
 
@@ -31,11 +28,13 @@ def snap_meets_minimum_criteria_query():
 
     has_media = func.json_array_length(Snap.media) >= MINIMUM_MEDIA_ITEMS
 
-    issues = func.json_extract(Snap.links, "$.issues")
+    issues = func.json_extract_path(Snap.links, "issues")
     has_issues_link = issues.isnot(None) & (func.json_array_length(issues) > 0)
 
-    contact = func.json_extract(Snap.links, "$.contact")
-    has_contact_link = contact.isnot(None) & (func.json_array_length(contact) > 0)
+    contact = func.json_extract_path(Snap.links, "contact")
+    has_contact_link = contact.isnot(None) & (
+        func.json_array_length(contact) > 0
+    )
 
     author_can_be_reached = has_issues_link | has_contact_link
 
@@ -55,16 +54,18 @@ def snap_meets_minimum_criteria_query():
 
 
 def filter_snaps_meeting_minimum_criteria():
-    with Session(bind=engine) as session:
-        query = session.query(Snap).filter(*snap_meets_minimum_criteria_query())
+    query = db.session.query(Snap).filter(*snap_meets_minimum_criteria_query())
 
-        snaps = query.all()
+    db.session.query(Snap).update(
+        {Snap.reaches_min_threshold: False}, synchronize_session=False
+    )
 
-        query.update({Snap.reaches_min_threshold: True}, synchronize_session=False)
+    query.update({Snap.reaches_min_threshold: True}, synchronize_session=False)
 
-        session.commit()
+    db.session.commit()
 
-        logger.info(f"Found {len(snaps)} snaps meeting the minimum criteria")
+    snap_count = query.count()
+    logger.info(f"Found {snap_count} snaps meeting minimum criteria.")
 
 
 if __name__ == "__main__":

@@ -185,4 +185,4 @@ go.work.sum
 # env file
 .env
 
-snaprecommend
+*.creds
