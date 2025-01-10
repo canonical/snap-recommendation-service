@@ -1,14 +1,22 @@
 from datetime import datetime
 from typing import Optional, List
-from sqlalchemy import Boolean, Integer, Float, String, DateTime, ForeignKey
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import (
+    Boolean,
+    Integer,
+    Float,
+    String,
+    DateTime,
+    ForeignKey,
+    JSON,
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app import db
+
+ALL_MEDIA_TYPES: List[str] = ["icon", "screenshot", "video", "banner", "logo"]
 
 
-class Base(DeclarativeBase):
-    pass
-
-
-class Snap(Base):
+class Snap(db.Model):
     __tablename__: str = "snap"
 
     snap_id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -22,8 +30,8 @@ class Snap(Base):
     contact: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     publisher: Mapped[str] = mapped_column(String)
     revision: Mapped[int] = mapped_column(Integer)  # Latest revision
-    links: Mapped[str] = mapped_column(String)
-    media: Mapped[str] = mapped_column(String)
+    links: Mapped[JSON] = mapped_column(JSON)
+    media: Mapped[JSON] = mapped_column(JSON)
     developer_validation: Mapped[str] = mapped_column(String)
     license: Mapped[str] = mapped_column(String)
     last_updated: Mapped[datetime] = mapped_column(DateTime)
@@ -31,7 +39,7 @@ class Snap(Base):
     reaches_min_threshold: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
-class Scores(Base):
+class Scores(db.Model):
     __tablename__: str = "scores"
 
     snap_id: Mapped[str] = mapped_column(
@@ -43,4 +51,11 @@ class Scores(Base):
     trending_score: Mapped[float] = mapped_column(Float)
 
 
-ALL_MEDIA_TYPES: List[str] = ["icon", "screenshot", "video", "banner", "logo"]
+class Settings(db.Model):
+    """
+    This table is used to store settings + metadata for the application.
+    TODO: This will include the weights for the scoring algorithm eventually
+    """
+
+    key: Mapped[str] = mapped_column(String, primary_key=True)
+    value: Mapped[JSON] = mapped_column(JSON)
