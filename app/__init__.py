@@ -50,7 +50,10 @@ def scheduled_collector():
 
     app = create_app()
     with app.app_context():
-        collect_data()
+        try:
+            collect_data()
+        except Exception as e:
+            app.logger.error(f"Error starting scheduled collector: {e}")
 
 
 scheduler.add_job(
