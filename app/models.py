@@ -30,8 +30,8 @@ class Snap(db.Model):
     contact: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     publisher: Mapped[str] = mapped_column(String)
     revision: Mapped[int] = mapped_column(Integer)  # Latest revision
-    links: Mapped[str] = mapped_column(JSON)
-    media: Mapped[str] = mapped_column(JSON)
+    links: Mapped[JSON] = mapped_column(JSON)
+    media: Mapped[JSON] = mapped_column(JSON)
     developer_validation: Mapped[str] = mapped_column(String)
     license: Mapped[str] = mapped_column(String)
     last_updated: Mapped[datetime] = mapped_column(DateTime)
@@ -51,6 +51,11 @@ class Scores(db.Model):
     trending_score: Mapped[float] = mapped_column(Float)
 
 
-class MetaData(db.Model):
-    last_collection: Mapped[datetime] = mapped_column(DateTime)
-    # TODO: we can add the tweakable parameters here
+class Settings(db.Model):
+    """
+    This table is used to store settings + metadata for the application.
+    TODO: This will include the weights for the scoring algorithm eventually
+    """
+
+    key: Mapped[str] = mapped_column(String, primary_key=True)
+    value: Mapped[JSON] = mapped_column(JSON)

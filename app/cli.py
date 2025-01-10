@@ -11,6 +11,14 @@ def collector():
 
 
 @collector.command()
+def start():
+    """Start the full data collection pipeline"""
+    from collector.main import collect_data
+
+    collect_data()
+
+
+@collector.command()
 def initial():
     """Collect initial snap data"""
     from collector.collect import collect_initial_snap_data
@@ -28,8 +36,8 @@ def filter():
 
 @collector.command()
 def extra_fields():
-    """Collect more fields for snaps"""
-    from collector.more_fields import fetch_extra_fields
+    """Collect extra fields for snaps"""
+    from collector.extra_fields import fetch_extra_fields
 
     fetch_extra_fields()
 

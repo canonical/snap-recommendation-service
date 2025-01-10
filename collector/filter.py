@@ -65,8 +65,6 @@ def filter_snaps_meeting_minimum_criteria():
     db.session.commit()
 
     snap_count = query.count()
-    logger.info(f"Found {snap_count} snaps meeting minimum criteria.")
-
-
-if __name__ == "__main__":
-    filter_snaps_meeting_minimum_criteria()
+    logger.info(
+        f"Filtered snaps to {snap_count} snaps meeting minimum criteria."
+    )

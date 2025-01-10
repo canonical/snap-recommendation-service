@@ -185,7 +185,3 @@ def collect_initial_snap_data():
     logger.info(
         f"Snap data ingestion process completed. {snaps_count} snaps inserted."
     )
-
-
-if __name__ == "__main__":
-    collect_initial_snap_data()

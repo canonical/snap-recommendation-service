@@ -71,8 +71,15 @@ def fetch_metrics_from_api(
         response.raise_for_status()
         return response.json()
     except requests.HTTPError as http_err:
+        if http_err.response.status_code == 401:
+            logger.error(
+                "Authentication error. Check your macaroon. "
+                "More details in the README."
+            )
+            logger.error(http_err.response.text)
+            raise SystemExit
         logger.error(f"HTTP error occurred: {http_err}")
-        raise
+
     except requests.RequestException as req_err:
         logger.error(f"Request error occurred: {req_err}")
         raise
@@ -138,7 +145,6 @@ def fetch_eligible_snaps(db_session: Session) -> List[Snap]:
         return snaps
     except Exception as e:
         logger.error(f"Error querying eligible snaps: {e}")
-        raise
 
 
 def update_snap_metrics():
@@ -153,7 +159,3 @@ def update_snap_metrics():
 def fetch_extra_fields():
     # Might add more fields in the future
     update_snap_metrics()
-
-
-if __name__ == "__main__":
-    fetch_extra_fields()

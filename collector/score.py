@@ -153,7 +153,3 @@ def clear_old_scores(session):
     """Clear old scores from the database."""
     session.query(Scores).delete()
     session.commit()
-
-
-if __name__ == "__main__":
-    calculate_scores()
