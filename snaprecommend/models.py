@@ -11,7 +11,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app import db
+from snaprecommend import db
 
 ALL_MEDIA_TYPES: List[str] = ["icon", "screenshot", "video", "banner", "logo"]
 

@@ -1,6 +1,6 @@
 from flask import Blueprint
-from app.models import Snap, Scores
-from app import db
+from snaprecommend.models import Snap, Scores
+from snaprecommend import db
 
 api_blueprint = Blueprint("api", __name__)
 

@@ -1,7 +1,7 @@
 from sqlalchemy import func
-from app.models import Snap
+from snaprecommend.models import Snap
 import datetime
-from app import db
+from snaprecommend import db
 
 import logging
 
