@@ -1,4 +1,4 @@
-from app.models import Snap
+from snaprecommend.models import Snap
 from sqlalchemy.orm import Session
 from collector.auth import get_auth_header
 import datetime
@@ -6,7 +6,8 @@ import requests
 import logging
 import os
 from typing import List
-from app import db
+from snaprecommend import db
+from config import MACAROON_ENV_PATH
 
 
 ACTIVE_DEVICES_TIMEFRAME = 30
@@ -14,7 +15,7 @@ ACTIVE_DEVICES_TIMEFRAME = 30
 BATCH_SIZE = 15
 RELEASES_URL = "http://api.snapcraft.io/api/v1/snaps/search?fields=revision"
 METRICS_URL = "https://dashboard.snapcraft.io/dev/api/snaps/metrics"
-MACAROON = os.environ.get("SNAPSTORE_MACAROON")
+MACAROON = os.environ.get(MACAROON_ENV_PATH)
 
 logger = logging.getLogger("extra_fields")
 
@@ -79,6 +80,7 @@ def fetch_metrics_from_api(
             logger.error(http_err.response.text)
             raise SystemExit
         logger.error(f"HTTP error occurred: {http_err}")
+        raise
 
     except requests.RequestException as req_err:
         logger.error(f"Request error occurred: {req_err}")

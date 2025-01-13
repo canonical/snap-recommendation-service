@@ -33,11 +33,10 @@ parts:  # you need to uncomment this line to add or update any part.
       # below to override the default list and include or exclude specific
       # files/directories in your project.
       # note: prefix each entry with "flask/app/" followed by the local path.
-      - flask/app/.env
       - flask/app/app.py
       - flask/app/config.py
       - flask/app/migrate.py
-      - flask/app/app
+      - flask/app/snaprecommend
       - flask/app/collector
       - flask/app/migrations
 

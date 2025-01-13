@@ -27,3 +27,11 @@ requires:
   postgresql:
     interface: postgresql_client
     optional: false
+
+config:
+  options:
+    snapstore-macaroon:
+      description: Secret needed to authenticate with the Snap Store.
+      optional: false
+      required: true
+      type: secret

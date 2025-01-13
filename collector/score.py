@@ -1,9 +1,9 @@
 from collections import Counter
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from app.models import Snap, Scores, ALL_MEDIA_TYPES
+from snaprecommend.models import Snap, Scores, ALL_MEDIA_TYPES
 from sqlalchemy.dialects.postgresql import insert
-from app import db
+from snaprecommend import db
 
 
 def normalize_field(session: Session, field: str, filter_condition=None):

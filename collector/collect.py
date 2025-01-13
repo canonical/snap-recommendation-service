@@ -4,8 +4,8 @@ import requests
 import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
-from app import db
-from app.models import Snap
+from snaprecommend import db
+from snaprecommend.models import Snap
 
 FIELDS = (
     "snap_id",
@@ -102,6 +102,7 @@ def insert_snaps() -> int:
             bulk_upsert_snaps(db.session, snaps)
         except Exception as e:
             logger.error(f"Error during bulk upsert on page {page}: {e}")
+            raise
 
         db.session.commit()
         logger.info(f"Page {page} processed with {len(snaps)} snaps.")
