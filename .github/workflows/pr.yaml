@@ -1,0 +1,27 @@
+name: PR checks
+on:
+  pull_request:
+
+jobs:
+   test-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            py:
+              - '**/*.py'
+
+      - name: Install Python dependencies
+        if: ${{ steps.filter.outputs.py == 'true' }}
+        run: |
+          pip3 install -r requirements.txt
+          pip3 install pytest
+
+      - name: Run Python tests 
+        if: ${{ steps.filter.outputs.py == 'true' }}
+        run: |
+          pytest 
