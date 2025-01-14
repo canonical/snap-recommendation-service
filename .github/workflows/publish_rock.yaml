@@ -53,7 +53,7 @@ jobs:
           CHARMCRAFT_AUTH: ${{ secrets.CHARMHUB_TOKEN }}
         run: |
             sudo snap install charmcraft --classic --channel=latest/edge
-            charmcraft upload-resource snapreommend flask-app-image --image=`docker images --format "{{.ID}}" | head -n 1` --verbosity=trace
+            charmcraft upload-resource snaprecommend flask-app-image --image=`docker images --format "{{.ID}}" | head -n 1` --verbosity=trace
 
       - name: Attach resource to charm
         env:
