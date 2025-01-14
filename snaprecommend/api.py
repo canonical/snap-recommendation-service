@@ -36,7 +36,13 @@ def get_top_snaps_by_field(
     field = getattr(Scores, field)
     order = field.asc() if ascending else field.desc()
 
-    snaps = db.session.query(Snap).join(Scores).order_by(order).limit(limit)
+    snaps = (
+        db.session.query(Snap)
+        .filter(Snap.reaches_min_threshold.is_(True))
+        .join(Scores)
+        .order_by(order)
+        .limit(limit)
+    )
 
     return list(snaps)
 

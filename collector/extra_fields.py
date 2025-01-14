@@ -147,15 +147,16 @@ def fetch_eligible_snaps(db_session: Session) -> List[Snap]:
         return snaps
     except Exception as e:
         logger.error(f"Error querying eligible snaps: {e}")
+        raise
 
 
 def update_snap_metrics():
-    with Session(bind=db.engine) as db_session:
-        try:
-            eligible_snaps = fetch_eligible_snaps(db_session)
-            fetch_and_update_metrics_for_snaps(eligible_snaps, db_session)
-        except Exception as e:
-            logger.error(f"Error during metrics update process: {e}")
+    try:
+        eligible_snaps = fetch_eligible_snaps(db.session)
+        fetch_and_update_metrics_for_snaps(eligible_snaps, db.session)
+    except Exception as e:
+        logger.error(f"Error during metrics update process: {e}")
+        raise
 
 
 def fetch_extra_fields():
