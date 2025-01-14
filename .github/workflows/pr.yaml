@@ -24,4 +24,4 @@ jobs:
       - name: Run Python tests 
         if: ${{ steps.filter.outputs.py == 'true' }}
         run: |
-          pytest 
+          python3 -m pytest tests/
