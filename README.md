@@ -37,12 +37,12 @@ Both components use a shared database (SQLite) to store both snap data and ranki
 
 ### Collector
 The collector is a multi-stage pipeline, each stage can be run independently if needed by running the corresponding script. The stages are:
-1. `collect.py`: Collecting data from the snap store [for all public (searchable) snaps]
+1. `collect.py`: Collecting data from the snap store [for all public (searchable) snaps]. 
 2. `filter.py`: Filter out snaps that are not suitable for recommendations (e.g snaps that don't have an icon, etc)
 3. `extrafields.py` Collect extra data from the snap store (e.g. active devices), this is done after filtering to reduce the number of requests
 4. `score.py`: Generate ratings for each snap based on multiple categories (e.g. popularity, trendiness, etc)
 
-The entire pipeline can be run by running `main.py` which will run all the stages in order.
+The entire pipeline can be run by running `flask collector start` which will run all the stages in order. See `flask collector --help` if you'd like to run a stage individually.
 
 ### Server
 The server is a very lightweight Flask server that serves the rankings for a given category.
