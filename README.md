@@ -8,7 +8,24 @@ This service is responsible for generating and serving recommendations for snaps
 
 ### Collector
 
-#### Setup
+You can use `docker compose up -d` to start the service alongside a postgres DB. you'll need to add the following to `.env`:
+
+```
+POSTGRESQL_DB_CONNECT_STRING=postgresql://postgres:mysecretpassword@db:5432/postgres
+FLASK_SNAPSTORE_MACAROON_KEY="" # look at collector/README.md for how to get this
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=mysecretpassword
+POSTGRES_DB=postgres
+```
+
+If running for the first time, you must run the following to apply migrations:
+
+```
+docker compose exec web flask db upgrade
+```
+
+#### Manual Setup
+
 ```bash
 # create a virtual environment
 python3 -m venv venv
@@ -46,6 +63,18 @@ The entire pipeline can be run by running `flask collector start` which will run
 
 ### Server
 The server is a very lightweight Flask server that serves the rankings for a given category.
+
+### DB & Migrations
+
+Any modifications to the models inside `snaprecommend/models.py` should result in a new migration that will be applied to the DB on the next deployment. To create a new migration:
+
+```
+flask db migrate -m "Added icon column"
+```
+
+Then apply the migration with `flask db upgrade`.
+
+Any of the commands above can be prefixed with `docker exec web` if running using docker compose
 
 ## Flowchart
 ```mermaid
