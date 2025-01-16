@@ -29,15 +29,7 @@ URL = f"http://api.snapcraft.io/api/v1/snaps/search?fields={','.join(FIELDS)}"
 logger = logging.getLogger("collector")
 
 
-def upsert_snap(session: Session, snap):
-    """
-    Upserts a snap into the database.
-
-    :param session: The database session.
-    :param snap: The snap to upsert (from the API response)
-    """
-
-    # website can be either a list of multiple websites or one string
+def parse_snap_from_response(snap: dict) -> dict:
     website = snap["links"].get("website", [])
     website = website[0] if len(website) else None
 
@@ -46,25 +38,35 @@ def upsert_snap(session: Session, snap):
     contact = contact[0] if len(contact) else None
 
     icon = next(filter(lambda x: x["type"] == "icon", snap["media"]), None)
+    return {
+        "snap_id": snap["snap_id"],
+        "name": snap["package_name"],
+        "icon": icon["url"] if icon else None,
+        "summary": snap["summary"],
+        "description": snap["description"],
+        "title": snap["title"],
+        "website": website,
+        "version": snap["version"],
+        "publisher": snap["publisher"],
+        "revision": snap["revision"],
+        "contact": contact,
+        "links": snap["links"],
+        "media": snap["media"],
+        "developer_validation": snap["developer_validation"],
+        "license": snap["license"],
+        "last_updated": datetime.datetime.fromisoformat(snap["last_updated"]),
+    }
 
-    snap_object = Snap(
-        snap_id=snap["snap_id"],
-        name=snap["package_name"],
-        icon=icon["url"] if icon else None,
-        summary=snap["summary"],
-        description=snap["description"],
-        title=snap["title"],
-        website=website,
-        version=snap["version"],
-        publisher=snap["publisher"],
-        revision=snap["revision"],
-        contact=contact,
-        links=snap["links"],
-        media=snap["media"],
-        developer_validation=snap["developer_validation"],
-        license=snap["license"],
-        last_updated=datetime.datetime.fromisoformat(snap["last_updated"]),
-    )
+
+def upsert_snap(session: Session, snap):
+    """
+    Upserts a snap into the database.
+
+    :param session: The database session.
+    :param snap: The snap to upsert (from the API response)
+    """
+
+    snap_object = Snap(**parse_snap_from_response(snap))
 
     logger.debug(f"Upserting snap: {snap['title']} (ID: {snap['snap_id']})")
 
@@ -95,7 +97,9 @@ def insert_snaps() -> int:
     """
     page = 1
     total_snaps = 0
-    while True:
+    has_next = True
+
+    while has_next:
         snaps, has_next = get_snap_page(page)
         total_snaps += len(snaps)
         try:
@@ -123,36 +127,8 @@ def bulk_upsert_snaps(session: Session, snaps: list):
 
     snap_data = []
     for snap in snaps:
-        website = snap["links"].get("website", [])
-        website = website[0] if len(website) else None
 
-        contact = snap["links"].get("contact", [])
-        contact = contact[0] if len(contact) else None
-
-        icon = next(filter(lambda x: x["type"] == "icon", snap["media"]), None)
-
-        snap_data.append(
-            {
-                "snap_id": snap["snap_id"],
-                "name": snap["package_name"],
-                "icon": icon["url"] if icon else None,
-                "summary": snap["summary"],
-                "description": snap["description"],
-                "title": snap["title"],
-                "website": website,
-                "version": snap["version"],
-                "publisher": snap["publisher"],
-                "revision": snap["revision"],
-                "contact": contact,
-                "links": snap["links"],
-                "media": snap["media"],
-                "developer_validation": snap["developer_validation"],
-                "license": snap["license"],
-                "last_updated": datetime.datetime.fromisoformat(
-                    snap["last_updated"]
-                ),
-            }
-        )
+        snap_data.append(parse_snap_from_response(snap))
 
     if snap_data:
         stmt = insert(Snap).values(snap_data)
