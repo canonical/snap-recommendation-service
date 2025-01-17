@@ -5,7 +5,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from config import Config
 from snaprecommend.cli import cli_blueprint
-
+from snaprecommend.sso import init_sso
 from apscheduler.schedulers.background import BackgroundScheduler
 
 logging.basicConfig(
@@ -23,6 +23,9 @@ def create_app(config_class=Config):
         __name__,
     )
     app.config.from_object(config_class)
+    app.config.from_prefixed_env()
+
+    init_sso(app)
 
     app.register_blueprint(cli_blueprint)
 
