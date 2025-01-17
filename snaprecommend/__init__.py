@@ -27,8 +27,11 @@ def create_app(config_class=Config):
     app.register_blueprint(cli_blueprint)
 
     from snaprecommend.api import api_blueprint
+    from snaprecommend.dashboard import dashboard_blueprint
 
     app.register_blueprint(api_blueprint, url_prefix="/api")
+
+    app.register_blueprint(dashboard_blueprint, url_prefix="/dashboard")
 
     db.init_app(app)
 
