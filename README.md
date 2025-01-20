@@ -8,15 +8,7 @@ This service is responsible for generating and serving recommendations for snaps
 
 ### Collector
 
-You can use `docker compose up -d` to start the service alongside a postgres DB. you'll need to add the following to `.env`:
-
-```
-POSTGRESQL_DB_CONNECT_STRING=postgresql://postgres:mysecretpassword@db:5432/postgres
-FLASK_SNAPSTORE_MACAROON_KEY="" # look at collector/README.md for how to get this
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=mysecretpassword
-POSTGRES_DB=postgres
-```
+You can use `docker compose up -d` to start the service alongside a postgres DB. But first you'll need to follow the instructions in collector/README.md to populate the `FLASK_SNAPSTORE_MACAROON_KEY` env variable.
 
 If running for the first time, you must run the following to apply migrations:
 
