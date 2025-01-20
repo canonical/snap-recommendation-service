@@ -32,6 +32,9 @@ config:
   options:
     snapstore-macaroon:
       description: Secret needed to authenticate with the Snap Store.
-      optional: false
       required: true
       type: secret
+    openid-launchpad-team:
+      description: The team that is requested from U1 SSO.
+      type: string
+      required: true

@@ -124,7 +124,6 @@ celerybeat.pid
 *.sage.py
 
 # Environments
-.env
 .venv
 env/
 venv/
@@ -181,9 +180,6 @@ cython_debug/
 # Go workspace file
 go.work
 go.work.sum
-
-# env file
-.env
 
 *.creds
 *.rock
