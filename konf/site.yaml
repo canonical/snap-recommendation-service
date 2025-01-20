@@ -17,5 +17,5 @@ env:
       name: snaprecommend
   - name: POSTGRESQL_DB_CONNECT_STRING
     secretKeyRef:
-      key: snaprecommend
+      key: postgresql-db-connect-string
       name: snaprecommend
