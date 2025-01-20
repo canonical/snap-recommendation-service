@@ -14,7 +14,7 @@ def init_sso(app: flask.Flask):
         extension_responses=[TeamsResponse],
     )
 
-    SSO_TEAM = app.config["SSO_TEAM"]
+    SSO_TEAM = app.config["OPENID_LAUNCHPAD_TEAM"]
 
     @app.route("/login", methods=["GET", "POST"])
     @open_id.loginhandler
