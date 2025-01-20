@@ -1,0 +1,21 @@
+domain: recommendations.snapcraft.io
+
+image: prod-comms.ps5.docker-registry.canonical.com/snap-recommendation-service
+
+env:
+  - name: FLASK_OPENID_LAUNCHPAD_TEAM
+    secretKeyRef:
+      key: flask-openid-launchpad-team
+      name: snaprecommend
+  - name: FLASK_SECRET_KEY
+    secretKeyRef:
+      key: flask-secret-key
+      name: snaprecommend
+  - name: FLASK_SNAPSTORE_MACAROON_KEY
+    secretKeyRef:
+      key: flask-snapstore-macaroon-key
+      name: snaprecommend
+  - name: POSTGRESQL_DB_CONNECT_STRING
+    secretKeyRef:
+      key: postgresql-db-connect-string
+      name: snaprecommend
