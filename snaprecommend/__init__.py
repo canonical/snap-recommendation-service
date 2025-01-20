@@ -36,6 +36,10 @@ def create_app(config_class=Config):
     def index():
         return "Snap recommendations API - Copyright 2025 Canonical"
 
+    @app.route("/_status/check")
+    def status_check():
+        return "OK"
+
     app.register_blueprint(api_blueprint, url_prefix="/api")
 
     app.register_blueprint(dashboard_blueprint, url_prefix="/dashboard")
