@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block meta_title %}Dashboard{% endblock %}
+
+{% block page_content %}
+<div class="p-panel">
+    <div class="p-panel__header">
+        <h4 class="p-panel__title">Dashboard</h4>
+    </div>
+    <div class="p-panel__content">
+        <div class="u-fixed-width">
+            <h4>Top snaps per category</h4>
+            <div class="row">
+                <div class="col-4">
+                    <h5>Most popular</h5>
+                    <ul class="p-list" style="max-height: 650px; overflow: scroll;">
+                        {% for snap in popular_snaps %}
+                            {% include "partials/snap_card.html" %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col-4">
+                    <h5>Recently updated</h5>
+                    <ul class="p-list" style="max-height: 650px; overflow: scroll;">
+                        {% for snap in recent_snaps %}
+                            {% include "partials/snap_card.html" %}
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col-4">
+                    <h5>Trending</h5>
+                    <ul class="p-list" style="max-height: 650px; overflow: scroll;">
+                        {% for snap in trending_snaps %}
+                            {% include "partials/snap_card.html" %}
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

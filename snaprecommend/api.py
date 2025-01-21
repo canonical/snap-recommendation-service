@@ -1,6 +1,6 @@
 from flask import Blueprint
-from snaprecommend.models import Snap, Scores
-from snaprecommend import db
+from snaprecommend.models import Snap
+from snaprecommend.logic import get_top_snaps_by_field
 
 api_blueprint = Blueprint("api", __name__)
 
@@ -25,26 +25,6 @@ def trending():
     snaps = get_top_snaps_by_field("trending_score")
 
     return format_response(snaps)
-
-
-def get_top_snaps_by_field(
-    field: str, limit: int = 50, ascending: bool = False
-) -> list[Snap]:
-    """
-    Returns the top snaps based on the given field
-    """
-    field = getattr(Scores, field)
-    order = field.asc() if ascending else field.desc()
-
-    snaps = (
-        db.session.query(Snap)
-        .filter(Snap.reaches_min_threshold.is_(True))
-        .join(Scores)
-        .order_by(order)
-        .limit(limit)
-    )
-
-    return list(snaps)
 
 
 def format_response(snaps: list[Snap]) -> list[dict]:

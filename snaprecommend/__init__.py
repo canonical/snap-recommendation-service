@@ -19,9 +19,7 @@ migrate = Migrate()
 
 
 def create_app(config_class=Config):
-    app = Flask(
-        __name__,
-    )
+    app = Flask(__name__, template_folder="templates")
     app.config.from_object(config_class)
     app.config.from_prefixed_env()
 
