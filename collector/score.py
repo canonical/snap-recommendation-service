@@ -68,11 +68,15 @@ def calculate_recency_score(
 
 
 def calculate_trending_score(
-    active_devices_normalized, metadata_score, dev_score
+    last_updated_normalized,
+    active_devices_normalized,
+    metadata_score,
+    dev_score,
 ):
     """Calculate the trending score for a snap."""
     return (
-        active_devices_normalized * 0.5
+        last_updated_normalized * 0.25
+        + active_devices_normalized * 0.25
         + metadata_score * 0.3
         + dev_score * 0.2
     )
@@ -123,7 +127,10 @@ def calculate_scores():
             last_updated_normalized, metadata_score, dev_score
         )
         trending_score = calculate_trending_score(
-            active_devices_normalized, metadata_score, dev_score
+            last_updated_normalized,
+            active_devices_normalized,
+            metadata_score,
+            dev_score,
         )
 
         scores_to_insert.append(
