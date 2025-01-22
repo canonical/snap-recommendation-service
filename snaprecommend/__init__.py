@@ -13,7 +13,6 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
 )
 
-
 db = SQLAlchemy()
 migrate = Migrate()
 
@@ -39,11 +38,9 @@ def create_app(config_class=Config):
         return "OK"
 
     app.register_blueprint(api_blueprint, url_prefix="/api")
-
     app.register_blueprint(dashboard_blueprint, url_prefix="/dashboard")
 
     db.init_app(app)
-
     migrate.init_app(app, db)
 
     app.logger.setLevel(logging.INFO)
@@ -54,13 +51,14 @@ def create_app(config_class=Config):
     return app
 
 
+app = create_app()
+
 scheduler = BackgroundScheduler()
 
 
 def scheduled_collector():
     from collector.main import collect_data
 
-    app = create_app()
     with app.app_context():
         try:
             collect_data()
