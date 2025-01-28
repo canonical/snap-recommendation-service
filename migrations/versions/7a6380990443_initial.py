@@ -44,7 +44,7 @@ def upgrade():
     sa.Column('popularity_score', sa.Float(), nullable=False),
     sa.Column('recency_score', sa.Float(), nullable=False),
     sa.Column('trending_score', sa.Float(), nullable=False),
-    sa.ForeignKeyConstraint(['snap_id'], ['snap.snap_id'], ),
+    sa.ForeignKeyConstraint(['snap_id'], ['snap.snap_id'],ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('snap_id')
     )
     # ### end Alembic commands ###

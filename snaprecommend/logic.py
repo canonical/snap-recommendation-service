@@ -1,22 +1,22 @@
-from snaprecommend.models import Snap, Scores
+from snaprecommend.models import Snap, SnapRecommendationScore
 from snaprecommend import db
 
 
-def get_top_snaps_by_field(
-    field: str, limit: int = 50, ascending: bool = False
-) -> list[Snap]:
+def get_category_top_snaps(category: str, limit: int = 50) -> list[Snap]:
     """
-    Returns the top snaps based on the given field
+    Returns the top snaps for a given category.
     """
-    field = getattr(Scores, field)
-    order = field.asc() if ascending else field.desc()
 
     snaps = (
         db.session.query(Snap)
+        .join(
+            SnapRecommendationScore,
+            Snap.snap_id == SnapRecommendationScore.snap_id,
+        )
         .filter(Snap.reaches_min_threshold.is_(True))
-        .join(Scores)
-        .order_by(order)
+        .filter(SnapRecommendationScore.category == category)
+        .order_by(SnapRecommendationScore.score.desc())
         .limit(limit)
-    )
+    ).all()
 
-    return list(snaps)
+    return snaps

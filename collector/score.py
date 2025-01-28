@@ -1,9 +1,16 @@
 from collections import Counter
 from sqlalchemy.orm import Session
 from sqlalchemy import func
-from snaprecommend.models import Snap, Scores, ALL_MEDIA_TYPES
+from snaprecommend.models import (
+    Snap,
+    SnapRecommendationScore,
+    SnapRecommendationScoreHistory,
+    ALL_MEDIA_TYPES,
+)
 from sqlalchemy.dialects.postgresql import insert
 from snaprecommend import db
+from collector.extra_fields import batched
+import math
 
 
 def normalize_field(session: Session, field: str, filter_condition=None):
@@ -11,6 +18,21 @@ def normalize_field(session: Session, field: str, filter_condition=None):
     if filter_condition is not None:
         query = query.filter(filter_condition)
     return query.one()
+
+
+def log_scale(value, min_value, max_value):
+    """Apply log scaling to a value, ensuring the result is between 0 and 1."""
+    if value <= 0:
+        return 0
+
+    log_min = math.log1p(min_value)  # log(1 + min_value)
+    log_max = math.log1p(max_value)  # log(1 + max_value)
+    log_value = math.log1p(value)  # log(1 + value)
+
+    if log_max == log_min:
+        return 1  # Avoid division by zero, treat as uniform scaling
+
+    return (log_value - log_min) / (log_max - log_min)
 
 
 def calculate_media_score(snap: Snap):
@@ -40,11 +62,9 @@ def calculate_metadata_score(snap: Snap):
 def calculate_dev_score(snap: Snap):
     """Calculate the developer score for a snap."""
     score = 0
-    if snap.developer_validation == "starred":
-        score = 2
-    elif snap.developer_validation == "verified":
+    if snap.developer_validation in ["verified", "starred"]:
         score = 1
-    return score / 2
+    return score
 
 
 def calculate_popularity_score(
@@ -52,8 +72,8 @@ def calculate_popularity_score(
 ):
     """Calculate the popularity score for a snap."""
     return (
-        active_devices_normalized * 0.5
-        + metadata_score * 0.3
+        active_devices_normalized * 0.7
+        + metadata_score * 0.1
         + dev_score * 0.2
     )
 
@@ -82,12 +102,10 @@ def calculate_trending_score(
     )
 
 
-def calculate_scores():
-    """Calculate the scores for all recommendable snaps."""
+def calculate_category_scores(category: str):
+    """Calculate the scores for all recommendable snaps in a category."""
 
     session = db.session
-
-    clear_old_scores(session)
 
     filter_condition = Snap.reaches_min_threshold.is_(True)
 
@@ -102,61 +120,95 @@ def calculate_scores():
 
     snaps = session.query(Snap).filter(filter_condition).all()
 
-    for snap in snaps:
-        # Normalize fields
-        active_devices_normalized = (
-            (snap.active_devices - min_active_devices)
-            / (max_active_devices - min_active_devices)
-            if max_active_devices != min_active_devices
-            else 1
-        )
-        last_updated_normalized = (
-            (snap.last_updated - min_last_updated).total_seconds()
-            / (max_last_updated - min_last_updated).total_seconds()
-            if max_last_updated != min_last_updated
-            else 1
-        )
+    for snaps_batch in batched(snaps, 100):
+        for snap in snaps_batch:
+            # Normalize fields with log scaling for active devices
+            active_devices_normalized = log_scale(
+                snap.active_devices, min_active_devices, max_active_devices
+            )
 
-        metadata_score = calculate_metadata_score(snap)
-        dev_score = calculate_dev_score(snap)
+            last_updated_normalized = (
+                (snap.last_updated - min_last_updated).total_seconds()
+                / (max_last_updated - min_last_updated).total_seconds()
+                if max_last_updated != min_last_updated
+                else 1
+            )
 
-        popularity_score = calculate_popularity_score(
-            active_devices_normalized, metadata_score, dev_score
-        )
-        recency_score = calculate_recency_score(
-            last_updated_normalized, metadata_score, dev_score
-        )
-        trending_score = calculate_trending_score(
-            last_updated_normalized,
-            active_devices_normalized,
-            metadata_score,
-            dev_score,
-        )
+            metadata_score = calculate_metadata_score(snap)
+            dev_score = calculate_dev_score(snap)
 
-        scores_to_insert.append(
-            {
-                "snap_id": snap.snap_id,
-                "popularity_score": popularity_score,
-                "recency_score": recency_score,
-                "trending_score": trending_score,
-            }
-        )
+            if snap.name == "firefox":
+                print(snap.snap_id)
+                print(
+                    f"active_devices_normalized: {active_devices_normalized}, last_updated_normalized: {last_updated_normalized}, metadata_score: {metadata_score}, dev_score: {dev_score}"
+                )
+
+            # TODO: formula will be a field in category eventually
+            if category == "popular":
+                score = calculate_popularity_score(
+                    active_devices_normalized, metadata_score, dev_score
+                )
+            elif category == "recent":
+                score = calculate_recency_score(
+                    last_updated_normalized, metadata_score, dev_score
+                )
+            elif category == "trending":
+                score = calculate_trending_score(
+                    last_updated_normalized,
+                    active_devices_normalized,
+                    metadata_score,
+                    dev_score,
+                )
+            else:
+                raise ValueError(f"Invalid category: {category}")
+
+            scores_to_insert.append(
+                {"snap_id": snap.snap_id, "category": category, "score": score}
+            )
+
+        if scores_to_insert:
+            stmt = insert(SnapRecommendationScore).values(scores_to_insert)
+            update_stmt = stmt.on_conflict_do_update(
+                index_elements=["snap_id", "category"],
+                set_={"score": stmt.excluded.score},
+            )
+            session.execute(update_stmt)
+            session.commit()
+
+
+def calculate_scores():
+    """Calculate the scores for all recommendable snaps."""
+
+    migrate_old_scores()
+
+    calculate_category_scores("popular")
+    calculate_category_scores("recent")
+    calculate_category_scores("trending")
+
+    return
+
+
+def migrate_old_scores():
+    """Migrate old scores to the history table."""
+    session = db.session
+
+    scores = session.query(SnapRecommendationScore).all()
+
+    scores_to_insert = [
+        {
+            "snap_id": score.snap_id,
+            "category": score.category,
+            "created_at": score.created_at,
+            "exclude": score.exclude,
+            "score": score.score,
+        }
+        for score in scores
+    ]
 
     if scores_to_insert:
-        insert_stmt = insert(Scores).values(scores_to_insert)
-        update_stmt = insert_stmt.on_conflict_do_update(
-            index_elements=["snap_id"],
-            set_={
-                "popularity_score": insert_stmt.excluded.popularity_score,
-                "recency_score": insert_stmt.excluded.recency_score,
-                "trending_score": insert_stmt.excluded.trending_score,
-            },
-        )
-        session.execute(update_stmt)
+        stmt = insert(SnapRecommendationScoreHistory).values(scores_to_insert)
+        stmt = stmt.on_conflict_do_nothing()
+        session.execute(stmt)
         session.commit()
 
-
-def clear_old_scores(session):
-    """Clear old scores from the database."""
-    session.query(Scores).delete()
     session.commit()

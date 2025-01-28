@@ -29,7 +29,7 @@ class Snap(db.Model):
     website: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     contact: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     publisher: Mapped[str] = mapped_column(String)
-    revision: Mapped[int] = mapped_column(Integer)  # Latest revision
+    revision: Mapped[int] = mapped_column(Integer)
     links: Mapped[JSON] = mapped_column(JSON)
     media: Mapped[JSON] = mapped_column(JSON)
     developer_validation: Mapped[str] = mapped_column(String)
@@ -39,22 +39,65 @@ class Snap(db.Model):
     reaches_min_threshold: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
-class Scores(db.Model):
-    __tablename__: str = "scores"
+class RecommendationCategory(db.Model):
+    """
+    This table is used to store recommendation categories.
+    """
+
+    id: Mapped[str] = mapped_column(
+        String, primary_key=True
+    )  # This is the slug, e.g. 'popularity', 'recent', 'trending'
+    name: Mapped[str] = mapped_column(String)
+    description: Mapped[str] = mapped_column(String)
+
+
+class SnapRecommendationScore(db.Model):
+    """
+    This table is used to store the current scores for each snap.
+    """
 
     snap_id: Mapped[str] = mapped_column(
-        String, ForeignKey("snap.snap_id"), primary_key=True
+        String,
+        ForeignKey("snap.snap_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    category: Mapped[str] = mapped_column(
+        String,
+        ForeignKey("recommendation_category.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    score: Mapped[float] = mapped_column(Float)
+    exclude: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now
     )
 
-    popularity_score: Mapped[float] = mapped_column(Float)
-    recency_score: Mapped[float] = mapped_column(Float)
-    trending_score: Mapped[float] = mapped_column(Float)
+
+class SnapRecommendationScoreHistory(db.Model):
+    """
+    This table is used to store the historical data for scores for each snap.
+    """
+
+    snap_id: Mapped[str] = mapped_column(
+        String,
+        ForeignKey("snap.snap_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    category: Mapped[str] = mapped_column(
+        String,
+        ForeignKey("recommendation_category.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    score: Mapped[float] = mapped_column(Float)
+    exclude: Mapped[bool] = mapped_column(Boolean, default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now, primary_key=True
+    )
 
 
 class Settings(db.Model):
     """
-    This table is used to store settings + metadata for the application.
-    TODO: This will include the weights for the scoring algorithm eventually
+    This table is used to store site wide settings + metadata for the application.
     """
 
     key: Mapped[str] = mapped_column(String, primary_key=True)

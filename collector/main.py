@@ -56,6 +56,9 @@ def collect_data(force_update: bool = False):
     else:
         logger.info("Force update enabled. updating data.")
 
+    # TODO: if a step fails, the pipeline should not continue
+    # TODO: don't repeat a step if it has already been done successfully
+
     collect_initial_snap_data()
     filter_snaps_meeting_minimum_criteria()
     fetch_extra_fields()
