@@ -10,8 +10,6 @@ from snaprecommend import db
 from config import MACAROON_ENV_PATH
 
 
-ACTIVE_DEVICES_TIMEFRAME = 30
-
 BATCH_SIZE = 15
 RELEASES_URL = "http://api.snapcraft.io/api/v1/snaps/search?fields=revision"
 METRICS_URL = "https://dashboard.snapcraft.io/dev/api/snaps/metrics"
@@ -32,14 +30,20 @@ def calculate_latest_active_devices(metrics_data: dict) -> int:
     """
     Calculates the latest number of active devices from metrics data.
     """
-    total_active_devices = 0
-    for series in metrics_data.get("series", []):
-        series["values"] = [value or 0 for value in series["values"]]
-        # This is a hack to deal with active devices restting to 0 at
-        # the start of the day
-        if len(series["values"]) >= 3:
-            total_active_devices += max(series["values"][-3:])
-    return total_active_devices
+    latest_active_devices = 0
+    metrics_data["series"] = sorted(
+        metrics_data["series"], key=lambda x: x["name"]
+    )
+
+    for series_index, series in enumerate(metrics_data["series"]):
+        for index, value in enumerate(series["values"]):
+            if value is None:
+                metrics_data["series"][series_index]["values"][index] = 0
+        values = series["values"]
+        if len(values) == len(metrics_data["buckets"]):
+            latest_active_devices += values[len(values) - 1]
+
+    return latest_active_devices
 
 
 def fetch_metrics_from_api(
@@ -127,11 +131,11 @@ def fetch_and_update_metrics_for_snaps(snaps: List[Snap], db_session: Session):
 
 
 def get_metrics_time_range() -> tuple[str, str]:
-    end_date = datetime.datetime.now().strftime("%Y-%m-%d")
-    start_date = (
-        datetime.datetime.now()
-        - datetime.timedelta(days=ACTIVE_DEVICES_TIMEFRAME)
-    ).strftime("%Y-%m-%d")
+    today = datetime.datetime.now()
+    yesterday = today - datetime.timedelta(days=1)
+
+    end_date = (yesterday).strftime("%Y-%m-%d")
+    start_date = (yesterday - datetime.timedelta(days=1)).strftime("%Y-%m-%d")
     return start_date, end_date
 
 
