@@ -32,13 +32,15 @@ def sample_snap():
 
 def test_calculate_latest_active_devices():
     metrics_data = {
-        "series": [
-            {"values": [0, 10, 20, 30]},
-            {"values": [5, 15, 25, 35]},
-        ]
+        "buckets": ["2025-01-26", "2025-01-27"],
+        "metric_name": "weekly_installed_base_by_version",
+        "series": [{"name": "1.0.1", "values": [23, 22]}],
+        "snap_id": "bv9Q2i9CNAvTjt9wTx1cFC6SAT9YrEfG",
+        "status": "OK",
     }
+
     result = calculate_latest_active_devices(metrics_data)
-    assert result == 65
+    assert result == 22
 
 
 @patch("collector.extra_fields.requests.post")
@@ -57,11 +59,18 @@ def test_fetch_metrics_from_api(mock_get_auth_header, mock_post, sample_snap):
 def test_process_and_update_snap_metrics(mock_session, sample_snap):
     metrics_data = {
         "metrics": [
-            {"series": [{"values": [0, 10, 20, 30]}]},
+            {
+                "buckets": ["2025-01-26", "2025-01-27"],
+                "metric_name": "weekly_installed_base_by_version",
+                "series": [{"name": "1.0.1", "values": [23, 22]}],
+                "snap_id": "bv9Q2i9CNAvTjt9wTx1cFC6SAT9YrEfG",
+                "status": "OK",
+            }
         ]
     }
+
     process_and_update_snap_metrics([sample_snap], metrics_data, mock_session)
-    assert sample_snap.active_devices == 30
+    assert sample_snap.active_devices == 22
     mock_session.commit.assert_called_once()
 
 
@@ -85,8 +94,10 @@ def test_fetch_and_update_metrics_for_snaps(
 
 def test_get_metrics_time_range():
     start_date, end_date = get_metrics_time_range()
-    assert end_date == datetime.now().strftime("%Y-%m-%d")
-    assert start_date == (datetime.now() - timedelta(days=30)).strftime(
+    assert end_date == (datetime.now() - timedelta(days=1)).strftime(
+        "%Y-%m-%d"
+    )
+    assert start_date == (datetime.now() - timedelta(days=2)).strftime(
         "%Y-%m-%d"
     )
 

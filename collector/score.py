@@ -137,12 +137,6 @@ def calculate_category_scores(category: str):
             metadata_score = calculate_metadata_score(snap)
             dev_score = calculate_dev_score(snap)
 
-            if snap.name == "firefox":
-                print(snap.snap_id)
-                print(
-                    f"active_devices_normalized: {active_devices_normalized}, last_updated_normalized: {last_updated_normalized}, metadata_score: {metadata_score}, dev_score: {dev_score}"
-                )
-
             # TODO: formula will be a field in category eventually
             if category == "popular":
                 score = calculate_popularity_score(
