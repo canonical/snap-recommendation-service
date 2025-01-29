@@ -1,4 +1,8 @@
-from snaprecommend.models import Snap, SnapRecommendationScore
+from snaprecommend.models import (
+    Snap,
+    SnapRecommendationScore,
+    RecommendationCategory,
+)
 from snaprecommend import db
 
 
@@ -15,11 +19,13 @@ def get_category_top_snaps(category: str, limit: int = 50) -> list[Snap]:
         )
         .filter(Snap.reaches_min_threshold.is_(True))
         .filter(SnapRecommendationScore.category == category)
+        .filter(SnapRecommendationScore.exclude.is_(False))
         .order_by(SnapRecommendationScore.score.desc())
         .limit(limit)
     ).all()
 
     return snaps
+
 
 def exclude_snap_from_category(category: str, snap_id: str):
     """
@@ -58,3 +64,31 @@ def include_snap_in_category(category: str, snap_id: str):
 
     return False
 
+
+def get_all_categories() -> list[RecommendationCategory]:
+    """
+    Returns all available categories.
+    """
+
+    categories = db.session.query(RecommendationCategory).all()
+
+    return categories
+
+
+def get_category_excluded_snaps(category: str) -> list[Snap]:
+    """
+    Returns the excluded snaps for a given category.
+    """
+
+    snaps = (
+        db.session.query(Snap)
+        .join(
+            SnapRecommendationScore,
+            Snap.snap_id == SnapRecommendationScore.snap_id,
+        )
+        .filter(SnapRecommendationScore.category == category)
+        .filter(SnapRecommendationScore.exclude.is_(True))
+        .order_by(SnapRecommendationScore.score.desc())
+    ).all()
+
+    return snaps

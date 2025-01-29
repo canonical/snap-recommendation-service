@@ -15,6 +15,19 @@
           >
         </h4>
       </div>
+      {% if excluded %}
+      <form
+        action="{{ url_for('dashboard.include_snap') }}"
+        method="post"
+        style="margin: 0"
+      >
+        <input type="hidden" name="snap_id" value="{{ snap.snap_id }}" />
+        <input type="hidden" name="category" value="{{ category }}" />
+        <button type="submit" class="p-button--positive has-icon">
+          <i class="p-icon--plus is-dark"></i><span>Include</span>
+        </button>
+      </form>
+      {% else %}
       <form
         action="{{ url_for('dashboard.exclude_snap') }}"
         method="post"
@@ -26,6 +39,7 @@
           <i class="p-icon--delete is-dark"></i><span>Exclude</span>
         </button>
       </form>
+      {% endif %}
     </div>
     <p class="card__content u-truncate">{{ snap.summary }}</p>
   </div>

@@ -3,7 +3,9 @@ from snaprecommend.sso import login_required
 from snaprecommend.logic import (
     get_category_top_snaps,
     exclude_snap_from_category,
+    include_snap_in_category,
     get_all_categories,
+    get_category_excluded_snaps,
 )
 
 dashboard_blueprint = Blueprint("dashboard", __name__)
@@ -25,6 +27,28 @@ def dashboard():
     }
 
     return render_template("dashboard.html", **context)
+
+
+@dashboard_blueprint.route("/excluded_snaps")
+@login_required
+def excluded_snaps():
+
+    excluded_snaps = []
+
+    for category in get_all_categories():
+        excluded_snaps.append(
+            {
+                "category": category,
+                "snaps": get_category_excluded_snaps(category.id),
+            }
+        )
+
+    context = {
+        "excluded_snaps": excluded_snaps,
+    }
+    return render_template("excluded_snaps.html", **context)
+
+
 @dashboard_blueprint.route("/exclude_snap", methods=["POST"])
 @login_required
 def exclude_snap():
@@ -33,3 +57,13 @@ def exclude_snap():
     if snap_id and category:
         exclude_snap_from_category(category, snap_id)
     return redirect(url_for("dashboard.dashboard"))
+
+
+@dashboard_blueprint.route("/include_snap", methods=["POST"])
+@login_required
+def include_snap():
+    snap_id = request.form.get("snap_id")
+    category = request.form.get("category")
+    if snap_id and category:
+        include_snap_in_category(category, snap_id)
+    return redirect(request.referrer)
