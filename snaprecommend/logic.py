@@ -20,3 +20,41 @@ def get_category_top_snaps(category: str, limit: int = 50) -> list[Snap]:
     ).all()
 
     return snaps
+
+def exclude_snap_from_category(category: str, snap_id: str):
+    """
+    Excludes a snap from a given category.
+    """
+
+    snap_score = (
+        db.session.query(SnapRecommendationScore)
+        .filter_by(snap_id=snap_id, category=category)
+        .first()
+    )
+
+    if snap_score:
+        snap_score.exclude = True
+        db.session.commit()
+        return True
+
+    return False
+
+
+def include_snap_in_category(category: str, snap_id: str):
+    """
+    Includes a snap in a given category.
+    """
+
+    snap_score = (
+        db.session.query(SnapRecommendationScore)
+        .filter_by(snap_id=snap_id, category=category)
+        .first()
+    )
+
+    if snap_score:
+        snap_score.exclude = False
+        db.session.commit()
+        return True
+
+    return False
+

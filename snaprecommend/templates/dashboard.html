@@ -14,14 +14,16 @@
                 <div class="col-4">
                     <h5>Most popular</h5>
                     <ul class="p-list" style="max-height: 650px; overflow: scroll;">
+                        {% set category= 'popular' %}
                         {% for snap in popular_snaps %}
-                            {% include "partials/snap_card.html" %}
+                            {% include "partials/snap_card.html"  %}
                         {% endfor %}
                     </ul>
                 </div>
                 <div class="col-4">
                     <h5>Recently updated</h5>
                     <ul class="p-list" style="max-height: 650px; overflow: scroll;">
+                        {% set category= 'recent' %}
                         {% for snap in recent_snaps %}
                             {% include "partials/snap_card.html" %}
                         {% endfor %}
@@ -30,6 +32,7 @@
                 <div class="col-4">
                     <h5>Trending</h5>
                     <ul class="p-list" style="max-height: 650px; overflow: scroll;">
+                        {% set category= 'trending' %}
                         {% for snap in trending_snaps %}
                             {% include "partials/snap_card.html" %}
                         {% endfor %}

@@ -1,6 +1,10 @@
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, request, redirect, url_for
 from snaprecommend.sso import login_required
-from snaprecommend.logic import get_category_top_snaps
+from snaprecommend.logic import (
+    get_category_top_snaps,
+    exclude_snap_from_category,
+    get_all_categories,
+)
 
 dashboard_blueprint = Blueprint("dashboard", __name__)
 
@@ -21,3 +25,11 @@ def dashboard():
     }
 
     return render_template("dashboard.html", **context)
+@dashboard_blueprint.route("/exclude_snap", methods=["POST"])
+@login_required
+def exclude_snap():
+    snap_id = request.form.get("snap_id")
+    category = request.form.get("category")
+    if snap_id and category:
+        exclude_snap_from_category(category, snap_id)
+    return redirect(url_for("dashboard.dashboard"))
