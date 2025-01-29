@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template
 from snaprecommend.sso import login_required
-from snaprecommend.logic import get_top_snaps_by_field
+from snaprecommend.logic import get_category_top_snaps
 
 dashboard_blueprint = Blueprint("dashboard", __name__)
 
@@ -10,9 +10,9 @@ dashboard_blueprint = Blueprint("dashboard", __name__)
 def dashboard():
     limit = 20
 
-    popular_snaps = get_top_snaps_by_field("popularity_score", limit=limit)
-    recent_snaps = get_top_snaps_by_field("recency_score", limit=limit)
-    trending_snaps = get_top_snaps_by_field("trending_score", limit=limit)
+    popular_snaps = get_category_top_snaps("popular", limit=limit)
+    recent_snaps = get_category_top_snaps("recent", limit=limit)
+    trending_snaps = get_category_top_snaps("trending", limit=limit)
 
     context = {
         "popular_snaps": popular_snaps,

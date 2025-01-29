@@ -1,28 +1,32 @@
 from flask import Blueprint
-from snaprecommend.models import Snap
-from snaprecommend.logic import get_top_snaps_by_field
+from snaprecommend.models import Snap, RecommendationCategory
+from snaprecommend.logic import get_category_top_snaps
 
 api_blueprint = Blueprint("api", __name__)
 
 
-# fetch recommendations /popular
-@api_blueprint.route("/popular")
-def popular():
-    snaps = get_top_snaps_by_field("popularity_score")
+@api_blueprint.route("/categories")
+def categories():
+    categories = RecommendationCategory.query.all()
 
-    return format_response(snaps)
+    return [
+        {
+            "id": category.id,
+            "name": category.name,
+            "description": category.description,
+        }
+        for category in categories
+    ]
 
 
-@api_blueprint.route("/recent")
-def recent():
-    snaps = get_top_snaps_by_field("recency_score")
+@api_blueprint.route("/category/<string:id>")
+def category(id: str):
+    category = RecommendationCategory.query.filter_by(id=id).first()
 
-    return format_response(snaps)
+    if category is None:
+        return {"error": "Category not found"}, 404
 
-
-@api_blueprint.route("/trending")
-def trending():
-    snaps = get_top_snaps_by_field("trending_score")
+    snaps = get_category_top_snaps(id)
 
     return format_response(snaps)
 

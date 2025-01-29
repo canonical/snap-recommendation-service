@@ -9,6 +9,7 @@ from collector.score import calculate_scores
 from snaprecommend.models import Settings
 from snaprecommend import db
 from config import MACAROON_ENV_PATH
+from snaprecommend.settings import get_setting, set_setting
 
 logging.basicConfig(
     level=logging.INFO,
@@ -39,7 +40,7 @@ def collect_data(force_update: bool = False):
 
     if not force_update:
 
-        last_update = Settings.query.filter_by(key="last_updated").first()
+        last_update = get_setting("last_updated")
 
         if last_update:
 
@@ -55,20 +56,16 @@ def collect_data(force_update: bool = False):
     else:
         logger.info("Force update enabled. updating data.")
 
+    # TODO: if a step fails, the pipeline should not continue
+    # TODO: don't repeat a step if it has already been done successfully
+
     collect_initial_snap_data()
     filter_snaps_meeting_minimum_criteria()
     fetch_extra_fields()
     calculate_scores()
 
     logger.info("Data collection pipeline complete")
-    last_update = Settings.query.filter_by(key="last_updated").first()
 
-    current_time = datetime.now().isoformat()
-
-    if last_update:
-        last_update.value = current_time
-    else:
-        last_update = Settings(key="last_updated", value=current_time)
-        db.session.add(last_update)
+    set_setting("last_updated", datetime.now().isoformat())
 
     db.session.commit()

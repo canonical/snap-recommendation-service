@@ -66,14 +66,23 @@ def scheduled_collector():
             app.logger.error(f"Error starting scheduled collector: {e}")
 
 
-scheduler.add_job(
-    func=scheduled_collector,
-    trigger="interval",
-    # Run on initialization, and then
-    # every 7 days (10 seconds to let the app start)
-    start_date=datetime.datetime.now() + datetime.timedelta(seconds=10),
-    days=7,
-    id="collect_data",
-)
+# This is a hack to only run the collector scheduler when the server is running
+# not when executing CLI commands
+def is_running_server():
+    import sys
 
-scheduler.start()
+    cli_command = " ".join(sys.argv)
+    return "flask run" in cli_command or "gunicorn" in cli_command
+
+
+if not scheduler.running and is_running_server():
+    scheduler.start()
+    scheduler.add_job(
+        func=scheduled_collector,
+        trigger="interval",
+        # Run on initialization, and then
+        # every 7 days (10 seconds to let the app start)
+        start_date=datetime.datetime.now() + datetime.timedelta(seconds=10),
+        days=7,
+        id="collect_data",
+    )
