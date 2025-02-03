@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup LXD
         uses: canonical/setup-lxd@main
@@ -22,7 +22,7 @@ jobs:
         run: rockcraft pack
 
       - name: Upload rock
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: snaprecommend-rock
           path: ./*.rock
@@ -34,7 +34,7 @@ jobs:
       image_url: ${{ steps.set_image_url.outputs.image_url }}
     steps:
       - name: Get Rock
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: snaprecommend-rock
 
