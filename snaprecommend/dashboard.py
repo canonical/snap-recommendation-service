@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from snaprecommend.sso import login_required
 from snaprecommend.logic import (
     get_category_top_snaps,
@@ -6,6 +6,10 @@ from snaprecommend.logic import (
     include_snap_in_category,
     get_all_categories,
     get_category_excluded_snaps,
+)
+from snaprecommend.editorials import (
+    get_all_editorial_slices,
+    create_editorial_slice,
 )
 
 dashboard_blueprint = Blueprint("dashboard", __name__)
@@ -27,6 +31,32 @@ def dashboard():
     }
 
     return render_template("dashboard.html", **context)
+
+
+@dashboard_blueprint.route("/editorial_slices")
+@login_required
+def editorial_slices():
+    slices = get_all_editorial_slices()
+
+    context = {
+        "editorial_slices": slices,
+    }
+
+    return render_template("editorial_slices.html", **context)
+
+
+@dashboard_blueprint.route("/editorial_slice", methods=["POST"])
+@login_required
+def create_slice():
+    name = request.form.get("name")
+    description = request.form.get("description")
+
+    try:
+        create_editorial_slice(name, description)
+    except ValueError as e:
+        flash(str(e), "error")
+
+    return redirect(url_for("dashboard.editorial_slices"))
 
 
 @dashboard_blueprint.route("/excluded_snaps")

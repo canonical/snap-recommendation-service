@@ -1,0 +1,127 @@
+{% extends "layout.html" %} {% block meta_title %}Editoral Slices{% endblock %}
+{% block page_content %}
+<div class="p-panel">
+  <div class="p-panel__header">
+    <h4 class="p-panel__title">Editoral Slices</h4>
+    <div class="p-panel__controls">
+      <button
+        class="u-no-margin--bottom p-button--positive"
+        id="create-slice-aside"
+      >
+        Create slice
+      </button>
+    </div>
+  </div>
+  <div class="p-panel__content">
+    <div class="u-fixed-width">
+      {% with errors = get_flashed_messages(category_filter=["error"]) %} 
+      {% if errors %}
+      <div class="p-notification--negative">
+        <p>{{ errors[0] }}</p>
+      </div>
+      {% endif %}
+      {% endwith %}
+      <table aria-label="Example of formatting in the table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Description</th>
+            <th class="u-align--right"># of snaps</th>
+            <th class="u-align--right">Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for slice in editorial_slices %}
+          <tr>
+            <th class="u-truncate">{{ slice.name }}</th>
+            <td>{{slice.description}}</td>
+            <td class="u-align--right">{{ slice.snaps_count }}</td>
+            <td class="u-align--right">
+              <a
+                href="/dashboard/editorial_slices/{{ slice.id }}"
+                class="p-button"
+                >Edit</a
+              >
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<aside class="l-aside is-collapsed" id="aside-panel">
+  <div class="p-panel">
+    <div class="p-panel__header">
+      <h4 class="p-panel__title">Create new editorial Slice</h4>
+      <div class="p-panel__controls">
+        <button
+          class="p-button--base js-aside-close u-no-margin--bottom has-icon"
+        >
+          <i class="p-icon--close"></i>
+        </button>
+      </div>
+    </div>
+    <div class="p-panel__content">
+      <form
+        class="p-form p-form--stacked"
+        action="{{ url_for('dashboard.create_slice') }}"
+        method="post"
+      >
+        <div class="p-form__group row">
+          <div class="col-4">
+            <label for="name" class="p-form__label">Slice name</label>
+          </div>
+
+          <div class="col-8">
+            <div class="p-form__control">
+              <input type="text" id="name" name="name" autocomplete="name" />
+            </div>
+          </div>
+        </div>
+        <div class="p-form__group row">
+          <div class="col-4">
+            <label for="description" class="p-form__label">Description</label>
+          </div>
+
+          <div class="col-8">
+            <div class="p-form__control">
+              <textarea id="description" name="description" rows="3"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-12">
+            <button
+              class="p-button--positive u-float-right"
+              type="submit"
+              name="create"
+            >
+              Create
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</aside>
+<script>
+  const aside = document.querySelector("#aside-panel");
+  const main = document.querySelector("main");
+
+  // move aside up a parent
+  // hack to get app layout to play nice
+  aside.parentNode.parentNode.appendChild(aside);
+
+  const openAside = document.querySelector("#create-slice-aside");
+  const asideClose = document.querySelector(".js-aside-close");
+
+  asideClose.addEventListener("click", function () {
+    aside.classList.add("is-collapsed");
+  });
+
+  openAside.addEventListener("click", function () {
+    aside.classList.remove("is-collapsed");
+  });
+</script>
+{% endblock %}
