@@ -22,6 +22,8 @@ from snaprecommend.editorials import (
     create_editorial_slice,
     delete_editorial_slice,
     add_snap_to_editorial_slice,
+    remove_snap_from_editorial_slice,
+    update_editorial_slice,
 )
 
 dashboard_blueprint = Blueprint("dashboard", __name__)
@@ -65,7 +67,6 @@ def editorial_slice(slice_id):
     if not slice:
         abort(404)
 
-    print(slice.snaps)
     context = {
         "slice": slice,
     }
@@ -86,6 +87,23 @@ def create_slice():
         flash(str(e), "error")
 
     return redirect(url_for("dashboard.editorial_slices"))
+
+
+@dashboard_blueprint.route(
+    "/editorial_slice/<string:slice_id>/edit", methods=["POST"]
+)
+@login_required
+def edit_slice(slice_id):
+    name = request.form.get("name")
+    description = request.form.get("description")
+
+    try:
+        update_editorial_slice(slice_id, name, description)
+        flash(f"Editorial slice '{name}' updated", "success")
+    except ValueError as e:
+        flash(str(e), "error")
+
+    return redirect(url_for("dashboard.editorial_slice", slice_id=slice_id))
 
 
 @dashboard_blueprint.route(
@@ -114,8 +132,28 @@ def add_snap_to_slice(slice_id):
     snap = get_snap_by_name(snap_name)
 
     if snap:
-        print(snap)
         add_snap_to_editorial_slice(slice_id, snap.snap_id)
+        flash(f"Snap '{snap_name}' added to slice", "success")
+    else:
+        flash(f"Snap '{snap_name}' not found", "error")
+
+    return redirect(url_for("dashboard.editorial_slice", slice_id=slice_id))
+
+
+@dashboard_blueprint.route(
+    "/editorial_slice/<string:slice_id>/remove_snap", methods=["POST"]
+)
+@login_required
+def remove_snap_from_slice(slice_id):
+    snap_name = request.form.get("snap_name")
+
+    snap = get_snap_by_name(snap_name)
+
+    if snap:
+        remove_snap_from_editorial_slice(slice_id, snap.snap_id)
+        flash(f"Snap '{snap_name}' removed from slice", "success")
+    else:
+        flash(f"Snap '{snap_name}' not found", "error")
     return redirect(url_for("dashboard.editorial_slice", slice_id=slice_id))
 
 

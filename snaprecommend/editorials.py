@@ -87,6 +87,28 @@ def create_editorial_slice(name: str, description: str = None):
     return True
 
 
+def update_editorial_slice(
+    slice_id: str,
+    name: str,
+    description: str = None,
+):
+    """
+    Updates an editorial slice.
+    """
+
+    editorial_slice = (
+        db.session.query(EditorialSlice).filter_by(id=slice_id).first()
+    )
+
+    if editorial_slice:
+        editorial_slice.name = name
+        editorial_slice.description = description
+        db.session.commit()
+        return True
+
+    return False
+
+
 def add_snap_to_editorial_slice(
     slice_id: str,
     snap_id: str,
@@ -99,7 +121,6 @@ def add_snap_to_editorial_slice(
         editorial_slice_id=slice_id,
         snap_id=snap_id,
     )
-    print(editorial_slice_snap)
 
     db.session.add(editorial_slice_snap)
     db.session.commit()

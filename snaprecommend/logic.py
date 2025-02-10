@@ -8,7 +8,6 @@ from snaprecommend import db
 
 def get_snap_by_name(name: str) -> Snap:
     snap = db.session.query(Snap).filter_by(name=name).first()
-    print(name, snap)
     return snap
 
 

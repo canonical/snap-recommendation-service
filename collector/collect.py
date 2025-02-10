@@ -23,7 +23,7 @@ FIELDS = (
     "license",
 )
 
-URL = f"http://api.snapcraft.io/api/v1/snaps/search?fields={','.join(FIELDS)}&arch=wide"
+URL = f"http://api.snapcraft.io/api/v1/snaps/search?fields={','.join(FIELDS)}"
 
 
 logger = logging.getLogger("collector")

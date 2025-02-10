@@ -1,3 +1,4 @@
+{% from "macros/snap_card.html" import snap_card %}
 {% extends "layout.html" %}
 {% block meta_title %}{{ slice.name }} | Editorial Slice{% endblock %}
 {% block page_header %}
@@ -20,7 +21,7 @@
       <div class="row--25-75">
         <div class="col">
           <form class="p-form p-form--stacked"
-                action="{{ url_for('dashboard.create_slice') }}"
+                action="{{ url_for('dashboard.edit_slice',slice_id=slice.id) }}"
                 method="post">
             <h4>Details</h4>
             <div class="p-form__group row">
@@ -52,19 +53,8 @@
         </div>
         <div class="col">
           <h4>Snaps</h4>
-          <ul>
-            {% for snap in slice.snaps %}
-              <li>
-                {% include "partials/snap_card.html" %}
-                {# <form action="{{ url_for('dashboard.remove_snap', slice_id=slice.id, snap_id=snap.id) }}"
-       method="post"
-       style="display:inline"> #}
-                {# </form> #}
-              </li>
-            {% endfor %}
-          </ul>
-          <h5>Add a Snap</h5>
           <form action="{{ url_for('dashboard.add_snap_to_slice', slice_id=slice.id) }}"
+                class="p-form p-form--inline"
                 method="post">
             <div class="p-form__group">
               <div class="p-form__control">
@@ -77,6 +67,16 @@
             </div>
             <button class="p-button--positive" type="submit">Add Snap</button>
           </form>
+          <ul class="p-list">
+            {% for snap in slice.snaps %}
+              {{ snap_card(snap=snap,
+                            category=slice.id,
+                            form_url=url_for('dashboard.remove_snap_from_slice', slice_id=slice.id) ,
+              button_label="Remove",
+              button_color="negative"
+              ) }}
+            {% endfor %}
+          </ul>
         </div>
       </div>
       <div class="row">
