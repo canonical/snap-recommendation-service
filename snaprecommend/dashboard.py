@@ -129,26 +129,19 @@ def delete_slice(slice_id):
 def add_snap_to_slice(slice_id):
     snap_name = request.form.get("snap_name")
 
-    if "," in snap_name:
-        snaps_to_add = snap_name.split(",")
-        snaps_to_add = [snap.strip() for snap in snaps_to_add]
-        failed = []
-        for snap_name in snaps_to_add:
-            snap = get_snap_by_name(snap_name)
-            if snap:
-                add_snap_to_editorial_slice(slice_id, snap.snap_id)
-            else:
-                failed.append(snap_name)
-        if failed:
-            flash(f"Failed to add snaps: {', '.join(failed)}", "error")
-        else:
-            flash("Snaps added to slice", "success")
+    slice = get_editorial_slice_with_snaps(slice_id)
+
+    if not slice:
+        abort(404)
 
     snap = get_snap_by_name(snap_name)
 
     if snap:
-        add_snap_to_editorial_slice(slice_id, snap.snap_id)
-        flash(f"Snap '{snap_name}' added to slice", "success")
+        if snap.snap_id in [s.snap_id for s in slice.snaps]:
+            flash(f"Snap '{snap_name}' already in slice", "success")
+        else:
+            add_snap_to_editorial_slice(slice_id, snap.snap_id)
+            flash(f"Snap '{snap_name}' added to slice", "success")
     else:
         flash(f"Snap '{snap_name}' not found", "error")
 

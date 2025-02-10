@@ -62,12 +62,12 @@
                        id="snap-search"
                        name="snap_name"
                        autocomplete="off"
-                       placeholder="Enter Snap name">
+                       placeholder="Enter snap name">
               </div>
             </div>
             <button class="p-button--positive" type="submit">Add Snap</button>
           </form>
-          <ul class="p-list">
+          <ul class="p-list" style="max-height: 650px; overflow: scroll">
             {% for snap in slice.snaps %}
               {{ snap_card(snap=snap,
                             category=slice.id,

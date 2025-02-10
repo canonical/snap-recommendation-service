@@ -124,13 +124,6 @@ def add_snap_to_editorial_slice(slice_id: str, snap_id: str):
         editorial_slice_snap = EditorialSliceSnap(
             editorial_slice_id=slice_id, snap_id=snap_id
         )
-        # only add if it doesn't already exist
-        if (
-            db.session.query(EditorialSliceSnap)
-            .filter_by(editorial_slice_id=slice_id, snap_id=snap_id)
-            .first()
-        ):
-            return editorial_slice_snap
         db.session.add(editorial_slice_snap)
         db.session.commit()
         return editorial_slice_snap

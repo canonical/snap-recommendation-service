@@ -85,9 +85,11 @@
     get_flashed_messages(category_filter=["error"]) %}
     {% if errors %}
       <div class="u-fixed-width">
-        <div class="p-notification--negative">
-          <p>{{ errors[0] }}</p>
-        </div>
+        {% for error in errors %}
+          <div class="p-notification--negative">
+            <p>{{ error }}</p>
+          </div>
+        {% endfor %}
       </div>
     {% endif %}
   {% endwith %}
@@ -95,9 +97,11 @@
     get_flashed_messages(category_filter=["success"]) %}
     {% if success %}
       <div class="u-fixed-width">
-        <div class="p-notification--positive">
-          <p>{{ success[0] }}</p>
-        </div>
+        {% for message in success %}
+          <div class="p-notification--positive">
+            <p>{{ message }}</p>
+          </div>
+        {% endfor %}
       </div>
     {% endif %}
   {% endwith %}
