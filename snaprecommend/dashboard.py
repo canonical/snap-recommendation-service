@@ -129,6 +129,21 @@ def delete_slice(slice_id):
 def add_snap_to_slice(slice_id):
     snap_name = request.form.get("snap_name")
 
+    if "," in snap_name:
+        snaps_to_add = snap_name.split(",")
+        snaps_to_add = [snap.strip() for snap in snaps_to_add]
+        failed = []
+        for snap_name in snaps_to_add:
+            snap = get_snap_by_name(snap_name)
+            if snap:
+                add_snap_to_editorial_slice(slice_id, snap.snap_id)
+            else:
+                failed.append(snap_name)
+        if failed:
+            flash(f"Failed to add snaps: {', '.join(failed)}", "error")
+        else:
+            flash("Snaps added to slice", "success")
+
     snap = get_snap_by_name(snap_name)
 
     if snap:
