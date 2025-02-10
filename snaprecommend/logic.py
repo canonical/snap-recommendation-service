@@ -6,6 +6,12 @@ from snaprecommend.models import (
 from snaprecommend import db
 
 
+def get_snap_by_name(name: str) -> Snap:
+    snap = db.session.query(Snap).filter_by(name=name).first()
+    print(name, snap)
+    return snap
+
+
 def get_category_top_snaps(category: str, limit: int = 50) -> list[Snap]:
     """
     Returns the top snaps for a given category.

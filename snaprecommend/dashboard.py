@@ -1,4 +1,12 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash
+from flask import (
+    Blueprint,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    abort,
+)
 from snaprecommend.sso import login_required
 from snaprecommend.logic import (
     get_category_top_snaps,
@@ -6,10 +14,14 @@ from snaprecommend.logic import (
     include_snap_in_category,
     get_all_categories,
     get_category_excluded_snaps,
+    get_snap_by_name,
 )
 from snaprecommend.editorials import (
     get_all_editorial_slices,
+    get_editorial_slice_with_snaps,
     create_editorial_slice,
+    delete_editorial_slice,
+    add_snap_to_editorial_slice,
 )
 
 dashboard_blueprint = Blueprint("dashboard", __name__)
@@ -45,6 +57,22 @@ def editorial_slices():
     return render_template("editorial_slices.html", **context)
 
 
+@dashboard_blueprint.route("/editorial_slice/<string:slice_id>")
+@login_required
+def editorial_slice(slice_id):
+    slice = get_editorial_slice_with_snaps(slice_id)
+
+    if not slice:
+        abort(404)
+
+    print(slice.snaps)
+    context = {
+        "slice": slice,
+    }
+
+    return render_template("slice_details.html", **context)
+
+
 @dashboard_blueprint.route("/editorial_slice", methods=["POST"])
 @login_required
 def create_slice():
@@ -53,10 +81,42 @@ def create_slice():
 
     try:
         create_editorial_slice(name, description)
+        flash(f"Editorial slice '{name}' created", "success")
     except ValueError as e:
         flash(str(e), "error")
 
     return redirect(url_for("dashboard.editorial_slices"))
+
+
+@dashboard_blueprint.route(
+    "/editorial_slice/<string:slice_id>/delete", methods=["POST"]
+)
+@login_required
+def delete_slice(slice_id):
+
+    deleted = delete_editorial_slice(slice_id)
+
+    if deleted:
+        flash(f"Editorial slice {slice_id} deleted", "success")
+    else:
+        flash("Editorial slice not found", "error")
+
+    return redirect(url_for("dashboard.editorial_slices"))
+
+
+@dashboard_blueprint.route(
+    "/editorial_slice/<string:slice_id>/add_snap", methods=["POST"]
+)
+@login_required
+def add_snap_to_slice(slice_id):
+    snap_name = request.form.get("snap_name")
+
+    snap = get_snap_by_name(snap_name)
+
+    if snap:
+        print(snap)
+        add_snap_to_editorial_slice(slice_id, snap.snap_id)
+    return redirect(url_for("dashboard.editorial_slice", slice_id=slice_id))
 
 
 @dashboard_blueprint.route("/excluded_snaps")

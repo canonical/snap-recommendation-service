@@ -99,6 +99,7 @@ def add_snap_to_editorial_slice(
         editorial_slice_id=slice_id,
         snap_id=snap_id,
     )
+    print(editorial_slice_snap)
 
     db.session.add(editorial_slice_snap)
     db.session.commit()
@@ -121,6 +122,25 @@ def remove_snap_from_editorial_slice(
 
     if editorial_slice_snap:
         db.session.delete(editorial_slice_snap)
+        db.session.commit()
+        return True
+
+    return False
+
+
+def delete_editorial_slice(
+    slice_id: str,
+):
+    """
+    Deletes an editorial slice.
+    """
+
+    editorial_slice = (
+        db.session.query(EditorialSlice).filter_by(id=slice_id).first()
+    )
+
+    if editorial_slice:
+        db.session.delete(editorial_slice)
         db.session.commit()
         return True
 
