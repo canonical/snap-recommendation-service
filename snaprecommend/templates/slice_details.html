@@ -1,0 +1,86 @@
+{% from "macros/snap_card.html" import snap_card %}
+{% extends "layout.html" %}
+{% block meta_title %}{{ slice.name }} | Editorial Slice{% endblock %}
+{% block page_header %}
+  <div class="p-panel">
+    <div class="p-panel__header">
+      <h4 class="p-panel__title">'{{ slice.name }}' slice details</h4>
+      <div class="p-panel__controls">
+        <form action="{{ url_for('dashboard.delete_slice', slice_id=slice.id) }}"
+              method="post">
+          <input type="hidden" name="slice_id" value="{{ slice.id }}" />
+          <button class="u-no-margin--bottom p-button--negative"
+                  id="create-slice-aside"
+                  type="submit">Delete slice</button>
+        </form>
+      </div>
+    </div>
+  {% endblock %}
+  {% block page_content %}
+    <div class="p-panel__content">
+      <div class="row--25-75">
+        <div class="col">
+          <form class="p-form p-form--stacked"
+                action="{{ url_for('dashboard.edit_slice',slice_id=slice.id) }}"
+                method="post">
+            <h4>Details</h4>
+            <div class="p-form__group row">
+              <div class="col-4">
+                <label for="name" class="p-form__label">Slice name</label>
+              </div>
+              <div class="col-8">
+                <div class="p-form__control">
+                  <input type="text"
+                         id="name"
+                         name="name"
+                         autocomplete="off"
+                         value="{{ slice.name }}" />
+                </div>
+              </div>
+            </div>
+            <div class="p-form__group row">
+              <div class="col-4">
+                <label for="description" class="p-form__label">Description</label>
+              </div>
+              <div class="col-8">
+                <div class="p-form__control">
+                  <textarea id="description" name="description" rows="3" autocomplete="off">{{ slice.description }}</textarea>
+                </div>
+              </div>
+            </div>
+            <button class="p-button--positive u-float-right" type="submit" name="create">Update</button>
+          </form>
+        </div>
+        <div class="col">
+          <h4>Snaps</h4>
+          <form action="{{ url_for('dashboard.add_snap_to_slice', slice_id=slice.id) }}"
+                class="p-form p-form--inline"
+                method="post">
+            <div class="p-form__group">
+              <div class="p-form__control">
+                <input type="text"
+                       id="snap-search"
+                       name="snap_name"
+                       autocomplete="off"
+                       placeholder="Enter snap name">
+              </div>
+            </div>
+            <button class="p-button--positive" type="submit">Add Snap</button>
+          </form>
+          <ul class="p-list" style="max-height: 650px; overflow: scroll">
+            {% for snap in slice.snaps %}
+              {{ snap_card(snap=snap,
+                            category=slice.id,
+                            form_url=url_for('dashboard.remove_snap_from_slice', slice_id=slice.id) ,
+              button_label="Remove",
+              button_color="negative"
+              ) }}
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-12"></div>
+      </div>
+    </div>
+  {% endblock %}

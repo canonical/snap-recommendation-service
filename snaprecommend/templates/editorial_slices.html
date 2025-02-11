@@ -1,5 +1,5 @@
 {% extends "layout.html" %} {% block meta_title %}Editoral Slices{% endblock %}
-{% block page_content %}
+{% block page_header %}
 <div class="p-panel">
   <div class="p-panel__header">
     <h4 class="p-panel__title">Editoral Slices</h4>
@@ -12,15 +12,10 @@
       </button>
     </div>
   </div>
+  {% endblock %} 
+  {% block page_content %}
   <div class="p-panel__content">
     <div class="u-fixed-width">
-      {% with errors = get_flashed_messages(category_filter=["error"]) %} 
-      {% if errors %}
-      <div class="p-notification--negative">
-        <p>{{ errors[0] }}</p>
-      </div>
-      {% endif %}
-      {% endwith %}
       <table aria-label="Example of formatting in the table">
         <thead>
           <tr>
@@ -38,7 +33,7 @@
             <td class="u-align--right">{{ slice.snaps_count }}</td>
             <td class="u-align--right">
               <a
-                href="/dashboard/editorial_slices/{{ slice.id }}"
+                href="/dashboard/editorial_slice/{{ slice.id }}"
                 class="p-button"
                 >Edit</a
               >
