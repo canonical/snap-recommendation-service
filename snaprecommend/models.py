@@ -8,6 +8,8 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     JSON,
+    Index,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -92,6 +94,37 @@ class SnapRecommendationScoreHistory(db.Model):
     exclude: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now, primary_key=True
+    )
+
+
+class EditorialSlice(db.Model):
+    """
+    This table is used to store editorial slices.
+    Editorial slices are hand-picked collections of snaps.
+    """
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    name: Mapped[str] = mapped_column(String)
+    description: Mapped[str] = mapped_column(String)
+
+
+class EditorialSliceSnap(db.Model):
+    """
+    This table is used to store the snaps that are part of each editorial slice.
+    """
+
+    editorial_slice_id: Mapped[str] = mapped_column(
+        String,
+        ForeignKey("editorial_slice.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    snap_id: Mapped[str] = mapped_column(
+        String,
+        ForeignKey("snap.snap_id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now
     )
 
 

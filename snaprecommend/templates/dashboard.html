@@ -1,45 +1,60 @@
+{% from "macros/snap_card.html" import snap_card %}
 {% extends "layout.html" %}
 {% block title %}Dashboard{% endblock %}
 {% block meta_title %}Dashboard{% endblock %}
-
 {% block page_content %}
-<div class="p-panel">
-    <div class="p-panel__header">
-        <h4 class="p-panel__title">Dashboard</h4>
-    </div>
-    <div class="p-panel__content">
-        <div class="u-fixed-width">
-            <h4>Top snaps per category</h4>
-            <div class="row">
-                <div class="col-4">
-                    <h5>Most popular</h5>
-                    <ul class="p-list" style="max-height: 650px; overflow: scroll;">
-                        {% set category= 'popular' %}
-                        {% for snap in popular_snaps %}
-                            {% include "partials/snap_card.html"  %}
-                        {% endfor %}
-                    </ul>
-                </div>
-                <div class="col-4">
-                    <h5>Recently updated</h5>
-                    <ul class="p-list" style="max-height: 650px; overflow: scroll;">
-                        {% set category= 'recent' %}
-                        {% for snap in recent_snaps %}
-                            {% include "partials/snap_card.html" %}
-                        {% endfor %}
-                    </ul>
-                </div>
-                <div class="col-4">
-                    <h5>Trending</h5>
-                    <ul class="p-list" style="max-height: 650px; overflow: scroll;">
-                        {% set category= 'trending' %}
-                        {% for snap in trending_snaps %}
-                            {% include "partials/snap_card.html" %}
-                        {% endfor %}
-                    </ul>
+    <div class="p-panel">
+        <div class="p-panel__header">
+            <h4 class="p-panel__title">Dashboard</h4>
+        </div>
+        <div class="p-panel__content">
+            <div class="u-fixed-width">
+                <h4>Top snaps per category</h4>
+                <div class="row">
+                    <div class="col-4">
+                        <h5>Most popular</h5>
+                        <ul class="p-list" style="max-height: 650px; overflow: scroll;">
+                            {% set category = "popular" %}
+                            {% for snap in popular_snaps %}
+                                {{ snap_card(snap=snap,
+                                                                category=category,
+                                                                form_url=url_for('dashboard.exclude_snap') ,
+                                button_label="exclude",
+                                button_color="negative"
+                                ) }}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-4">
+                        <h5>Recently updated</h5>
+                        <ul class="p-list" style="max-height: 650px; overflow: scroll;">
+                            {% set category = "recent" %}
+                            {% for snap in recent_snaps %}
+                                {{ snap_card(snap=snap,
+                                                                category=category,
+                                                                form_url=url_for('dashboard.exclude_snap') ,
+                                button_label="exclude",
+                                button_color="negative"
+                                ) }}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-4">
+                        <h5>Trending</h5>
+                        <ul class="p-list" style="max-height: 650px; overflow: scroll;">
+                            {% set category = "trending" %}
+                            {% for snap in trending_snaps %}
+                                {{ snap_card(snap=snap,
+                                                                category=category,
+                                                                form_url=url_for('dashboard.exclude_snap') ,
+                                button_label="exclude",
+                                button_color="negative"
+                                ) }}
+                            {% endfor %}
+                        </ul>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</div>
 {% endblock %}
