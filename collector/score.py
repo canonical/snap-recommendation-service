@@ -49,9 +49,7 @@ def calculate_media_score(snap: Snap):
 def calculate_metadata_score(snap: Snap):
     """Calculate the metadata quality score for a snap."""
     # only count non empty links
-    num_of_links = min(
-        5, sum(1 for link in snap.links.values() if link)
-    )  # max 5 links
+    num_of_links = min(5, sum(1 for link in snap.links.values() if link))  # max 5 links
     set_license = snap.license != "unset"
     media_quality = calculate_media_score(snap)
     links_quality = (set_license + num_of_links) / 6
@@ -67,24 +65,14 @@ def calculate_dev_score(snap: Snap):
     return score
 
 
-def calculate_popularity_score(
-    active_devices_normalized, metadata_score, dev_score
-):
+def calculate_popularity_score(active_devices_normalized, metadata_score, dev_score):
     """Calculate the popularity score for a snap."""
-    return (
-        active_devices_normalized * 0.7
-        + metadata_score * 0.1
-        + dev_score * 0.2
-    )
+    return active_devices_normalized * 0.7 + metadata_score * 0.1 + dev_score * 0.2
 
 
-def calculate_recency_score(
-    last_updated_normalized, metadata_score, dev_score
-):
+def calculate_recency_score(last_updated_normalized, metadata_score, dev_score):
     """Calculate the recency score for a snap."""
-    return (
-        last_updated_normalized * 0.5 + metadata_score * 0.3 + dev_score * 0.2
-    )
+    return last_updated_normalized * 0.5 + metadata_score * 0.3 + dev_score * 0.2
 
 
 def calculate_trending_score(
