@@ -1,13 +1,22 @@
 from flask import Blueprint
-from snaprecommend.models import Snap, RecommendationCategory
-from snaprecommend.logic import get_category_top_snaps
+from snaprecommend.models import (
+    Snap,
+    RecommendationCategory,
+    EditorialSlice,
+)
+from snaprecommend.logic import (
+    get_category_top_snaps,
+    get_slice_snaps,
+    get_all_categories,
+    get_all_slices,
+)
 
 api_blueprint = Blueprint("api", __name__)
 
 
 @api_blueprint.route("/categories")
 def categories():
-    categories = RecommendationCategory.query.all()
+    categories = get_all_categories()
 
     return [
         {
@@ -31,8 +40,73 @@ def category(id: str):
     return format_response(snaps)
 
 
-def format_response(snaps: list[Snap]) -> list[dict]:
+@api_blueprint.route("/slices")
+def slices():
+    slices = get_all_slices()
+
     return [
-        {"snap_id": snap.snap_id, "name": snap.name, "rank": i + 1}
+        {
+            "id": slice.id,
+            "name": slice.name,
+            "description": slice.description,
+        }
+        for slice in slices
+    ]
+
+
+@api_blueprint.route("/slice/<string:id>")
+def slice(id: str):
+    slice = EditorialSlice.query.filter_by(id=id).first()
+
+    print(slice)
+
+    if slice is None:
+        return {"error": "Slice not found"}, 404
+
+    snaps = get_slice_snaps(id)
+
+    response = {
+        "slice": {
+            "id": slice.id,
+            "name": slice.name,
+            "description": slice.description,
+        },
+        "snaps": [serialize_snap(snap) for snap in snaps],
+    }
+
+    return response
+
+
+def format_response(snaps: list[Snap]) -> list[dict]:
+
+    return [
+        {
+            "snap_id": snap.snap_id,
+            "rank": i + 1,
+            "details": serialize_snap(snap),
+        }
         for i, snap in enumerate(snaps)
     ]
+
+
+def serialize_snap(snap: Snap) -> dict:
+    return {
+        "snap_id": snap.snap_id,
+        "title": snap.title,
+        "name": snap.name,
+        "version": snap.version,
+        "summary": snap.summary,
+        "description": snap.description,
+        "icon": snap.icon,
+        "website": snap.website,
+        "contact": snap.contact,
+        "publisher": snap.publisher,
+        "revision": snap.revision,
+        "links": snap.links,
+        "media": snap.media,
+        "developer_validation": snap.developer_validation,
+        "license": snap.license,
+        "last_updated": snap.last_updated,
+        "active_devices": snap.active_devices,
+        "reaches_min_threshold": snap.reaches_min_threshold,
+    }
