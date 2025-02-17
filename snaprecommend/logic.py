@@ -2,11 +2,13 @@ from snaprecommend.models import (
     Snap,
     SnapRecommendationScore,
     RecommendationCategory,
+    EditorialSlice,
+    EditorialSliceSnap,
 )
 from snaprecommend import db
 
 
-def get_snap_by_name(name: str) -> Snap:
+def get_snap_by_name(name: str) -> Snap | None:
     snap = db.session.query(Snap).filter_by(name=name).first()
     return snap
 
@@ -94,6 +96,33 @@ def get_category_excluded_snaps(category: str) -> list[Snap]:
         .filter(SnapRecommendationScore.category == category)
         .filter(SnapRecommendationScore.exclude.is_(True))
         .order_by(SnapRecommendationScore.score.desc())
+    ).all()
+
+    return snaps
+
+
+def get_all_slices() -> list[EditorialSlice]:
+    """
+    Returns all editorial slices.
+    """
+
+    slices = db.session.query(EditorialSlice).all()
+
+    return slices
+
+
+def get_slice_snaps(slice: str) -> list[Snap]:
+    """
+    Returns the snaps for a given slice.
+    """
+
+    snaps = (
+        db.session.query(Snap)
+        .join(
+            EditorialSliceSnap,
+            Snap.snap_id == EditorialSliceSnap.snap_id,
+        )
+        .filter(EditorialSliceSnap.editorial_slice_id == slice)
     ).all()
 
     return snaps
