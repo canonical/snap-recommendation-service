@@ -2,6 +2,7 @@ from snaprecommend.models import (
     Snap,
     SnapRecommendationScore,
     RecommendationCategory,
+    EditorialSlice,
     EditorialSliceSnap,
 )
 from snaprecommend import db

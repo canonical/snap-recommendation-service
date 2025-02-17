@@ -107,6 +107,4 @@ def serialize_snap(snap: Snap) -> dict:
         "developer_validation": snap.developer_validation,
         "license": snap.license,
         "last_updated": snap.last_updated,
-        "active_devices": snap.active_devices,
-        "reaches_min_threshold": snap.reaches_min_threshold,
     }
