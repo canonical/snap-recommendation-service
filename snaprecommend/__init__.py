@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 import datetime
 import logging
 from flask_sqlalchemy import SQLAlchemy
@@ -44,6 +45,10 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
 
     app.logger.setLevel(logging.INFO)
+
+    # init cors manually (add header)
+
+    CORS(app)
 
     if app.debug:
         app.logger.setLevel(logging.DEBUG)
