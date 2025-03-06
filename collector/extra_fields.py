@@ -41,7 +41,10 @@ def calculate_latest_active_devices(metrics_data: dict) -> int:
                 metrics_data["series"][series_index]["values"][index] = 0
         values = series["values"]
         if len(values) == len(metrics_data["buckets"]):
-            latest_active_devices += values[len(values) - 1]
+            for i in range(len(values) - 1, -1, -1):
+                if values[i] != 0:
+                    latest_active_devices += values[i]
+                    break
 
     return latest_active_devices
 
