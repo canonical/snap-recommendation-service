@@ -5,6 +5,7 @@ from django_openid_auth.teams import TeamsRequest, TeamsResponse
 from flask_openid import OpenID
 
 SSO_LOGIN_URL = "https://login.ubuntu.com"
+DEFAULT_SSO_TEAM = "canonical-webmonkeys"
 
 
 def init_sso(app: flask.Flask):
@@ -14,12 +15,16 @@ def init_sso(app: flask.Flask):
         extension_responses=[TeamsResponse],
     )
 
-    SSO_TEAM = app.config["OPENID_LAUNCHPAD_TEAM"]
+    SSO_TEAM = app.config.get("OPENID_LAUNCHPAD_TEAM", DEFAULT_SSO_TEAM)
 
     @app.route("/login", methods=["GET", "POST"])
     @open_id.loginhandler
     def login():
         if "openid" in flask.session:
+            if flask.request.is_secure:
+                return flask.redirect(
+                    open_id.get_next_url().replace("http://", "https://")
+                )
             return flask.redirect(open_id.get_next_url())
 
         teams_request = TeamsRequest(query_membership=[SSO_TEAM])
