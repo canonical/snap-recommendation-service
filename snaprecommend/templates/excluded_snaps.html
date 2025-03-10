@@ -1,0 +1,30 @@
+{% from "macros/snap_card.html" import snap_card %}
+{% extends "layout.html" %}
+{% block meta_title %}Excluded Snaps{% endblock %}
+{% block page_content %}
+  <div class="p-panel">
+    <div class="p-panel__header">
+      <h4 class="p-panel__title">Excluded Snaps</h4>
+    </div>
+    <div class="p-panel__content">
+      <div class="u-fixed-width">
+        <h4>Excluded snaps</h4>
+        <ul class="p-list" style="max-height: 650px; overflow: scroll">
+          {% for excluded_group in excluded_snaps %}
+            <h5>{{ excluded_group.category.name }}</h5>
+            {% set category = excluded_group.category.id %}
+            {% set excluded = True %}
+            {% for snap in excluded_group.snaps %}
+              {{ snap_card(snap=snap,
+                            category=category,
+                            form_url=url_for('dashboard.include_snap') ,
+              button_label="Include",
+              button_color="positive"
+              ) }}
+            {% endfor %}
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endblock %}

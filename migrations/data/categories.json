@@ -1,0 +1,17 @@
+[
+  {
+    "id": "popular",
+    "name": "Popular snaps",
+    "description": "Snaps that are popular and downloaded frequently"
+  },
+  {
+    "id": "trending",
+    "name": "Trending snaps",
+    "description": "Snaps that have a sudden increase in popularity"
+  },
+  {
+    "id": "recent",
+    "name": "Recently updated snaps",
+    "description": "Snaps that have been updated recently"
+  }
+]
