@@ -21,7 +21,7 @@ def init_sso(app: flask.Flask):
     @open_id.loginhandler
     def login():
         if "openid" in flask.session:
-            if flask.request.is_secure:
+            if flask.request.url.startswith("https://"):
                 return flask.redirect(
                     open_id.get_next_url().replace("http://", "https://")
                 )
