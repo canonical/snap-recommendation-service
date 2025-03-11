@@ -89,9 +89,7 @@ def create_slice():
     return redirect(url_for("dashboard.editorial_slices"))
 
 
-@dashboard_blueprint.route(
-    "/editorial_slice/<string:slice_id>/edit", methods=["POST"]
-)
+@dashboard_blueprint.route("/editorial_slice/<string:slice_id>/edit", methods=["POST"])
 @login_required
 def edit_slice(slice_id):
     name = request.form.get("name")
@@ -203,3 +201,30 @@ def include_snap():
     if snap_id and category:
         include_snap_in_category(category, snap_id)
     return redirect(request.referrer)
+
+
+@dashboard_blueprint.route("/settings")
+@login_required
+def settings():
+    pipeline_steps = [
+        {
+            "name": "Collect",
+            "status": "Success",
+            "last_successful_run": "2021-01-01",
+            "last_failed_run": "2021-01-01",
+        }
+    ]
+
+    context = {"pipeline_steps": pipeline_steps}
+
+    return render_template("settings.html", **context)
+
+
+@dashboard_blueprint.route("/run_pipeline_step", methods=["POST"])
+@login_required
+def run_pipeline_step():
+    step_name = request.args.get("step_name")
+
+    if step_name:
+        flash(f"Running pipeline step {step_name}", "success")
+    return redirect(url_for("dashboard.settings"))
