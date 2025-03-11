@@ -40,5 +40,5 @@ jobs:
           juju wait-for application snaprecommend --query='name=="snaprecommend" && (status=="active" || status=="idle")'
 
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
