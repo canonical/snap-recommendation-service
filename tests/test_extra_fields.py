@@ -123,6 +123,10 @@ def test_update_snap_metrics(
 
 
 @patch("collector.extra_fields.update_snap_metrics")
-def test_fetch_extra_fields(mock_update_snap_metrics):
+@patch("collector.extra_fields.add_pipeline_step_log")
+def test_fetch_extra_fields(
+    mock_add_pipeline_step_log, mock_update_snap_metrics
+):
     fetch_extra_fields()
     mock_update_snap_metrics.assert_called_once()
+    mock_add_pipeline_step_log.assert_called_once()
