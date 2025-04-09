@@ -47,7 +47,6 @@ def create_app(config_class=Config):
     app.logger.setLevel(logging.INFO)
 
     # init cors manually (add header)
-
     CORS(app)
 
     if app.debug:
@@ -66,7 +65,7 @@ def scheduled_collector():
 
     with app.app_context():
         try:
-            collect_data()
+            collect_data(entire_pipeline=True)
         except Exception as e:
             app.logger.error(f"Error starting scheduled collector: {e}")
 

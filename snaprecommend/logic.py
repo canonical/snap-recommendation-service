@@ -4,6 +4,8 @@ from snaprecommend.models import (
     RecommendationCategory,
     EditorialSlice,
     EditorialSliceSnap,
+    PipelineStepLog,
+    PipelineSteps,
 )
 from snaprecommend import db
 
@@ -126,3 +128,80 @@ def get_slice_snaps(slice: str) -> list[Snap]:
     ).all()
 
     return snaps
+
+
+def add_pipeline_step_log(step_name: str, status: bool, message: str = ""):
+    """
+    Adds a log entry for a pipeline step.
+    """
+
+    log_entry = PipelineStepLog(
+        step=step_name, success=status, message=message
+    )
+    db.session.add(log_entry)
+    db.session.commit()
+
+
+def get_most_recent_pipeline_step_logs():
+    """
+    Retrieve the most recent run information for each pipeline step.
+    Groups by step and finds the last successful and failed runs for each.
+    For status and message, uses the most recent run regardless of success/failure.
+
+    Returns:
+        list: A list of dictionaries containing information about pipeline steps
+    """
+    results = []
+
+    # Get all unique steps from the enum
+    all_steps = [step for step in PipelineSteps]
+
+    for step in all_steps:
+
+        most_recent = (
+            PipelineStepLog.query.filter_by(step=step)
+            .order_by(PipelineStepLog.created_at.desc())
+            .first()
+        )
+
+        last_successful = (
+            PipelineStepLog.query.filter_by(step=step, success=True)
+            .order_by(PipelineStepLog.created_at.desc())
+            .first()
+        )
+
+        last_failed = (
+            PipelineStepLog.query.filter_by(step=step, success=False)
+            .order_by(PipelineStepLog.created_at.desc())
+            .first()
+        )
+
+        names = {
+            PipelineSteps.SCORE: "Score",
+            PipelineSteps.FILTER: "Filter",
+            PipelineSteps.COLLECT: "Collect",
+            PipelineSteps.EXTRA_FIELDS: "Extra fields",
+        }
+
+        step_info = {
+            "id": step,
+            "name": names.get(step, step),
+            "success": None,
+            "last_successful_run": None,
+            "last_failed_run": None,
+            "message": None,
+        }
+
+        if most_recent:
+            step_info["success"] = most_recent.success
+            step_info["message"] = most_recent.message
+
+        if last_successful:
+            step_info["last_successful_run"] = last_successful.created_at
+
+        if last_failed:
+            step_info["last_failed_run"] = last_failed.created_at
+
+        results.append(step_info)
+
+    return results

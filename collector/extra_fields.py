@@ -1,4 +1,4 @@
-from snaprecommend.models import Snap
+from snaprecommend.models import Snap, PipelineSteps
 from sqlalchemy.orm import Session
 from collector.auth import get_auth_header
 import datetime
@@ -8,6 +8,7 @@ import os
 from typing import List
 from snaprecommend import db
 from config import MACAROON_ENV_PATH
+from snaprecommend.logic import add_pipeline_step_log
 
 
 BATCH_SIZE = 15
@@ -85,7 +86,7 @@ def fetch_metrics_from_api(
                 "More details in the README."
             )
             logger.error(http_err.response.text)
-            raise SystemExit
+            raise
         logger.error(f"HTTP error occurred: {http_err}")
         raise
 
@@ -112,8 +113,10 @@ def process_and_update_snap_metrics(
         logger.info(f"Updated metrics for {len(snaps)} snaps successfully.")
     except KeyError as key_err:
         logger.error(f"Missing expected data in metrics response: {key_err}")
+        raise
     except Exception as ex:
         logger.error(f"Unexpected error during metrics processing: {ex}")
+        raise
 
 
 def fetch_and_update_metrics_for_snaps(snaps: List[Snap], db_session: Session):
@@ -131,6 +134,7 @@ def fetch_and_update_metrics_for_snaps(snaps: List[Snap], db_session: Session):
             )
         except Exception as ex:
             logger.error(f"Failed to process batch of snaps: {ex}")
+            raise
 
 
 def get_metrics_time_range() -> tuple[str, str]:
@@ -167,5 +171,11 @@ def update_snap_metrics():
 
 
 def fetch_extra_fields():
-    # Might add more fields in the future
-    update_snap_metrics()
+    try:
+        # Might add more fields in the future
+        update_snap_metrics()
+
+        add_pipeline_step_log(PipelineSteps.EXTRA_FIELDS, True)
+    except Exception as e:
+        logger.error(f"Error during extra fields update: {e}")
+        add_pipeline_step_log(PipelineSteps.EXTRA_FIELDS, False, str(e))
