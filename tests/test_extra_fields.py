@@ -44,9 +44,7 @@ def test_calculate_latest_active_devices():
 
 
 @patch("collector.extra_fields.requests.post")
-@patch("collector.extra_fields.get_auth_header")
-def test_fetch_metrics_from_api(mock_get_auth_header, mock_post, sample_snap):
-    mock_get_auth_header.return_value = "Bearer token"
+def test_fetch_metrics_from_api(mock_post, sample_snap):
     mock_response = MagicMock()
     mock_response.json.return_value = {"metrics": []}
     mock_post.return_value = mock_response
