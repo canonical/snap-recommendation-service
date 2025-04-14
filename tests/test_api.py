@@ -56,7 +56,6 @@ def test_format_response():
     snap2.version = "2.1.0"
     mock_snaps = [snap1, snap2]
     response = format_response(mock_snaps)
-    print(response)
 
     assert response == [
         {

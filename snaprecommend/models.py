@@ -8,10 +8,10 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     JSON,
-    Index,
-    UniqueConstraint,
+    Enum,
 )
 from sqlalchemy.orm import Mapped, mapped_column
+import enum
 
 from snaprecommend import db
 
@@ -135,3 +135,26 @@ class Settings(db.Model):
 
     key: Mapped[str] = mapped_column(String, primary_key=True)
     value: Mapped[JSON] = mapped_column(JSON)
+
+
+class PipelineSteps(enum.Enum):
+    COLLECT = "collect"
+    FILTER = "filter"
+    EXTRA_FIELDS = "extra_fields"
+    SCORE = "score"
+
+
+class PipelineStepLog(db.Model):
+    """
+    This table is used to store the status of each step in the pipeline.
+    """
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
+    step: Mapped[PipelineSteps] = mapped_column(Enum(PipelineSteps))
+    success: Mapped[bool] = mapped_column(Boolean)
+    message: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.now
+    )

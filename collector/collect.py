@@ -5,7 +5,9 @@ import datetime
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.postgresql import insert
 from snaprecommend import db
-from snaprecommend.models import Snap
+from snaprecommend.models import Snap, PipelineSteps
+from snaprecommend.logic import add_pipeline_step_log
+
 
 FIELDS = (
     "snap_id",
@@ -158,7 +160,13 @@ def bulk_upsert_snaps(session: Session, snaps: list):
 
 def collect_initial_snap_data():
     logger.info("Starting the snap data ingestion process.")
-    snaps_count = insert_snaps()
-    logger.info(
-        f"Snap data ingestion process completed. {snaps_count} snaps inserted."
-    )
+    try:
+        snaps_count = insert_snaps()
+        add_pipeline_step_log(PipelineSteps.COLLECT, True)
+        logger.info(
+            f"Snap data ingestion process completed. {snaps_count} snaps inserted."
+        )
+    except Exception as e:
+        logger.error(f"Error during snap data ingestion: {e}")
+        add_pipeline_step_log(PipelineSteps.COLLECT, False, str(e))
+        raise

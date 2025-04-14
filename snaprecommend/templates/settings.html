@@ -1,0 +1,57 @@
+{% extends "layout.html" %}
+{% block meta_title %}
+  Settings
+{% endblock meta_title %}
+{% block page_header %}
+  <div class="p-panel">
+    <div class="p-panel__header">
+      <h4 class="p-panel__title">Settings</h4>
+    </div>
+  {% endblock page_header %}
+  {% block page_content %}
+    <div class="p-panel__content">
+      <div class="u-fixed-width">
+        <h5>Collector</h5>
+        <div class="p-form__group row">
+          <div class="col-2">
+            <p>Last completed run:</p>
+          </div>
+          <div class="col-6">
+            <p>{{ last_updated.strftime("%Y-%m-%d %H:%M:%S") }}</p>
+          </div>
+        </div>
+        <hr />
+        <div>
+          <table class="p-table">
+            <thead>
+              <tr>
+                <th>Step</th>
+                <th>Status</th>
+                <th>Last successful run</th>
+                <th>Last failed run</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for step in pipeline_steps %}
+                <tr>
+                  <td>{{ step.name }}</td>
+                  <td>
+                    <i class="p-icon--{{ 'success' if step.success else 'error' }}"></i>
+                  </td>
+                  <td>{{ step.last_successful_run.strftime("%Y-%m-%d %H:%M:%S") if step.last_successful_run else "-" }}</td>
+                  <td>{{ step.last_failed_run.strftime("%Y-%m-%d %H:%M:%S") if step.last_failed_run else "-" }}</td>
+                  <td>
+                    <form action="{{ url_for('dashboard.run_pipeline_step', step_name=step.name) }}"
+                          method="post">
+                      <button type="submit" class="p-button--positive">Run now</button>
+                    </form>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% endblock page_content %}

@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import (
     Blueprint,
     render_template,
@@ -15,6 +16,7 @@ from snaprecommend.logic import (
     get_all_categories,
     get_category_excluded_snaps,
     get_snap_by_name,
+    get_most_recent_pipeline_step_logs,
 )
 from snaprecommend.editorials import (
     get_all_editorial_slices,
@@ -25,6 +27,7 @@ from snaprecommend.editorials import (
     remove_snap_from_editorial_slice,
     update_editorial_slice,
 )
+from snaprecommend.settings import get_setting
 
 dashboard_blueprint = Blueprint("dashboard", __name__)
 
@@ -203,3 +206,31 @@ def include_snap():
     if snap_id and category:
         include_snap_in_category(category, snap_id)
     return redirect(request.referrer)
+
+
+@dashboard_blueprint.route("/settings")
+@login_required
+def settings():
+    pipeline_steps = get_most_recent_pipeline_step_logs()
+
+    last_updated = get_setting("last_updated")
+
+    if last_updated.value:
+        last_updated = datetime.fromisoformat(last_updated.value)
+
+    context = {
+        "pipeline_steps": pipeline_steps,
+        "last_updated": last_updated,
+    }
+
+    return render_template("settings.html", **context)
+
+
+@dashboard_blueprint.route("/run_pipeline_step", methods=["POST"])
+@login_required
+def run_pipeline_step():
+    step_name = request.args.get("step_name")
+
+    if step_name:
+        flash(f"Running pipeline step {step_name}", "success")
+    return redirect(url_for("dashboard.settings"))

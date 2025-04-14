@@ -6,7 +6,6 @@ from collector.collect import collect_initial_snap_data
 from collector.filter import filter_snaps_meeting_minimum_criteria
 from collector.extra_fields import fetch_extra_fields
 from collector.score import calculate_scores
-from snaprecommend.models import Settings
 from snaprecommend import db
 from config import MACAROON_ENV_PATH
 from snaprecommend.settings import get_setting, set_setting

@@ -8,6 +8,7 @@ from collector.collect import (
     bulk_upsert_snaps,
     collect_initial_snap_data,
 )
+from snaprecommend.models import PipelineSteps
 from sqlalchemy.orm import Session
 
 
@@ -139,7 +140,12 @@ def test_bulk_upsert_snaps(mock_insert, mock_session, sample_snap):
 
 @patch("collector.collect.insert_snaps", return_value=5)
 @patch("collector.collect.logger")
-def test_collect_initial_snap_data(mock_logger, mock_insert_snaps):
+@patch(
+    "collector.collect.add_pipeline_step_log"
+)  # Mock the function causing the issue
+def test_collect_initial_snap_data(
+    mock_add_pipeline_step_log, mock_logger, mock_insert_snaps
+):
     """Test the entire snap collection process."""
     collect_initial_snap_data()
 
@@ -149,4 +155,7 @@ def test_collect_initial_snap_data(mock_logger, mock_insert_snaps):
     )
     mock_logger.info.assert_any_call(
         "Snap data ingestion process completed. 5 snaps inserted."
+    )
+    mock_add_pipeline_step_log.assert_called_once_with(
+        PipelineSteps.COLLECT, True
     )
