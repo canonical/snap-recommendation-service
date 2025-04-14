@@ -1,6 +1,5 @@
 from snaprecommend.models import Snap, PipelineSteps
 from sqlalchemy.orm import Session
-from collector.auth import get_auth_header
 import datetime
 import requests
 import logging
@@ -72,7 +71,7 @@ def fetch_metrics_from_api(
         response = requests.post(
             METRICS_URL,
             headers={
-                "Authorization": get_auth_header(MACAROON),
+                "Authorization": f"Macaroon {MACAROON}",
                 "Content-Type": "application/json",
             },
             json=request_body,
