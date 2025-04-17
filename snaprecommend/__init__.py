@@ -65,7 +65,7 @@ def scheduled_collector():
 
     with app.app_context():
         try:
-            collect_data(entire_pipeline=True)
+            collect_data()
         except Exception as e:
             app.logger.error(f"Error starting scheduled collector: {e}")
 
