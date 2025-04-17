@@ -184,7 +184,7 @@ def get_most_recent_pipeline_step_logs():
         }
 
         step_info = {
-            "id": step,
+            "id": step.value,
             "name": names.get(step, step),
             "success": None,
             "last_successful_run": None,

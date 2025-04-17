@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <!--
   This is a basic HTML file template to become the new homepage of the site.
   Currently it simply includes Vanilla styles and not much else.
@@ -7,23 +6,23 @@
   When you come to work on it in ernest, please remove this comment
   and replace index.html with this file.
 -->
-
 <html lang="en">
-
-<head>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
-  <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <title>
-    {% block meta_title %}Home{% endblock %} | Snap recommendations service 
-  </title>
-  <link rel="stylesheet" href="https://assets.ubuntu.com/v1/vanilla-framework-version-4.21.0.min.css" />
-</head>
-
-<body >
-  {% block body %}
-    {% block content %}{% endblock %}
-  {% endblock body %}
-</body>
-
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>
+      {% block meta_title %}Home{% endblock %}
+      | Snap recommendations service
+    </title>
+    <link rel="shortcut icon"
+          href="https://assets.ubuntu.com/v1/d4ca039f-favicon_16px.png">
+    <link rel="stylesheet"
+          href="https://assets.ubuntu.com/v1/vanilla-framework-version-4.21.0.min.css" />
+  </head>
+  <body>
+    {% block body %}
+      {% block content %}{% endblock %}
+    {% endblock body %}
+  </body>
 </html>
