@@ -1,7 +1,8 @@
 from sqlalchemy import func
-from snaprecommend.models import Snap
+from snaprecommend.models import Snap, PipelineSteps
 import datetime
 from snaprecommend import db
+from snaprecommend.logic import add_pipeline_step_log
 
 import logging
 
@@ -54,17 +55,27 @@ def snap_meets_minimum_criteria_query():
 
 
 def filter_snaps_meeting_minimum_criteria():
-    query = db.session.query(Snap).filter(*snap_meets_minimum_criteria_query())
+    try:
+        query = db.session.query(Snap).filter(
+            *snap_meets_minimum_criteria_query()
+        )
 
-    db.session.query(Snap).update(
-        {Snap.reaches_min_threshold: False}, synchronize_session=False
-    )
+        db.session.query(Snap).update(
+            {Snap.reaches_min_threshold: False}, synchronize_session=False
+        )
 
-    query.update({Snap.reaches_min_threshold: True}, synchronize_session=False)
+        query.update(
+            {Snap.reaches_min_threshold: True}, synchronize_session=False
+        )
 
-    db.session.commit()
+        db.session.commit()
 
-    snap_count = query.count()
-    logger.info(
-        f"Filtered snaps to {snap_count} snaps meeting minimum criteria."
-    )
+        snap_count = query.count()
+        logger.info(
+            f"Filtered snaps to {snap_count} snaps meeting minimum criteria."
+        )
+
+        add_pipeline_step_log(PipelineSteps.FILTER, True)
+    except Exception as e:
+        logger.error(f"Error during filtering snaps: {e}")
+        add_pipeline_step_log(PipelineSteps.FILTER, False, str(e))

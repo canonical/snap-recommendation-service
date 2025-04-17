@@ -58,8 +58,6 @@ def slices():
 def slice(id: str):
     slice = EditorialSlice.query.filter_by(id=id).first()
 
-    print(slice)
-
     if slice is None:
         return {"error": "Slice not found"}, 404
 

@@ -1,5 +1,5 @@
 from flask import Blueprint
-
+import click
 
 cli_blueprint = Blueprint("cli", __name__, cli_group=None)
 
@@ -11,11 +11,16 @@ def collector():
 
 
 @collector.command()
-def start():
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Force the full data collection pipeline to run",
+)
+def start(force):
     """Start the full data collection pipeline"""
     from collector.main import collect_data
 
-    collect_data()
+    collect_data(force_update=force)
 
 
 @collector.command()

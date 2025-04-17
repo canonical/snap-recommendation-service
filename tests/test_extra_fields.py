@@ -44,9 +44,7 @@ def test_calculate_latest_active_devices():
 
 
 @patch("collector.extra_fields.requests.post")
-@patch("collector.extra_fields.get_auth_header")
-def test_fetch_metrics_from_api(mock_get_auth_header, mock_post, sample_snap):
-    mock_get_auth_header.return_value = "Bearer token"
+def test_fetch_metrics_from_api(mock_post, sample_snap):
     mock_response = MagicMock()
     mock_response.json.return_value = {"metrics": []}
     mock_post.return_value = mock_response
@@ -123,6 +121,10 @@ def test_update_snap_metrics(
 
 
 @patch("collector.extra_fields.update_snap_metrics")
-def test_fetch_extra_fields(mock_update_snap_metrics):
+@patch("collector.extra_fields.add_pipeline_step_log")
+def test_fetch_extra_fields(
+    mock_add_pipeline_step_log, mock_update_snap_metrics
+):
     fetch_extra_fields()
     mock_update_snap_metrics.assert_called_once()
+    mock_add_pipeline_step_log.assert_called_once()
