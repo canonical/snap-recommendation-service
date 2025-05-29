@@ -3,36 +3,36 @@ name: Deploy with Juju
 on:
   workflow_call:
     inputs:
-      controller_name:
-        required: true
-        type: string
-      model_name:
+      environment:
         required: true
         type: string
     secrets:
-      VAULT_ROLE_ID:
+      VAULT_APPROLE_ROLE_ID:
         required: true
-      VAULT_SECRET_ID:
+      VAULT_APPROLE_SECRET_ID:
         required: true
 
 jobs:
   deploy:
     runs-on: [self-hosted, self-hosted-linux-amd64-jammy-private-endpoint-medium]
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ vars.ENVIRONMENT_URL }}
     steps:
       - name: Install Dependencies
         run: |
-          sudo snap install juju --channel=3.4/stable --classic
+          sudo snap install juju --classic
           sudo snap install vault --classic
 
       - name: Configure Vault and Juju
         env:
           VAULT_ADDR: "https://vault.admin.canonical.com:8200"
-          VAULT_ROLE_ID: ${{ secrets.VAULT_ROLE_ID }}
-          VAULT_SECRET_ID: ${{ secrets.VAULT_SECRET_ID }}
+          VAULT_ROLE_ID: ${{ secrets.VAULT_APPROLE_ROLE_ID }}
+          VAULT_SECRET_ID: ${{ secrets.VAULT_APPROLE_SECRET_ID }}
         run: |
           set -e
-          export CONTROLLER_NAME=${{ inputs.controller_name }}
-          export MODEL_NAME=${{ inputs.model_name }}
+          export CONTROLLER_NAME=${{ vars.JUJU_CONTROLLER_NAME }}
+          export MODEL_NAME=${{ vars.JUJU_MODEL_NAME }}
           export VAULT_SECRET_PATH_ROLE=secret/prodstack6/roles/${MODEL_NAME}
           export VAULT_SECRET_PATH_COMMON=secret/prodstack6/juju/common
           export VAULT_TOKEN=$(vault write -f -field=token auth/approle/login role_id="$VAULT_ROLE_ID" secret_id="$VAULT_SECRET_ID") 
@@ -44,7 +44,10 @@ jobs:
 
       - name: Deploy Application
         run: |
-          export JUJU_MODEL=admin/${{ inputs.model_name }}
-          export resource_revision=$(juju charm-resources snaprecommend --channel=latest/edge | awk 'NR==2 {print $2}')
-          juju refresh snaprecommend --channel=latest/edge --resource flask-app-image=$resource_revision
-          juju wait-for application snaprecommend --query='name=="snaprecommend" && (status=="active" || status=="idle")'
+          export JUJU_MODEL=admin/${{ vars.JUJU_MODEL_NAME }}
+          export CHARM_NAME=${{ vars.CHARM_NAME }}
+          export CHANNEL=${{ vars.CHANNEL || 'latest/stable' }}
+          export resource_revision=$(juju charm-resources $CHARM_NAME --channel=$CHANNEL | awk 'NR==2 {print $2}')
+          juju refresh $CHARM_NAME --channel=$CHANNEL
+          juju refresh $CHARM_NAME --channel=$CHANNEL --resource flask-app-image=$resource_revision
+          juju wait-for application $CHARM_NAME --query="name=='$CHARM_NAME' && (status=='active' || status=='idle')"
