@@ -6,6 +6,14 @@ on:
       - main
       - staging
   workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment (Production or Staging)'
+        required: true
+        type: choice
+        options:
+          - Production
+          - Staging
 
 env:
   CHARM_NAME: snaprecommend
@@ -24,7 +32,9 @@ jobs:
       - name: Determine environment
         id: set_env
         run: |
-          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+          if [[ -n "${{ github.event.inputs.environment }}" ]]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             echo "environment=Production" >> "$GITHUB_OUTPUT"
           else
             echo "environment=Staging" >> "$GITHUB_OUTPUT"
