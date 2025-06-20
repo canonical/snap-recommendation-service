@@ -16,10 +16,28 @@ on:
           - Production
           - Staging
 jobs:
+  setup:
+    name: Setup
+    runs-on: ubuntu-latest
+    outputs:
+      environment: ${{ steps.set_env.outputs.environment }}
+    steps:
+      - name: Determine environment
+        id: set_env
+        run: |
+          if [[ -n "${{ github.event.inputs.environment }}" ]]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> "$GITHUB_OUTPUT"
+          elif [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            echo "environment=Production" >> "$GITHUB_OUTPUT"
+          else
+            echo "environment=Staging" >> "$GITHUB_OUTPUT"
+          fi
+
   deploy:
+    needs: setup
     uses: canonical/webteam-devops/.github/workflows/deploy.yaml@main
     with:
-      environment: Staging
+      environment: ${{ needs.setup.outputs.environment }}
     secrets:
       VAULT_APPROLE_ROLE_ID: ${{ secrets.VAULT_APPROLE_ROLE_ID }}
       VAULT_APPROLE_SECRET_ID: ${{ secrets.VAULT_APPROLE_SECRET_ID }}
