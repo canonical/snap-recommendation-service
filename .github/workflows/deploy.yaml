@@ -36,6 +36,7 @@ jobs:
   deploy:
     needs: setup
     name: Deploy
+    environment: ${{ github.event.inputs.environment != '' && github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'Production' || 'Staging') }}
     uses: canonical/webteam-devops/.github/workflows/deploy.yaml@main
     with:
       charm_name: ${{ needs.setup.outputs.charm_name }}
