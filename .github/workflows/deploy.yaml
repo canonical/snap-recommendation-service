@@ -24,6 +24,7 @@ jobs:
       channel: ${{ steps.setup-vars.outputs.channel }}
       juju_controller_name: ${{ steps.setup-vars.outputs.juju_controller_name }}
       juju_model_name: ${{ steps.setup-vars.outputs.juju_model_name }}
+      environment: ${{ steps.setup-vars.outputs.environment }}
     steps:
       - name: setup vars
         id: setup-vars
@@ -32,17 +33,18 @@ jobs:
           echo "channel=stable" >> $GITHUB_OUTPUT
           echo "juju_controller_name=${{ vars.JUJU_CONTROLLER_NAME }}" >> $GITHUB_OUTPUT
           echo "juju_model_name=${{ vars.JUJU_MODEL_NAME }}" >> $GITHUB_OUTPUT
+          echo "environment=${{ github.event.inputs.environment != '' && github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'Production' || 'Staging') }}" >> $GITHUB_OUTPUT
 
   deploy:
     needs: setup
     name: Deploy
-    environment: ${{ github.event.inputs.environment != '' && github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'Production' || 'Staging') }}
     uses: canonical/webteam-devops/.github/workflows/deploy.yaml@main
     with:
       charm_name: ${{ needs.setup.outputs.charm_name }}
       channel: ${{ needs.setup.outputs.channel }}
       juju_controller_name: ${{ needs.setup.outputs.juju_controller_name }}
       juju_model_name: ${{ needs.setup.outputs.juju_model_name }}
+      environment: ${{ needs.setup.outputs.environment }}
     secrets:
       VAULT_APPROLE_ROLE_ID: ${{ secrets.VAULT_APPROLE_ROLE_ID }}
       VAULT_APPROLE_SECRET_ID: ${{ secrets.VAULT_APPROLE_SECRET_ID }}
