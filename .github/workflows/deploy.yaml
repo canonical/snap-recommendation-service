@@ -16,30 +16,12 @@ on:
           - Production
           - Staging
 jobs:
-  setup:
-    name: Setup
-    runs-on: ubuntu-latest
-    outputs:
-      environment: ${{ steps.set_env.outputs.environment }}
-    steps:
-      - name: Determine environment
-        id: set_env
-        run: |
-          if [[ -n "${{ github.event.inputs.environment }}" ]]; then
-            echo "environment=${{ github.event.inputs.environment }}" >> "$GITHUB_OUTPUT"
-          elif [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
-            echo "environment=Production" >> "$GITHUB_OUTPUT"
-          else
-            echo "environment=Staging" >> "$GITHUB_OUTPUT"
-          fi
-
   deploy:
     name: Deploy
     needs: setup
+    environment: ${{ github.event.inputs.environment != '' && github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'Production' || 'Staging') }}
     uses: canonical/webteam-devops/.github/workflows/deploy.yaml@main
-    environment: ${{ needs.setup.outputs.environment }}
     with:
-      environment_url: ${{ vars.ENVIRONMENT_URL }}
       charm_name: ${{ vars.CHARM_NAME }}
       channel: ${{ vars.CHANNEL }}
       juju_controller_name: ${{ vars.JUJU_CONTROLLER_NAME }}
