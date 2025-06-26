@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - staging
+      - deploy-v1
   workflow_dispatch:
     inputs:
       environment:
@@ -37,7 +38,7 @@ jobs:
   deploy:
     needs: setup
     name: Deploy
-    uses: canonical/webteam-devops/.github/workflows/deploy.yaml@main
+    uses: canonical/webteam-devops/.github/workflows/deploy.yaml@v1
     with:
       charm_name: ${{ needs.setup.outputs.charm_name }}
       channel: ${{ needs.setup.outputs.channel }}
