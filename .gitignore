@@ -183,3 +183,6 @@ go.work.sum
 
 *.creds
 *.rock
+
+node_modules
+static

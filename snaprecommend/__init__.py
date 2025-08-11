@@ -8,6 +8,8 @@ from config import Config
 from snaprecommend.cli import cli_blueprint
 from snaprecommend.sso import init_sso
 from apscheduler.schedulers.background import BackgroundScheduler
+from flask import send_from_directory, render_template
+import os
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,7 +21,7 @@ migrate = Migrate()
 
 
 def create_app(config_class=Config):
-    app = Flask(__name__, template_folder="templates")
+    app = Flask(__name__, static_folder='static', template_folder="templates")
     app.config.from_object(config_class)
     app.config.from_prefixed_env()
 
@@ -37,6 +39,15 @@ def create_app(config_class=Config):
     @app.route("/_status/check")
     def status_check():
         return "OK"
+    
+
+    @app.route("/", defaults={"path": ""})
+    @app.route("/<path:path>")
+    def serve_react_app(path):
+        static_file_path = os.path.join(app.static_folder, path)
+        if path != "" and os.path.exists(static_file_path):
+            return send_from_directory(app.static_folder, path)
+        return render_template("index.html")
 
     app.register_blueprint(api_blueprint, url_prefix="/api")
     app.register_blueprint(dashboard_blueprint, url_prefix="/dashboard")
