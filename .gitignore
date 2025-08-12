@@ -186,3 +186,4 @@ go.work.sum
 
 node_modules
 static
+templates/index.html
