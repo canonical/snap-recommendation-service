@@ -186,4 +186,6 @@ go.work.sum
 
 node_modules
 static
-templates/index.html
+
+# This file will be created and placed after running the build command
+snaprecommend/templates/index.html
