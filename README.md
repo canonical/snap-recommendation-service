@@ -32,8 +32,6 @@ flask collector start
 
 ### Server
 
-There are two packages one for frontend (react) and one for backend(flask)
-
 In development for hot module reloding the backend api's accessed through flask. If the user enters any paths other than the ones that are listed in the vite configuration they are navigated to react frontend otherwise they are navigated to the corresponding backend api.
 
 To make it work 
@@ -42,7 +40,7 @@ Terminal 1
 flask run
 ```
 
-Terminal2
+Terminal 2
 ```bash
 cd frontend
 npm run dev
