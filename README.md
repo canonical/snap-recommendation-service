@@ -32,10 +32,33 @@ flask collector start
 
 ### Server
 
+There are two packages one for frontend (react) and one for backend(flask)
+
+In development for hot module reloding the backend api's accessed through flask. If the user enters any paths other than the ones that are listed in the vite configuration they are navigated to react frontend otherwise they are navigated to the corresponding backend api.
+
+To make it work 
+Terminal 1
 ```bash
 flask run
 ```
 
+Terminal2
+```bash
+cd frontend
+npm run dev
+```
+
+In dev mode, Vite runs on port 5173 and proxies API calls to Flask on port 5000.
+
+## Production
+
+In production there is one server. Flask serve the built React files plus API endpoints.
+
+1. Build with `yarn build`
+2. Move build output into Flask
+   - All the .js and .css files need to be moved to 'static' folder
+   - 'index.html' needs to be in the 'templates' folder
+3. Run the server with `flask run`
 
 ## Architecture
 The Snap Recommendation Service consists of two main components:
