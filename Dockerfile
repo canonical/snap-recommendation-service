@@ -1,5 +1,5 @@
 # build frontend
-FROM node:22-alpine as frontend-builder
+FROM node:22-alpine
 WORKDIR /frontend
 
 COPY frontend/package.json frontend/yarn.lock* ./
