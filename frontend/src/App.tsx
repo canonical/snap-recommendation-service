@@ -1,7 +1,7 @@
 
 function App() {
   return (
-    <div>Snap recommendations API - Copyright 2025 Canonical</div>
+    <div>FE - Snap recommendations API - Copyright 2025 Canonical</div>
   )
 }
 
