@@ -1,3 +1,4 @@
+# --- Build frontend ---
 FROM node:22-alpine AS frontend
 WORKDIR /frontend
 
@@ -8,7 +9,7 @@ COPY frontend/ ./
 RUN yarn build
 
 
-# build backend
+# --- Build backend ---
 FROM python:3.11-alpine 
 
 ENV PYTHONDONTWRITEBYTECODE=1
