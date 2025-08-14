@@ -30,12 +30,36 @@ pip install -r requirements.txt
 flask collector start
 ```
 
-### Server
+### Starting the local environment
+In development for hot module reloding the backend api's accessed through flask. If the user enters any paths other than the ones that are listed in the vite configuration they are navigated to react frontend otherwise they are navigated to the corresponding backend api.
 
+To make it work 
+Terminal 1
 ```bash
 flask run
 ```
 
+Terminal 2
+```bash
+cd frontend
+yarn
+yarn dev
+```
+
+In dev mode, Vite runs on port 5173 and proxies API calls to Flask on port 5000.
+
+### Troubleshoot
+- If you got an error that is related with connection to server at "db", change the "db" in the POSTGRESQL_DB_CONNECT_STRING to "localhost" in the .env file.
+
+## Production
+
+In production there is one server. Flask serve the built React files plus API endpoints.
+
+1. Build with `yarn build`
+2. Move build output into Flask
+   - All the .js and .css files need to be moved to 'static' folder
+   - 'index.html' needs to be in the 'templates' folder
+3. Run the server with `flask run`
 
 ## Architecture
 The Snap Recommendation Service consists of two main components:
