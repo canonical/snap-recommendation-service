@@ -22,7 +22,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . . 
-COPY --from=frontend /frontend/dist/assets/ ./snaprecommend/static/assets/
+COPY --from=frontend /frontend/dist/static/ ./snaprecommend/static/
 COPY --from=frontend /frontend/dist/index.html ./snaprecommend/templates/index.html
 
 CMD ["flask", "run", "--host=0.0.0.0", "--port=80"]
