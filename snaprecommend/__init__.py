@@ -40,12 +40,9 @@ def create_app(config_class=Config):
     def status_check():
         return "OK"
     
-    @app.route("/", defaults={"path": ""})
-    @app.route("/<path:path>")
-    def serve_react_app(path):
-        static_file_path = os.path.join(app.static_folder, path)
-        if path != "" and os.path.exists(static_file_path):
-            return send_from_directory(app.static_folder, path)
+    @app.route("/v2/dashboard")
+    @app.route("/v2/dashboard/<path:path>")
+    def serve_react_app():
         return render_template("index.html")
 
     app.register_blueprint(api_blueprint, url_prefix="/api")
