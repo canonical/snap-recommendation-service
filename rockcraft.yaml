@@ -20,7 +20,7 @@ parts:
       - nodejs
       - yarnpkg
     override-build: |
-      yarn install --frozen-lockfile
+      yarn install
       yarn build
       mkdir -p ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/static
       mkdir -p ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/templates
