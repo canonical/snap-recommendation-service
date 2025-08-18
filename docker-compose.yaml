@@ -5,20 +5,36 @@ services:
     build: .
     env_file: .env
     ports:
-      - "5000:5000"
+      - "5050:5000" 
     depends_on:
       - db
+    environment:
+      - FLASK_APP=snaprecommend
+      - FLASK_ENV=development
     volumes:
       - .:/app
-    command: flask run --host=0.0.0.0 --port 5000
+    command: flask run --host=0.0.0.0 --port=5000
     networks:
       - app-network
+
+  frontend:
+    image: node:20-bullseye 
+    working_dir: /frontend
+    volumes:
+      - ./frontend:/frontend
+    ports:
+      - "5173:5173"
+    command: sh -lc "corepack enable && yarn install && yarn dev --host 0.0.0.0 --port 5173"
+    networks:
+      - app-network
+    depends_on:
+      - web
 
   db:
     image: postgres:latest
     env_file: .env
     ports:
-      - 5432:5432
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:

@@ -12,7 +12,21 @@ platforms:
 extensions:
     - flask-framework
 
-parts: 
+parts:
+  frontend:
+    plugin: nil
+    source: ./frontend
+    build-packages:
+      - nodejs
+      - yarnpkg
+    override-build: |
+      yarn install --frozen-lockfile
+      yarn build
+      mkdir -p ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/static
+      mkdir -p ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/templates
+      cp -r dist/static/* ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/static/
+      cp dist/index.html ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/templates/
+
   flask-framework/install-app:
     prime:
       - flask/app/app.py
@@ -21,6 +35,8 @@ parts:
       - flask/app/snaprecommend
       - flask/app/collector
       - flask/app/migrations
+      - flask/app/snaprecommend/static
+      - flask/app/snaprecommend/templates/index.html
 
   runtime-debs:
     plugin: nil
