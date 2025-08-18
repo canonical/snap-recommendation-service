@@ -16,18 +16,23 @@ parts:
   frontend:
     plugin: nil
     source: ./frontend
-    build-packages:
-      - nodejs
-      - yarnpkg
+    source-type: local
+    build-snaps:
+      - node/22/stable
     override-build: |
+      set -eux
+      # install dependencies
+      npm install -g yarn
       yarn install --frozen-lockfile
       yarn build
-      mkdir -p ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/static
-      mkdir -p ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/templates
-      cp -r dist/static/* ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/static/
-      cp dist/index.html ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/templates/
+      mkdir -p ${CRAFT_PART_INSTALL}/flask/app/static
+      mkdir -p ${CRAFT_PART_INSTALL}/flask/app/templates
+      cp -r dist/static/* ${CRAFT_PART_INSTALL}/flask/app/static/
+      cp dist/index.html ${CRAFT_PART_INSTALL}/flask/app/templates/
 
   flask-framework/install-app:
+    after:
+      - frontend
     prime:
       - flask/app/app.py
       - flask/app/config.py
@@ -35,8 +40,8 @@ parts:
       - flask/app/snaprecommend
       - flask/app/collector
       - flask/app/migrations
-      - flask/app/snaprecommend/static
-      - flask/app/snaprecommend/templates/index.html
+      - flask/app/static
+      - flask/app/templates
 
   runtime-debs:
     plugin: nil
