@@ -8,7 +8,7 @@ description: |
     More information can be found at https://github.com/canonical/snap-recommendation-service
 platforms:
     amd64:
-
+    arm64:
 extensions:
     - flask-framework
 
@@ -23,12 +23,12 @@ parts:
       set -eux
       # install dependencies
       npm install -g yarn
-      yarn install --frozen-lockfile
+      yarn install
       yarn build
-      mkdir -p ${CRAFT_PART_INSTALL}/flask/app/static
-      mkdir -p ${CRAFT_PART_INSTALL}/flask/app/templates
-      cp -r dist/static/* ${CRAFT_PART_INSTALL}/flask/app/static/
-      cp dist/index.html ${CRAFT_PART_INSTALL}/flask/app/templates/
+      mkdir -p ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/static
+      mkdir -p ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/templates
+      cp -r dist/static/* ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/static/
+      cp dist/index.html ${CRAFT_PART_INSTALL}/flask/app/snaprecommend/templates/
 
   flask-framework/install-app:
     after:
@@ -40,8 +40,6 @@ parts:
       - flask/app/snaprecommend
       - flask/app/collector
       - flask/app/migrations
-      - flask/app/static
-      - flask/app/templates
 
   runtime-debs:
     plugin: nil
