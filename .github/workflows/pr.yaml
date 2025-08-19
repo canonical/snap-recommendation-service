@@ -42,3 +42,61 @@ jobs:
         if: ${{ steps.filter.outputs.py == 'true' }}
         run: |
           python3 -m pytest tests/
+  lint-python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            py:
+              - '**/*.py'
+
+      - uses: actions/setup-python@v5
+        if: ${{ steps.filter.outputs.py == 'true' }}
+        with:
+          python-version: '3.10'
+
+      - name: Install Python dependencies
+        if: ${{ steps.filter.outputs.py == 'true' }}
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Lint Python
+        if: ${{ steps.filter.outputs.py == 'true' }}
+        run: flake8 --extend-ignore=E203 snaprecommend collector
+
+  lint-js:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+        # cd into frontend/
+      - name: Change directory to static/js
+        run: cd frontend
+
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            js:
+              - '**/*.js'
+            ts:
+              - '**/*.ts'
+            jsx:
+              - '**/*.jsx'
+            tsx:
+              - '**/*.tsx'
+
+      - name: Install JS dependencies
+        if: ${{ steps.filter.outputs.js == 'true' || steps.filter.outputs.ts == 'true' || steps.filter.outputs.jsx == 'true' || steps.filter.outputs.tsx == 'true' }}
+        run: yarn install --immutable
+
+      - name: Lint JS
+        if: ${{ steps.filter.outputs.js == 'true' || steps.filter.outputs.ts == 'true' || steps.filter.outputs.jsx == 'true' || steps.filter.outputs.tsx == 'true' }}
+        run: eslint static/js/src
+

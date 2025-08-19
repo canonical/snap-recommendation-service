@@ -9,7 +9,8 @@ from snaprecommend.cli import cli_blueprint
 from snaprecommend.sso import init_sso
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import render_template
-import os
+
+from snaprecommend.utils import clear_trailing_slash
 
 logging.basicConfig(
     level=logging.INFO,
@@ -52,8 +53,8 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
 
     app.logger.setLevel(logging.INFO)
+    app.before_request(clear_trailing_slash)
 
-    # init cors manually (add header)
     CORS(app)
 
     if app.debug:
