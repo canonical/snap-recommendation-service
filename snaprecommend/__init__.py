@@ -8,7 +8,7 @@ from config import Config
 from snaprecommend.cli import cli_blueprint
 from snaprecommend.sso import init_sso
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import send_from_directory, render_template
+from flask import render_template
 import os
 
 logging.basicConfig(
