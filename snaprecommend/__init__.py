@@ -10,8 +10,6 @@ from snaprecommend.sso import init_sso
 from apscheduler.schedulers.background import BackgroundScheduler
 from flask import render_template
 
-from snaprecommend.utils import clear_trailing_slash
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
@@ -46,6 +44,8 @@ def create_app(config_class=Config):
     def serve_react_app():
         return render_template("index.html")
 
+    app.url_map.strict_slashes = False
+
     app.register_blueprint(api_blueprint, url_prefix="/api")
     app.register_blueprint(dashboard_blueprint, url_prefix="/dashboard")
 
@@ -53,7 +53,6 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
 
     app.logger.setLevel(logging.INFO)
-    app.before_request(clear_trailing_slash)
 
     CORS(app)
 
