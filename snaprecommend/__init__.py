@@ -8,6 +8,9 @@ from config import Config
 from snaprecommend.cli import cli_blueprint
 from snaprecommend.sso import init_sso
 from apscheduler.schedulers.background import BackgroundScheduler
+from flask import render_template
+
+from snaprecommend.utils import clear_trailing_slash
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,7 +22,7 @@ migrate = Migrate()
 
 
 def create_app(config_class=Config):
-    app = Flask(__name__, template_folder="templates")
+    app = Flask(__name__, static_folder='static', template_folder="templates")
     app.config.from_object(config_class)
     app.config.from_prefixed_env()
 
@@ -38,6 +41,11 @@ def create_app(config_class=Config):
     def status_check():
         return "OK"
 
+    @app.route("/v2/dashboard")
+    @app.route("/v2/dashboard/<path:path>")
+    def serve_react_app():
+        return render_template("index.html")
+
     app.register_blueprint(api_blueprint, url_prefix="/api")
     app.register_blueprint(dashboard_blueprint, url_prefix="/dashboard")
 
@@ -45,8 +53,8 @@ def create_app(config_class=Config):
     migrate.init_app(app, db)
 
     app.logger.setLevel(logging.INFO)
+    app.before_request(clear_trailing_slash)
 
-    # init cors manually (add header)
     CORS(app)
 
     if app.debug:
