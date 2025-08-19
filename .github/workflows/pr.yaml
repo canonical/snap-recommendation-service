@@ -98,5 +98,5 @@ jobs:
 
       - name: Lint JS
         if: ${{ steps.filter.outputs.js == 'true' || steps.filter.outputs.ts == 'true' || steps.filter.outputs.jsx == 'true' || steps.filter.outputs.tsx == 'true' }}
-        run: eslint static/js/src
+        run: yarn run eslint src
 
