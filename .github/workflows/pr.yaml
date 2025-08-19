@@ -92,11 +92,10 @@ jobs:
             tsx:
               - '**/*.tsx'
 
-      - name: Install JS dependencies
+      - name: Install JS dependencies and Lint JS
         if: ${{ steps.filter.outputs.js == 'true' || steps.filter.outputs.ts == 'true' || steps.filter.outputs.jsx == 'true' || steps.filter.outputs.tsx == 'true' }}
-        run: yarn install --immutable
+        run: | 
+          yarn install --immutable
+          yarn run eslint src
 
-      - name: Lint JS
-        if: ${{ steps.filter.outputs.js == 'true' || steps.filter.outputs.ts == 'true' || steps.filter.outputs.jsx == 'true' || steps.filter.outputs.tsx == 'true' }}
-        run: yarn run eslint src
 
