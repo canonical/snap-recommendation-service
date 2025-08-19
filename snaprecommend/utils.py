@@ -1,6 +1,7 @@
 from flask import request, redirect
 from urllib.parse import unquote, urlparse, urlunparse
 
+
 def slugify(s: str) -> str:
     """
     Slugifies a string.
@@ -12,8 +13,8 @@ def slugify(s: str) -> str:
 
     return slug
 
-def clear_trailing_slash():
 
+def clear_trailing_slash():
     parsed_url = urlparse(unquote(request.url))
     path = parsed_url.path
 

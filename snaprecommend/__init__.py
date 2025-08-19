@@ -40,7 +40,7 @@ def create_app(config_class=Config):
     @app.route("/_status/check")
     def status_check():
         return "OK"
-    
+
     @app.route("/v2/dashboard")
     @app.route("/v2/dashboard/<path:path>")
     def serve_react_app():
