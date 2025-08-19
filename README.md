@@ -34,6 +34,8 @@ flask collector start
 #### Starting the local environment
 In development for hot module reloding the backend api's accessed through flask. If the user enters any paths other than the ones that are listed in the vite configuration they are navigated to react frontend otherwise they are navigated to the corresponding backend api.
 
+You can start the local by using `docker compose up -d` but if you like to run it without docker:
+
 Change the 'target' entry in the vite.config.ts to 'http://127.0.0.1:5000'
 
 To make it work 
