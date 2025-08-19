@@ -75,10 +75,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-        # cd into frontend/
-      - name: Change directory to static/js
-        run: cd frontend
-
       - uses: dorny/paths-filter@v3
         id: filter
         with:
@@ -95,8 +91,10 @@ jobs:
       - name: Install JS dependencies
         if: ${{ steps.filter.outputs.js == 'true' || steps.filter.outputs.ts == 'true' || steps.filter.outputs.jsx == 'true' || steps.filter.outputs.tsx == 'true' }}
         run: yarn install --immutable
+        working-directory: frontend
 
       - name: Lint JS
         if: ${{ steps.filter.outputs.js == 'true' || steps.filter.outputs.ts == 'true' || steps.filter.outputs.jsx == 'true' || steps.filter.outputs.tsx == 'true' }}
         run: yarn run eslint src
+        working-directory: frontend
 
