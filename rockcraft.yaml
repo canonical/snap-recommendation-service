@@ -21,7 +21,6 @@ parts:
       - node/22/stable
     override-build: |
       set -eux
-      # install dependencies
       npm install -g yarn
       yarn install
       yarn build
