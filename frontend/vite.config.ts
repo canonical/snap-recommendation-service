@@ -6,6 +6,11 @@ export default defineConfig(({mode}) => {
   return {
     base: isProd ? '/' : '/v2/dashboard/',
     plugins: [react()],
+    css: {
+      preprocessorOptions: {
+        scss: {}
+      }
+    },
     build: {
       outDir: 'dist',
       assetsDir: 'static',
