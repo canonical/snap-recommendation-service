@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import { Layout } from "./components";
 
-function App() {
+export default function App() {
   return (
     <Routes>
       <Route element={<Layout />}>
@@ -11,5 +11,3 @@ function App() {
     </Routes>
   );
 }
-
-export default App;
