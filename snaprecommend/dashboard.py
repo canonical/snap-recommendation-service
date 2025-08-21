@@ -8,6 +8,7 @@ from flask import (
     flash,
     abort,
     current_app,
+    jsonify,
 )
 from snaprecommend.models import PipelineSteps
 from snaprecommend.sso import login_required
@@ -46,19 +47,7 @@ dashboard_blueprint = Blueprint("dashboard", __name__)
 @dashboard_blueprint.route("/")
 @login_required
 def dashboard():
-    limit = 20
-
-    popular_snaps = get_category_top_snaps("popular", limit=limit)
-    recent_snaps = get_category_top_snaps("recent", limit=limit)
-    trending_snaps = get_category_top_snaps("trending", limit=limit)
-
-    context = {
-        "popular_snaps": popular_snaps,
-        "recent_snaps": recent_snaps,
-        "trending_snaps": trending_snaps,
-    }
-
-    return render_template("dashboard.html", **context)
+    return redirect("/v2/dashboard/")
 
 
 @dashboard_blueprint.route("/editorial_slices")
@@ -199,14 +188,15 @@ def excluded_snaps():
     return render_template("excluded_snaps.html", **context)
 
 
-@dashboard_blueprint.route("/exclude_snap", methods=["POST"])
+@dashboard_blueprint.route("/api/exclude_snap", methods=["POST"])
 @login_required
 def exclude_snap():
-    snap_id = request.form.get("snap_id")
-    category = request.form.get("category")
+    data = request.get_json()
+    snap_id = data.get("snap_id")
+    category = data.get("category")
     if snap_id and category:
         exclude_snap_from_category(category, snap_id)
-    return redirect(url_for("dashboard.dashboard"))
+    return jsonify({"status": "success"}), 200
 
 
 @dashboard_blueprint.route("/include_snap", methods=["POST"])

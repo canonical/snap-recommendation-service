@@ -1,4 +1,5 @@
 from flask import Blueprint
+import flask
 from snaprecommend.models import (
     Snap,
     RecommendationCategory,
@@ -74,6 +75,19 @@ def slice(id: str):
 
     return response
 
+
+
+@api_blueprint.route("/snaps")
+def popular_snaps():
+    limit = flask.request.args.get("limit", 10)
+    category = flask.request.args.get("category")
+
+    popular_snaps = get_category_top_snaps(category, limit=limit)
+    response = {
+        "snaps": [serialize_snap(snap) for snap in popular_snaps],
+    }
+
+    return response
 
 def format_response(snaps: list[Snap]) -> list[dict]:
 

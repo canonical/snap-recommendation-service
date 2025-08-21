@@ -33,11 +33,9 @@ export function Layout() {
                     to: "/v2/dashboard/settings"
                 }]
             }]}  >
-            <Panel>
-                <Row>
-                    <Col size={12}> <Outlet /></Col>
-                </Row>
-            </Panel>
+
+            <Outlet />
+
         </ApplicationLayout>
     );
 }
