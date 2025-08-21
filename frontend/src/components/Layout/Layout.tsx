@@ -1,4 +1,4 @@
-import { ApplicationLayout, Col, Panel, Row } from "@canonical/react-components";
+import { ApplicationLayout } from "@canonical/react-components";
 import { Outlet, Link } from "react-router-dom";
 import { LayoutLogo } from "./LayoutLogo/LayoutLogo";
 
