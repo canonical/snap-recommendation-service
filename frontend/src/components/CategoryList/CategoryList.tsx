@@ -39,7 +39,7 @@ export const CategoryList = ({ category, label }: { category: string, label: str
                 severity="negative"
                 title="Error"
             >
-                {excludeError || error}
+                An error occurred
             </Notification>
         }
         {
@@ -48,7 +48,7 @@ export const CategoryList = ({ category, label }: { category: string, label: str
         {snaps &&
             <ul className="p-list category-list">
                 {
-                    snaps.map((snap) => <li className="p-list__item">
+                    snaps.map((snap) => <li key={snap.snap_id} className="p-list__item">
                         <div className="p-card">
                             <div className="category-list__item">
                                 <div className="category-list__item-info">

@@ -41,6 +41,7 @@ def create_app(config_class=Config):
 
     @app.route("/v2/dashboard")
     @app.route("/v2/dashboard/<path:path>")
+    @login_required
     def serve_react_app():
         return render_template("index.html")
 
