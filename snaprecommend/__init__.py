@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template, redirect
 from flask_cors import CORS
 import datetime
 import logging
@@ -6,9 +6,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from config import Config
 from snaprecommend.cli import cli_blueprint
-from snaprecommend.sso import init_sso
+from snaprecommend.sso import init_sso, login_required
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import render_template
 
 logging.basicConfig(
     level=logging.INFO,
@@ -18,9 +17,15 @@ logging.basicConfig(
 db = SQLAlchemy()
 migrate = Migrate()
 
+OLD_PATHS = [
+    "excluded_snaps",
+    "editorial_slices",
+    "settings",
+]
+
 
 def create_app(config_class=Config):
-    app = Flask(__name__, static_folder='static', template_folder="templates")
+    app = Flask(__name__, static_folder="static", template_folder="templates")
     app.config.from_object(config_class)
     app.config.from_prefixed_env()
 
@@ -41,7 +46,10 @@ def create_app(config_class=Config):
 
     @app.route("/v2/dashboard")
     @app.route("/v2/dashboard/<path:path>")
-    def serve_react_app():
+    @login_required
+    def serve_react_app(path=None):
+        if path in OLD_PATHS:
+            return redirect(f"/dashboard/{path}")
         return render_template("index.html")
 
     app.url_map.strict_slashes = False

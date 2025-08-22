@@ -1,0 +1,18 @@
+.category-list {
+    max-height: 650px;
+    overflow: scroll;
+
+    &__item {
+        display: flex;
+        justify-content: space-between;
+    }
+
+    &__item-img {
+        height: 50px;
+    }
+
+    &__item-info {
+        display: flex;
+        gap: 12px;
+    }
+}

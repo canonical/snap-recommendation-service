@@ -1,4 +1,4 @@
-import { ApplicationLayout, Col, Panel, Row } from "@canonical/react-components";
+import { ApplicationLayout } from "@canonical/react-components";
 import { Outlet, Link } from "react-router-dom";
 import { LayoutLogo } from "./LayoutLogo/LayoutLogo";
 
@@ -33,11 +33,9 @@ export function Layout() {
                     to: "/v2/dashboard/settings"
                 }]
             }]}  >
-            <Panel>
-                <Row>
-                    <Col size={12}> <Outlet /></Col>
-                </Row>
-            </Panel>
+
+            <Outlet />
+
         </ApplicationLayout>
     );
 }
