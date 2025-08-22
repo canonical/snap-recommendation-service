@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, render_template
 from flask_cors import CORS
 import datetime
 import logging
@@ -8,7 +8,6 @@ from config import Config
 from snaprecommend.cli import cli_blueprint
 from snaprecommend.sso import init_sso
 from apscheduler.schedulers.background import BackgroundScheduler
-from flask import render_template
 
 logging.basicConfig(
     level=logging.INFO,
