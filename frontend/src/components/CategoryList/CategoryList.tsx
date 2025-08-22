@@ -8,26 +8,28 @@ export const CategoryList = ({ category, label }: { category: string, label: str
 
     const [excludeError, setExcludeError] = useState<string | null>(null)
 
-    const excludeSnap = (snap: any) => {
-        fetch("/dashboard/api/exclude_snap", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                "snap_id": snap.snap_id,
-                "category": category
-            }),
-        })
-            .then((response) => {
-                if (!response.ok) {
-                    throw new Error("Failed to exclude snap.");
-                }
-                refetch()
+    const excludeSnap = async (snap: any) => {
+        try {
+            const response = await fetch("/dashboard/api/exclude_snap", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    "snap_id": snap.snap_id,
+                    "category": category
+                }),
             })
-            .catch((err) => {
-                setExcludeError(err)
-            });
+
+            if (!response.ok) {
+                throw new Error("Failed to exclude snap.");
+            }
+            setExcludeError(null)
+
+            await refetch()
+        } catch (err: any) {
+            setExcludeError(err)
+        }
     }
 
     return <div>
@@ -46,7 +48,7 @@ export const CategoryList = ({ category, label }: { category: string, label: str
         {snaps &&
             <ul className="p-list category-list">
                 {
-                    snaps.snaps.map((snap) => <li className="p-list__item">
+                    snaps.map((snap) => <li className="p-list__item">
                         <div className="p-card">
                             <div className="category-list__item">
                                 <div className="category-list__item-info">
