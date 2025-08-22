@@ -46,7 +46,7 @@ dashboard_blueprint = Blueprint("dashboard", __name__)
 @dashboard_blueprint.route("/")
 @login_required
 def dashboard():
-    return redirect("/v2/dashboard/")
+    return redirect("/v2/dashboard")
 
 
 @dashboard_blueprint.route("/editorial_slices")
