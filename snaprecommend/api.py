@@ -76,7 +76,6 @@ def slice(id: str):
     return response
 
 
-
 @api_blueprint.route("/snaps")
 def popular_snaps():
     limit = flask.request.args.get("limit", 10)
@@ -88,6 +87,7 @@ def popular_snaps():
     }
 
     return response
+
 
 def format_response(snaps: list[Snap]) -> list[dict]:
 

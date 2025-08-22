@@ -13,7 +13,6 @@ from flask import (
 from snaprecommend.models import PipelineSteps
 from snaprecommend.sso import login_required
 from snaprecommend.logic import (
-    get_category_top_snaps,
     exclude_snap_from_category,
     include_snap_in_category,
     get_all_categories,

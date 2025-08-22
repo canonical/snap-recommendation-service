@@ -2,13 +2,14 @@ import { Notification } from "@canonical/react-components";
 import { useFetchSnaps } from "../../hooks/useFetchSnaps";
 import { useState } from "react";
 import "./CategoryList.scss";
+import type { Snap } from "../../types/snap";
 
 export const CategoryList = ({ category, label }: { category: string, label: string }) => {
     const { error, loading, snaps, refetch } = useFetchSnaps(`/api/snaps?category=${category}`);
 
     const [excludeError, setExcludeError] = useState<string | null>(null)
 
-    const excludeSnap = async (snap: any) => {
+    const excludeSnap = async (snap: Snap) => {
         try {
             const response = await fetch("/dashboard/api/exclude_snap", {
                 method: "POST",
@@ -27,8 +28,8 @@ export const CategoryList = ({ category, label }: { category: string, label: str
             setExcludeError(null)
 
             await refetch()
-        } catch (err: any) {
-            setExcludeError(err)
+        } catch {
+            setExcludeError("An error occurred")
         }
     }
 
