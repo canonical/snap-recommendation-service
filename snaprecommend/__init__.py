@@ -25,7 +25,7 @@ OLD_PATHS = [
 
 
 def create_app(config_class=Config):
-    app = Flask(__name__, static_folder='static', template_folder="templates")
+    app = Flask(__name__, static_folder="static", template_folder="templates")
     app.config.from_object(config_class)
     app.config.from_prefixed_env()
 
@@ -49,7 +49,7 @@ def create_app(config_class=Config):
     @login_required
     def serve_react_app(path=None):
         if path in OLD_PATHS:
-             return redirect(f"/dashboard/{path}")
+            return redirect(f"/dashboard/{path}")
         return render_template("index.html")
 
     app.url_map.strict_slashes = False
