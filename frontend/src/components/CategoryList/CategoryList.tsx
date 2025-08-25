@@ -1,11 +1,16 @@
-import { Notification } from "@canonical/react-components";
-import { useFetchSnaps } from "../../hooks/useFetchSnaps";
+import { useFetchData } from "../../hooks/useFetchData";
 import { useState } from "react";
 import "./CategoryList.scss";
 import type { Snap } from "../../types/snap";
+import { SnapCard } from "../SnapCard/SnapCard";
+import { AsyncBoundary } from "../AsyncBoundary/AsyncBoundary";
+
+type SnapResponse = {
+    snaps: Snap[]
+}
 
 export const CategoryList = ({ category, label }: { category: string, label: string }) => {
-    const { error, loading, snaps, refetch } = useFetchSnaps(`/api/snaps?category=${category}`);
+    const { error, loading, data, refetch } = useFetchData<SnapResponse>(`/api/snaps?category=${category}`);
 
     const [excludeError, setExcludeError] = useState<string | null>(null)
 
@@ -33,45 +38,22 @@ export const CategoryList = ({ category, label }: { category: string, label: str
         }
     }
 
-    return <div>
-        <h5>{label}</h5>
-        {
-            (excludeError || error) && <Notification
-                severity="negative"
-                title="Error"
-            >
-                An error occurred
-            </Notification>
-        }
-        {
-            loading && <div>Loading</div>
-        }
-        {snaps &&
+    return <AsyncBoundary label={label} loading={loading} error={excludeError || error ? "An error occurred" : undefined}>
+        {data &&
             <ul className="p-list category-list">
                 {
-                    snaps.map((snap) => <li key={snap.snap_id} className="p-list__item">
-                        <div className="p-card">
-                            <div className="category-list__item">
-                                <div className="category-list__item-info">
-                                    <img
-                                        src={snap.icon}
-                                        alt={snap.name}
-                                        className="u-icon category-list__item-img" />
-                                    <h4>
-                                        <a href={`https://snapcraft.io/${snap.name}`} target="_blank">{snap.name}</a>
-                                    </h4>
-                                </div>
-
-                                <button className="p-button--negative has-icon" onClick={() => excludeSnap(snap)}>
-                                    <i className="p-icon--delete is-dark"></i>
-                                    <span>Exclude</span>
-                                </button>
-                            </div>
-                            <p className="card__content u-truncate">{snap.summary}</p>
-                        </div>
-                    </li>)
+                    data.snaps.map((snap) => <SnapCard
+                        key={snap.snap_id}
+                        snap={snap}
+                        actionButton={
+                            <button className="p-button--negative has-icon" onClick={() => excludeSnap(snap)}>
+                                <i className="p-icon--delete is-dark"></i>
+                                <span>Exclude</span>
+                            </button>
+                        }
+                    />)
                 }
             </ul>
         }
-    </div>
+    </AsyncBoundary>
 }

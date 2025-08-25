@@ -10,7 +10,11 @@ from snaprecommend.logic import (
     get_slice_snaps,
     get_all_categories,
     get_all_slices,
+    get_category_excluded_snaps,
+    include_snap_in_category,
 )
+from snaprecommend.sso import login_required
+
 
 api_blueprint = Blueprint("api", __name__)
 
@@ -87,6 +91,34 @@ def popular_snaps():
     }
 
     return response
+
+
+@api_blueprint.route("/excluded_snaps")
+@login_required
+def excluded_snaps():
+    excluded_snaps = []
+    for category in get_all_categories():
+        snaps = get_category_excluded_snaps(category.id)
+        excluded_snaps.append(
+            {
+                "category": {
+                    "name": category.name,
+                    "id": category.id
+                },
+                "snaps": [serialize_snap(snap) for snap in snaps],
+            }
+        )
+    return flask.jsonify({ "excluded_snaps": excluded_snaps}), 200
+
+@api_blueprint.route("/include_snap", methods=["POST"])
+@login_required
+def include_snap():
+    data = flask.request.get_json()
+    snap_id = data.get("snap_id")
+    category = data.get("category")
+    if snap_id and category:
+        include_snap_in_category(category, snap_id)
+    return flask.jsonify({"status": "success"}), 200
 
 
 def format_response(snaps: list[Snap]) -> list[dict]:
