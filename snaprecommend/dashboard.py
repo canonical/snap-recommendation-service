@@ -14,9 +14,6 @@ from snaprecommend.models import PipelineSteps
 from snaprecommend.sso import login_required
 from snaprecommend.logic import (
     exclude_snap_from_category,
-    include_snap_in_category,
-    get_all_categories,
-    get_category_excluded_snaps,
     get_snap_by_name,
     get_most_recent_pipeline_step_logs,
 )

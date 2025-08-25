@@ -101,14 +101,12 @@ def excluded_snaps():
         snaps = get_category_excluded_snaps(category.id)
         excluded_snaps.append(
             {
-                "category": {
-                    "name": category.name,
-                    "id": category.id
-                },
+                "category": {"name": category.name, "id": category.id},
                 "snaps": [serialize_snap(snap) for snap in snaps],
             }
         )
-    return flask.jsonify({ "excluded_snaps": excluded_snaps}), 200
+    return flask.jsonify({"excluded_snaps": excluded_snaps}), 200
+
 
 @api_blueprint.route("/include_snap", methods=["POST"])
 @login_required
