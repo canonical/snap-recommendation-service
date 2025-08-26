@@ -14,6 +14,15 @@ from snaprecommend.logic import (
     include_snap_in_category,
 )
 from snaprecommend.sso import login_required
+from snaprecommend.editorials import (
+    get_all_editorial_slices,
+    get_editorial_slice_with_snaps,
+    create_editorial_slice,
+    delete_editorial_slice,
+    add_snap_to_editorial_slice,
+    remove_snap_from_editorial_slice,
+    update_editorial_slice,
+)
 
 
 api_blueprint = Blueprint("api", __name__)
@@ -94,7 +103,6 @@ def popular_snaps():
 
 
 @api_blueprint.route("/excluded_snaps")
-@login_required
 def excluded_snaps():
     excluded_snaps = []
     for category in get_all_categories():
@@ -109,13 +117,39 @@ def excluded_snaps():
 
 
 @api_blueprint.route("/include_snap", methods=["POST"])
-@login_required
 def include_snap():
     data = flask.request.get_json()
     snap_id = data.get("snap_id")
     category = data.get("category")
     if snap_id and category:
         include_snap_in_category(category, snap_id)
+    return flask.jsonify({"status": "success"}), 200
+
+
+def serialize_editorial_slice(editorial_slice):
+    return {
+        "name": editorial_slice.name,
+        "id": editorial_slice.id,
+        "description": editorial_slice.description,
+        "snaps_count": editorial_slice.snaps_count,
+    }
+
+@api_blueprint.route("/editorial_slices")
+def editorial_slices():
+    slices = get_all_editorial_slices()
+    return flask.jsonify([serialize_editorial_slice(slice) for slice in slices],), 200
+
+@api_blueprint.route("/editorial_slice", methods=["POST"])
+def create_slice():
+    data = flask.request.get_json()
+    name = data.get("name")
+    description = data.get("description")
+
+    try:
+        create_editorial_slice(name, description)
+    except ValueError:
+         return flask.jsonify({"status": "failed", "error": "Slice cannot be created."}), 500
+
     return flask.jsonify({"status": "success"}), 200
 
 

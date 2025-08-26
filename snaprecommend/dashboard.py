@@ -46,18 +46,6 @@ def dashboard():
     return redirect("/v2/dashboard")
 
 
-@dashboard_blueprint.route("/editorial_slices")
-@login_required
-def editorial_slices():
-    slices = get_all_editorial_slices()
-
-    context = {
-        "editorial_slices": slices,
-    }
-
-    return render_template("editorial_slices.html", **context)
-
-
 @dashboard_blueprint.route("/editorial_slice/<string:slice_id>")
 @login_required
 def editorial_slice(slice_id):
@@ -71,21 +59,6 @@ def editorial_slice(slice_id):
     }
 
     return render_template("slice_details.html", **context)
-
-
-@dashboard_blueprint.route("/editorial_slice", methods=["POST"])
-@login_required
-def create_slice():
-    name = request.form.get("name")
-    description = request.form.get("description")
-
-    try:
-        create_editorial_slice(name, description)
-        flash(f"Editorial slice '{name}' created", "success")
-    except ValueError as e:
-        flash(str(e), "error")
-
-    return redirect(url_for("dashboard.editorial_slices"))
 
 
 @dashboard_blueprint.route(
