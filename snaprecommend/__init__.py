@@ -18,7 +18,6 @@ db = SQLAlchemy()
 migrate = Migrate()
 
 OLD_PATHS = [
-    "excluded_snaps",
     "editorial_slices",
     "settings",
 ]

@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
-import type { Snap } from "../types/snap";
 
-
-export function useFetchSnaps(path: string) {
-    const [snaps, setSnaps] = useState<Snap[] | null>(null);
+export function useFetchData<T>(path: string) {
+    const [data, setData] = useState<T | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -11,11 +9,11 @@ export function useFetchSnaps(path: string) {
         try {
             const response = await fetch(path);
             if (!response.ok) {
-                throw new Error("Failed to fetch snaps.");
+                throw new Error("Failed to fetch data.");
             }
 
             const parsedResult = await response.json();
-            setSnaps(parsedResult.snaps);
+            setData(parsedResult);
             setLoading(false);
         } catch {
             setError("An error occurred.");
@@ -29,6 +27,6 @@ export function useFetchSnaps(path: string) {
     }, []);
 
     return {
-        snaps, loading, error, refetch: fetchData
+        data, loading, error, refetch: fetchData
     }
 }
