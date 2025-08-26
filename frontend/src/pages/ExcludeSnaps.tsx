@@ -4,15 +4,14 @@ import { useFetchData } from "../hooks/useFetchData";
 import type { Snap } from "../types/snap";
 import { AsyncBoundary } from "../components/AsyncBoundary/AsyncBoundary";
 
-type ExcludedSnapResponse = {
-    excluded_snaps: {
-        "category": {
-            name: string,
-            id: string,
-        },
-        "snaps": Snap[]
-    }[]
-}
+type ExcludedSnapResponse = Array<{
+    "category": {
+        name: string,
+        id: string,
+    },
+    "snaps": Snap[]
+}>
+
 
 
 export function ExcludeSnaps() {
@@ -53,7 +52,7 @@ export function ExcludeSnaps() {
                 <div className="u-fixed-width">
                     <AsyncBoundary label="Excluded snaps" loading={loading} error={includeError || error ? "An error occurred" : undefined}>
                         <ul className="p-list" style={{ maxHeight: "650px", overflow: "scroll" }}>
-                            {data?.excluded_snaps.map((info) => (
+                            {data?.map((info) => (
                                 <div key={info.category.id}>
                                     <h5>{info.category.name}</h5>
                                     {info.snaps.map(snap => <SnapCard

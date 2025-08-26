@@ -105,7 +105,7 @@ def excluded_snaps():
                 "snaps": [serialize_snap(snap) for snap in snaps],
             }
         )
-    return flask.jsonify({"excluded_snaps": excluded_snaps}), 200
+    return flask.jsonify(excluded_snaps), 200
 
 
 @api_blueprint.route("/include_snap", methods=["POST"])
