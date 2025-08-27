@@ -3,6 +3,7 @@ import { useFetchData } from "../hooks/useFetchData";
 import { useAside } from "../contexts/AsideContext";
 import { CreateEditorialSliceAside } from "../components";
 import { AsyncBoundary } from "../components/AsyncBoundary/AsyncBoundary";
+import { Link } from "react-router-dom";
 
 type EditorialSlicesResponse = Array<{
     name: string,
@@ -45,12 +46,12 @@ export function EditorialSlices() {
                                 <td>{slice.description}</td>
                                 <td className="u-align--right">{slice.snaps_count}</td>
                                 <td className="u-align--right">
-                                    <a
-                                        href={`/dashboard/editorial_slice/${slice.id}`}
+                                    <Link
+                                        to={`/v2/dashboard/editorial_slice/${slice.id}`}
                                         className="p-button"
                                     >
                                         Edit
-                                    </a>
+                                    </Link>
                                 </td>
                             </tr>
                         ))}

@@ -1,4 +1,4 @@
-import { AppAside, Button, Col, Form, Icon, Notification, Panel, Row } from "@canonical/react-components";
+import { AppAside, Button, Col, Form, Icon, Input, Notification, Panel, Row, Textarea } from "@canonical/react-components";
 import { useState } from "react";
 
 export function CreateEditorialSliceAside({ close, refetch }: { close: () => void, refetch: () => Promise<void> }) {
@@ -6,7 +6,7 @@ export function CreateEditorialSliceAside({ close, refetch }: { close: () => voi
 
     const createEditorialSlice = async (name: string, description: string) => {
         try {
-            const response = await fetch("/api//editorial_slice", {
+            const response = await fetch("/api/editorial_slice", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -44,53 +44,36 @@ export function CreateEditorialSliceAside({ close, refetch }: { close: () => voi
                 </Button>
             </>}
         >
-            {
-                error && <Notification
-                    severity="negative"
-                    title="Error"
+
+            <div className={"u-fixed-width"}>
+                {
+                    error && <Notification
+                        severity="negative"
+                        title="Error"
+                    >
+                        {error}
+                    </Notification>
+                }
+                <Form
+                    stacked
+                    onSubmit={onSubmit}
                 >
-                    {error}
-                </Notification>
-            }
-
-            <Form
-                stacked
-                onSubmit={onSubmit}
-            >
-                <Row className="p-form__group">
-                    <Col size={4}>
-                        <label htmlFor="name" className="p-form__label">Slice name</label>
-                    </Col>
-
-                    <Col size={8}>
-                        <div className="p-form__control">
-                            <input type="text" id="name" name="name" autoComplete="name" />
-                        </div>
-                    </Col>
-                </Row>
-                <Row className="p-form__group">
-                    <Col size={4}>
-                        <label htmlFor="description" className="p-form__label">Description</label>
-                    </Col>
-
-                    <Col size={8}>
-                        <div className="p-form__control">
-                            <textarea id="description" name="description" rows={3}></textarea>
-                        </div>
-                    </Col>
-                </Row>
-                <Row>
-                    <Col size={12}>
-                        <button
-                            className="p-button--positive u-float-right"
-                            type="submit"
-                            name="create"
-                        >
-                            Create
-                        </button>
-                    </Col>
-                </Row>
-            </Form>
+                    <Input type="text" id="name" label="Slice name" name={"name"} />
+                    <Textarea id="description" name="description" rows={3} label={"Description"} />
+                    <Row>
+                        <Col size={12}>
+                            <Button
+                                appearance="positive"
+                                className="u-float-right"
+                                type="submit"
+                                name="create"
+                            >
+                                Create
+                            </Button>
+                        </Col>
+                    </Row>
+                </Form>
+            </div>
         </Panel>
     </AppAside>
 }
