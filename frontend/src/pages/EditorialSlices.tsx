@@ -4,13 +4,9 @@ import { useAside } from "../contexts/AsideContext";
 import { CreateEditorialSliceAside } from "../components";
 import { AsyncBoundary } from "../components/AsyncBoundary/AsyncBoundary";
 import { Link } from "react-router-dom";
+import type { SliceListItem } from "../types/slice";
 
-type EditorialSlicesResponse = Array<{
-    name: string,
-    id: string,
-    description: string,
-    snaps_count: number,
-}>
+type EditorialSlicesResponse = SliceListItem[]
 
 export function EditorialSlices() {
     const { error, loading, data, refetch } = useFetchData<EditorialSlicesResponse>('/api/editorial_slices');

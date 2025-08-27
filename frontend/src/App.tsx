@@ -5,6 +5,7 @@ import NotFound from "./pages/NotFound";
 import { ExcludeSnaps } from "./pages/ExcludeSnaps";
 import { EditorialSlices } from "./pages/EditorialSlices";
 import { AsideProvider } from "./contexts/AsideContext";
+import { SliceDetails } from "./pages/SliceDetails";
 
 const OLD_PATHS = [
   "settings",
@@ -18,6 +19,7 @@ export default function App() {
           <Route path="/v2/dashboard" element={<Dashboard />} />
           <Route path="/v2/dashboard/excluded_snaps" element={<ExcludeSnaps />} />
           <Route path="/v2/dashboard/editorial_slices" element={<EditorialSlices />} />
+          <Route path="/v2/dashboard/editorial_slice/:id" element={<SliceDetails />} />
           {OLD_PATHS.map((page) => (
             <Route
               key={page}

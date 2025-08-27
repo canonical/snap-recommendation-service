@@ -1,5 +1,12 @@
-import { AppAside, Button, Col, Form, Icon, Input, Notification, Panel, Row, Textarea } from "@canonical/react-components";
+import { AppAside, Button, Icon, Notification, Panel } from "@canonical/react-components";
 import { useState } from "react";
+import { EditorialSliceForm } from "../EditorialSliceForm/EditorialSliceForm";
+
+function CloseAsideButton({ close }: { close: () => void }) {
+    return <Button appearance="base" className="u-no-margin--bottom" hasIcon onClick={close}>
+        <Icon name="close">Close</Icon>
+    </Button>
+}
 
 export function CreateEditorialSliceAside({ close, refetch }: { close: () => void, refetch: () => Promise<void> }) {
     const [error, setError] = useState<string | null>(null)
@@ -28,23 +35,11 @@ export function CreateEditorialSliceAside({ close, refetch }: { close: () => voi
         }
     }
 
-    const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-
-        const formData = new FormData(event.currentTarget);
-        createEditorialSlice(formData.get("name") as string, formData.get("description") as string);
-    }
-
     return <AppAside>
         <Panel
             title="Create new editorial Slice"
-            controls={<>
-                <Button appearance="base" className="u-no-margin--bottom" hasIcon onClick={close}>
-                    <Icon name="close">Close</Icon>
-                </Button>
-            </>}
+            controls={<CloseAsideButton close={close} />}
         >
-
             <div className={"u-fixed-width"}>
                 {
                     error && <Notification
@@ -54,25 +49,7 @@ export function CreateEditorialSliceAside({ close, refetch }: { close: () => voi
                         {error}
                     </Notification>
                 }
-                <Form
-                    stacked
-                    onSubmit={onSubmit}
-                >
-                    <Input type="text" id="name" label="Slice name" name={"name"} />
-                    <Textarea id="description" name="description" rows={3} label={"Description"} />
-                    <Row>
-                        <Col size={12}>
-                            <Button
-                                appearance="positive"
-                                className="u-float-right"
-                                type="submit"
-                                name="create"
-                            >
-                                Create
-                            </Button>
-                        </Col>
-                    </Row>
-                </Form>
+                <EditorialSliceForm onSubmit={createEditorialSlice} buttonLabel="Create" />
             </div>
         </Panel>
     </AppAside>

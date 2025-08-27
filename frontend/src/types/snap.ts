@@ -1,4 +1,3 @@
-
 export type Snap = {
     snap_id: string;
     title: string;
