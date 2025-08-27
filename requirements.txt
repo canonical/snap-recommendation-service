@@ -12,3 +12,5 @@ apscheduler==3.11.0
 Flask-OpenID==1.3.1
 django-openid-auth==0.17 # TODO: we only need one file from this package, consider copying it to our codebase
 flask-cors==5.0.0
+grpcio==1.74.0
+protobuf==6.32.0

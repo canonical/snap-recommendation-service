@@ -38,6 +38,8 @@ class Snap(db.Model):
     license: Mapped[str] = mapped_column(String)
     last_updated: Mapped[datetime] = mapped_column(DateTime)
     active_devices: Mapped[int] = mapped_column(Integer, default=0)
+    raw_rating: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    total_votes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     reaches_min_threshold: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
