@@ -1,3 +1,4 @@
+from typing import TypeVar
 from snaprecommend.models import Snap, PipelineSteps
 from sqlalchemy.orm import Session
 import datetime
@@ -20,8 +21,10 @@ MACAROON = os.environ.get(MACAROON_ENV_PATH)
 
 logger = logging.getLogger("extra_fields")
 
+T = TypeVar("T")
 
-def batched(iterable: list, batch_size: int = 1):
+
+def batched(iterable: list[T], batch_size: int = 1):
     """
     Yields successive chunks of a specified size from the input iterable.
     """
