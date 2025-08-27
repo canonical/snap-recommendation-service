@@ -54,14 +54,15 @@ def calculate_media_score(snap: Snap):
 
 def calculate_metadata_score(snap: Snap):
     """Calculate the metadata quality score for a snap."""
-    # only count non empty links
+    MAX_LINKS = 5
     num_of_links = min(
-        5, sum(1 for link in snap.links.values() if link)
-    )  # max 5 links
+        MAX_LINKS, sum(1 for link in snap.links.values() if link)
+    )
     set_license = snap.license != "unset"
-    media_quality = calculate_media_score(snap)
-    links_quality = (set_license + num_of_links) / 6
-
+    media_quality = min(1.0, calculate_media_score(snap))  # Clamp to max 1.0
+    links_quality = (set_license + num_of_links) / (
+        MAX_LINKS + 1
+    )  # max 6 (5 links + license)
     return (media_quality + links_quality) / 2
 
 
@@ -108,9 +109,9 @@ def calculate_trending_score(
     )
 
 
-def calculate_top_rated_score(ratings, metadata_score, dev_score):
+def calculate_top_rated_score(rating, metadata_score, dev_score):
     """Calculate the top-rated score for a snap."""
-    return ratings * 0.7 + metadata_score * 0.1 + dev_score * 0.2
+    return rating * 0.8 + metadata_score * 0.1 + dev_score * 0.1
 
 
 def calculate_category_scores(category: str):
