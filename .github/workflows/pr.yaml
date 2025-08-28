@@ -67,7 +67,7 @@ jobs:
 
       - name: Lint Python
         if: ${{ steps.filter.outputs.py == 'true' }}
-        run: flake8 --extend-ignore=E203,E501 snaprecommend collector
+        run: flake8 --extend-ignore=E203,E501 --exclude generated snaprecommend collector
 
   lint-js:
     runs-on: ubuntu-latest
