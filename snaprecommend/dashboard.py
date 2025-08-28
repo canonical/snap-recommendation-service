@@ -14,17 +14,7 @@ from snaprecommend.models import PipelineSteps
 from snaprecommend.sso import login_required
 from snaprecommend.logic import (
     exclude_snap_from_category,
-    get_snap_by_name,
     get_most_recent_pipeline_step_logs,
-)
-from snaprecommend.editorials import (
-    get_all_editorial_slices,
-    get_editorial_slice_with_snaps,
-    create_editorial_slice,
-    delete_editorial_slice,
-    add_snap_to_editorial_slice,
-    remove_snap_from_editorial_slice,
-    update_editorial_slice,
 )
 from snaprecommend.settings import get_setting
 import threading
