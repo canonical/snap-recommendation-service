@@ -9,6 +9,7 @@ import { useState } from "react";
 
 export function SliceDetails() {
     const { id } = useParams<{ id: string }>();
+
     const navigate = useNavigate();
     const { error, data, refetch } = useFetchData<SliceDetail>(`/api/editorial_slice/${id}`);
     const [operationError, setOperationError] = useState("");
@@ -32,6 +33,7 @@ export function SliceDetails() {
             if (!response.ok) {
                 throw new Error();
             }
+            await refetch();
             setOperationError("");
             setSuccessText(`Editorial slice '${name}' updated`)
         } catch {
@@ -57,7 +59,7 @@ export function SliceDetails() {
             if (!response.ok) {
                 throw new Error();
             }
-            await refetch();
+
             setOperationError("");
             setSuccessText(`'${searchTerm}' added to the '${id}'.`);
             setSearchTerm("");
