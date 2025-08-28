@@ -21,8 +21,7 @@ export function EditorialSliceForm({ onSubmit, buttonLabel, initialName, initial
             onSubmit={handleSubmit}
         >
             <Input type="text" id="name" label="Slice name" name={"name"} defaultValue={initialName} />
-            <Textarea id="description" name="description" rows={3} label={"Description"} defaultValue={initialDescription} />
-
+            <textarea id="description" name="description" rows={3} autoComplete="off" defaultValue={initialDescription}></textarea>
             <Button
                 appearance="positive"
                 className="u-float-right"

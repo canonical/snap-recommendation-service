@@ -11,10 +11,10 @@ export function SliceDetails() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
     const { error, data, refetch } = useFetchData<SliceDetail>(`/api/editorial_slice/${id}`);
-    const [operationError, setOperationError] = useState('');
-    const [successText, setSuccessText] = useState('');
+    const [operationError, setOperationError] = useState("");
+    const [successText, setSuccessText] = useState("");
 
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchTerm, setSearchTerm] = useState("");
 
     const handleUpdate = async (name: string, description: string) => {
         try {
@@ -43,9 +43,6 @@ export function SliceDetails() {
     const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        const formData = new FormData(event.currentTarget);
-        const snapName = formData.get("snapName") as string
-
         try {
             const response = await fetch(`/api/editorial_slice/${id}/snaps`, {
                 method: "POST",
@@ -53,7 +50,7 @@ export function SliceDetails() {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    name: snapName
+                    name: searchTerm
                 }),
             })
 
@@ -62,10 +59,11 @@ export function SliceDetails() {
             }
             await refetch();
             setOperationError("");
-            setSuccessText(`'${snapName}' added to the '${id}'.`)
+            setSuccessText(`'${searchTerm}' added to the '${id}'.`);
+            setSearchTerm("");
         } catch {
             setOperationError("Failed to add snap to the slice.");
-            setSuccessText("")
+            setSuccessText("");
         }
     }
 
@@ -118,26 +116,19 @@ export function SliceDetails() {
     >
         {successText && <Row>
             <Col size={12}>
-                <Notification
-                    severity="positive"
-                >
+                <Notification severity="positive">
                     {successText}
                 </Notification>
             </Col>
-        </Row>
-        }
+        </Row>}
 
-        {
-            error || operationError && <Row>
-                <Col size={12}>
-                    <Notification
-                        severity="negative"
-                    >
-                        {error || operationError}
-                    </Notification>
-                </Col>
-            </Row>
-        }
+        {error || operationError && <Row>
+            <Col size={12}>
+                <Notification severity="negative">
+                    {error || operationError}
+                </Notification>
+            </Col>
+        </Row>}
 
         <Row>
             <Col size={4}>
@@ -148,7 +139,7 @@ export function SliceDetails() {
                 <h4>Snaps</h4>
 
                 <Form inline onSubmit={handleSearch}>
-                    <Input type="text" id="snap-search" name="snapName" autoComplete="off" placeholder="Enter snap name" />
+                    <Input type="text" id="snap-search" name="snapName" autoComplete="off" placeholder="Enter snap name" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
                     <Button appearance="positive" type="submit">Add Snap</Button>
                 </Form>
 
