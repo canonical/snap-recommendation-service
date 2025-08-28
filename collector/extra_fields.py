@@ -1,3 +1,4 @@
+from typing import TypeVar
 from snaprecommend.models import Snap, PipelineSteps
 from sqlalchemy.orm import Session
 import datetime
@@ -8,17 +9,22 @@ from typing import List
 from snaprecommend import db
 from config import MACAROON_ENV_PATH
 from snaprecommend.logic import add_pipeline_step_log
+from collector.ratings.collect_ratings import get_ratings, ratings_login
 
 
-BATCH_SIZE = 15
+METRICS_BATCH_SIZE = 15
+RATINGS_BATCH_SIZE = 100
 RELEASES_URL = "http://api.snapcraft.io/api/v1/snaps/search?fields=revision"
 METRICS_URL = "https://dashboard.snapcraft.io/dev/api/snaps/metrics"
+
 MACAROON = os.environ.get(MACAROON_ENV_PATH)
 
 logger = logging.getLogger("extra_fields")
 
+T = TypeVar("T")
 
-def batched(iterable: list, batch_size: int = 1):
+
+def batched(iterable: list[T], batch_size: int = 1):
     """
     Yields successive chunks of a specified size from the input iterable.
     """
@@ -123,7 +129,7 @@ def fetch_and_update_metrics_for_snaps(snaps: List[Snap], db_session: Session):
     Fetches and updates metrics for a list of snaps in batches.
     """
     start_date, end_date = get_metrics_time_range()
-    for snap_batch in batched(snaps, BATCH_SIZE):
+    for snap_batch in batched(snaps, METRICS_BATCH_SIZE):
         try:
             metrics_data = fetch_metrics_from_api(
                 snap_batch, start_date, end_date
@@ -152,7 +158,7 @@ def fetch_eligible_snaps(db_session: Session) -> List[Snap]:
     try:
         snaps = db_session.query(Snap).filter(Snap.reaches_min_threshold).all()
         logger.info(
-            f"Found {len(snaps)} eligible snaps for metrics collection."
+            f"Found {len(snaps)} eligible snaps for extra fields collection."
         )
         return snaps
     except Exception as e:
@@ -169,11 +175,31 @@ def update_snap_metrics():
         raise
 
 
+def update_snap_ratings():
+    try:
+        eligible_snaps = fetch_eligible_snaps(db.session)
+        token = ratings_login()
+        for snap_batch in batched(eligible_snaps, RATINGS_BATCH_SIZE):
+            ratings_dict = get_ratings(
+                [snap.snap_id for snap in snap_batch], token
+            )
+            for snap in snap_batch:
+                if snap.snap_id in ratings_dict:
+                    snap.raw_rating = ratings_dict[snap.snap_id]["raw_rating"]
+                    snap.total_votes = ratings_dict[snap.snap_id][
+                        "total_votes"
+                    ]
+        db.session.commit()
+        logger.info("Updated ratings for eligible snaps successfully.")
+    except Exception as e:
+        logger.error(f"Error during ratings update process: {e}")
+        raise
+
+
 def fetch_extra_fields():
     try:
-        # Might add more fields in the future
         update_snap_metrics()
-
+        update_snap_ratings()
         add_pipeline_step_log(PipelineSteps.EXTRA_FIELDS, True)
     except Exception as e:
         logger.error(f"Error during extra fields update: {e}")

@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from collections import Counter
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -13,6 +14,9 @@ from snaprecommend import db
 from collector.extra_fields import batched
 import math
 from snaprecommend.logic import add_pipeline_step_log
+import logging
+
+logger = logging.getLogger("scorer")
 
 
 def normalize_field(session: Session, field: str, filter_condition=None):
@@ -50,14 +54,15 @@ def calculate_media_score(snap: Snap):
 
 def calculate_metadata_score(snap: Snap):
     """Calculate the metadata quality score for a snap."""
-    # only count non empty links
+    MAX_LINKS = 5
     num_of_links = min(
-        5, sum(1 for link in snap.links.values() if link)
-    )  # max 5 links
+        MAX_LINKS, sum(1 for link in snap.links.values() if link)
+    )
     set_license = snap.license != "unset"
-    media_quality = calculate_media_score(snap)
-    links_quality = (set_license + num_of_links) / 6
-
+    media_quality = min(1.0, calculate_media_score(snap))  # Clamp to max 1.0
+    links_quality = (set_license + num_of_links) / (
+        MAX_LINKS + 1
+    )  # max 6 (5 links + license)
     return (media_quality + links_quality) / 2
 
 
@@ -104,8 +109,15 @@ def calculate_trending_score(
     )
 
 
+def calculate_top_rated_score(rating, metadata_score, dev_score):
+    """Calculate the top-rated score for a snap."""
+    return rating * 0.8 + metadata_score * 0.1 + dev_score * 0.1
+
+
 def calculate_category_scores(category: str):
     """Calculate the scores for all recommendable snaps in a category."""
+
+    logger.info(f"Calculating scores for category: {category}")
 
     session = db.session
 
@@ -118,11 +130,10 @@ def calculate_category_scores(category: str):
         session, Snap.last_updated, filter_condition=filter_condition
     )
 
-    scores_to_insert = []
-
     snaps = session.query(Snap).filter(filter_condition).all()
 
     for snaps_batch in batched(snaps, 100):
+        scores_to_insert = []
         for snap in snaps_batch:
             # Normalize fields with log scaling for active devices
             active_devices_normalized = log_scale(
@@ -155,6 +166,10 @@ def calculate_category_scores(category: str):
                     metadata_score,
                     dev_score,
                 )
+            elif category == "top_rated":
+                score = calculate_top_rated_score(
+                    snap.raw_rating or 0, metadata_score, dev_score
+                )
             else:
                 raise ValueError(f"Invalid category: {category}")
 
@@ -176,12 +191,13 @@ def calculate_scores():
     """Calculate the scores for all recommendable snaps."""
 
     try:
-
-        migrate_old_scores()
+        delete_old_scores()
+        migrate_current_scores()
 
         calculate_category_scores("popular")
         calculate_category_scores("recent")
         calculate_category_scores("trending")
+        calculate_category_scores("top_rated")
 
         add_pipeline_step_log(PipelineSteps.SCORE, True)
     except Exception as e:
@@ -189,9 +205,27 @@ def calculate_scores():
         raise
 
 
-def migrate_old_scores():
+def delete_old_scores():
+    """Delete old scores from the history table."""
+    session = db.session
+    logger.info("Deleting old scores from history table")
+
+    cutoff_date = datetime.now() - timedelta(days=90)
+    deleted = (
+        session.query(SnapRecommendationScoreHistory)
+        .filter(SnapRecommendationScoreHistory.created_at < cutoff_date)
+        .delete()
+    )
+
+    logger.info(f"Deleted {deleted} old scores from history table")
+
+    session.commit()
+
+
+def migrate_current_scores():
     """Migrate old scores to the history table."""
     session = db.session
+    logger.info("Migrating current scores to history table")
 
     scores = session.query(SnapRecommendationScore).all()
 
@@ -211,5 +245,9 @@ def migrate_old_scores():
         stmt = stmt.on_conflict_do_nothing()
         session.execute(stmt)
         session.commit()
+
+    logger.info(
+        f"Migrated {len(scores_to_insert)} current scores to history table"
+    )
 
     session.commit()
