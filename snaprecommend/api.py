@@ -56,7 +56,6 @@ def category(id: str):
 
 
 @api_blueprint.route("/slices")
-@login_required
 def slices():
     slices = get_all_slices()
 
@@ -71,7 +70,6 @@ def slices():
 
 
 @api_blueprint.route("/slice/<string:id>")
-@login_required
 def slice(id: str):
     slice = EditorialSlice.query.filter_by(id=id).first()
 
@@ -93,7 +91,6 @@ def slice(id: str):
 
 
 @api_blueprint.route("/snaps")
-@login_required
 def popular_snaps():
     limit = flask.request.args.get("limit", 10)
     category = flask.request.args.get("category")
