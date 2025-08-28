@@ -60,6 +60,7 @@ export function SliceDetails() {
                 throw new Error();
             }
 
+            await refetch();
             setOperationError("");
             setSuccessText(`'${searchTerm}' added to the '${id}'.`);
             setSearchTerm("");
