@@ -1,10 +1,10 @@
 import { Button, Panel } from "@canonical/react-components";
 import { useFetchData } from "../hooks/useFetchData";
-import { useAside } from "../contexts/AsideContext";
 import { CreateEditorialSliceAside } from "../components";
 import { AsyncBoundary } from "../components/AsyncBoundary/AsyncBoundary";
 import { Link } from "react-router-dom";
 import type { SliceListItem } from "../types/slice";
+import { useAside } from "../hooks/useAside";
 
 type EditorialSlicesResponse = SliceListItem[]
 

@@ -1,13 +1,12 @@
 import { ApplicationLayout } from "@canonical/react-components";
 import { Outlet, Link } from "react-router-dom";
 import { LayoutLogo } from "./LayoutLogo/LayoutLogo";
-import { AsideProvider, useAside } from "../../contexts/AsideContext";
+import { useAside } from "../../hooks/useAside";
 
 
 
 export function Layout() {
     const { content, isOpen } = useAside();
-
 
     return (
 

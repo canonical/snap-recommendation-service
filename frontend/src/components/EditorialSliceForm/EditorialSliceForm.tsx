@@ -1,4 +1,4 @@
-import { Button, Form, Input, Textarea } from "@canonical/react-components";
+import { Button, Form, Input } from "@canonical/react-components";
 
 interface IProps {
     onSubmit: (name: string, description: string) => void,

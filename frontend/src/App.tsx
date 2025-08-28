@@ -4,8 +4,8 @@ import { ExternalRedirect, Layout } from "./components";
 import NotFound from "./pages/NotFound";
 import { ExcludeSnaps } from "./pages/ExcludeSnaps";
 import { EditorialSlices } from "./pages/EditorialSlices";
-import { AsideProvider } from "./contexts/AsideContext";
 import { SliceDetails } from "./pages/SliceDetails";
+import { AsideProvider } from "./contexts/AsideContext/AsideProvider";
 
 const OLD_PATHS = [
   "settings",
