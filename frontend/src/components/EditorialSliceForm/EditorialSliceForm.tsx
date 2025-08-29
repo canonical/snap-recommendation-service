@@ -18,7 +18,14 @@ export function EditorialSliceForm({ onSubmit, buttonLabel, initialName, initial
     return (
         <Form stacked onSubmit={handleSubmit}>
             <Input type="text" id="name" label="Slice name" name={"name"} defaultValue={initialName} />
-            <textarea id="description" name="description" rows={3} autoComplete="off" defaultValue={initialDescription}></textarea>
+            <div className="p-form__group p-form-validation">
+                <label className="p-form__label" htmlFor="description">Description</label>
+                <div className="p-form__control u-clearfix">
+                    <textarea className="p-form-validation__input" id="description" name="description" rows={3} autoComplete="off" defaultValue={initialDescription}></textarea>
+                </div>
+            </div>
+
+
             <Button
                 appearance="positive"
                 className="u-float-right"
