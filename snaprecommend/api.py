@@ -329,7 +329,6 @@ def format_response(snaps: list[Snap]) -> list[dict]:
         for i, snap in enumerate(snaps)
     ]
 
-
 def serialize_snap(snap: Snap) -> dict:
     return {
         "snap_id": snap.snap_id,
