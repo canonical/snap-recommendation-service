@@ -12,8 +12,6 @@ type ExcludedSnapResponse = Array<{
     "snaps": Snap[]
 }>
 
-
-
 export function ExcludeSnaps() {
     const { error, loading, data, refetch } = useFetchData<ExcludedSnapResponse>('/api/excluded_snaps');
 

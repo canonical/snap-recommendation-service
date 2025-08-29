@@ -21,7 +21,7 @@ export function useFetchData<T>(path: string) {
         }
     }
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     useEffect(() => {
         void fetchData();
     }, []);

@@ -1,9 +1,15 @@
 import { ApplicationLayout } from "@canonical/react-components";
 import { Outlet, Link } from "react-router-dom";
 import { LayoutLogo } from "./LayoutLogo/LayoutLogo";
+import { useAside } from "../../hooks/useAside";
+
+
 
 export function Layout() {
+    const { content, isOpen } = useAside();
+
     return (
+
         <ApplicationLayout
             logo={{
                 name: "",
@@ -32,10 +38,10 @@ export function Layout() {
                     label: "Settings",
                     to: "/v2/dashboard/settings"
                 }]
-            }]}  >
-
+            }]}
+            aside={isOpen ? content : null}
+        >
             <Outlet />
-
         </ApplicationLayout>
     );
 }
