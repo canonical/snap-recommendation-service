@@ -1,7 +1,7 @@
 import { Notification } from "@canonical/react-components";
 import type { ReactNode } from "react";
 
-export function AsyncBoundary({ label, error, children, loading }: { label: string; loading: boolean; children: ReactNode; error?: string }) {
+export function AsyncBoundary({ label, error, children, loading }: { label: string; loading: boolean; children: ReactNode; error?: string | null }) {
     return (
         <>
             <h5>{label}</h5>

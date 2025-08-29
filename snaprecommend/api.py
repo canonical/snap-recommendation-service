@@ -27,6 +27,14 @@ from snaprecommend.editorials import (
     update_editorial_slice,
 )
 from snaprecommend.settings import get_setting
+from snaprecommend.models import PipelineSteps
+import threading
+from collector.main import (
+    collect_initial_snap_data,
+    filter_snaps_meeting_minimum_criteria,
+    fetch_extra_fields,
+    calculate_scores,
+)
 
 api_blueprint = Blueprint("api", __name__)
 
@@ -265,9 +273,10 @@ def get_collector_info():
 @api_blueprint.route("/run_pipeline_step", methods=["POST"])
 @login_required
 def run_pipeline_step():
-    step_name = request.args.get("step_name")
+    data = flask.request.get_json()
+    step_name = data.get("step_name")
     if not step_name:
-        abort(400, "Step name is required")
+        return {"error": "Step name is required"}, 400
 
     steps_map = {
         PipelineSteps.COLLECT.value: collect_initial_snap_data,
@@ -277,7 +286,7 @@ def run_pipeline_step():
     }
 
     if step_name not in steps_map:
-        abort(400, "Invalid step name")
+        return {"error": "Invalid step name"}, 400
 
     step_function = steps_map[step_name]
 
@@ -287,16 +296,15 @@ def run_pipeline_step():
 
     threading.Thread(
         target=run_step,
-        args=(current_app.app_context(),),
+        args=(flask.current_app.app_context(),),
     ).start()
 
     # TODO: tmp fix until we add "in_progress" to steps
-    flash(
-        f"Pipeline step '{step_name}' started, please don't trigger again until last run time is updated",
-        "success",
-    )
+    return {
+        "status": "success",
+        "message": f"Pipeline step '{step_name}' started, please don't trigger again until last run time is updated",
+    }, 200
 
-    return redirect(url_for("dashboard.settings"))
 
 def format_response(snaps: list[Snap]) -> list[dict]:
     return [
