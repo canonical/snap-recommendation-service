@@ -318,7 +318,6 @@ def exclude_snap():
     return flask.jsonify({"status": "success"}), 200
 
 
-
 def format_response(snaps: list[Snap]) -> list[dict]:
     return [
         {
@@ -328,6 +327,7 @@ def format_response(snaps: list[Snap]) -> list[dict]:
         }
         for i, snap in enumerate(snaps)
     ]
+
 
 def serialize_snap(snap: Snap) -> dict:
     return {
