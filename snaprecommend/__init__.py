@@ -17,10 +17,6 @@ logging.basicConfig(
 db = SQLAlchemy()
 migrate = Migrate()
 
-OLD_PATHS = [
-    "settings",
-]
-
 
 def create_app(config_class=Config):
     app = Flask(__name__, static_folder="static", template_folder="templates")
@@ -46,8 +42,6 @@ def create_app(config_class=Config):
     @app.route("/v2/dashboard/<path:path>")
     @login_required
     def serve_react_app(path=None):
-        if path in OLD_PATHS:
-            return redirect(f"/dashboard/{path}")
         return render_template("index.html")
 
     app.url_map.strict_slashes = False

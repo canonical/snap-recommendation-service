@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Blueprint
 import flask
 from snaprecommend.models import (
@@ -13,6 +14,7 @@ from snaprecommend.logic import (
     get_category_excluded_snaps,
     include_snap_in_category,
     get_snap_by_name,
+    get_most_recent_pipeline_step_logs,
 )
 from snaprecommend.sso import login_required
 from snaprecommend.editorials import (
@@ -24,7 +26,7 @@ from snaprecommend.editorials import (
     remove_snap_from_editorial_slice,
     update_editorial_slice,
 )
-
+from snaprecommend.settings import get_setting
 
 api_blueprint = Blueprint("api", __name__)
 
@@ -244,8 +246,59 @@ def remove_snap_from_slice(slice_id):
     return flask.jsonify({"status": "success"}), 200
 
 
-def format_response(snaps: list[Snap]) -> list[dict]:
+@api_blueprint.route("/settings")
+@login_required
+def get_collector_info():
+    pipeline_steps = get_most_recent_pipeline_step_logs()
 
+    last_updated = get_setting("last_updated")
+
+    if last_updated.value:
+        last_updated = datetime.fromisoformat(last_updated.value)
+
+    return flask.jsonify({
+        "pipeline_steps": pipeline_steps,
+        "last_updated": last_updated,
+    }), 200
+
+
+@api_blueprint.route("/run_pipeline_step", methods=["POST"])
+@login_required
+def run_pipeline_step():
+    step_name = request.args.get("step_name")
+    if not step_name:
+        abort(400, "Step name is required")
+
+    steps_map = {
+        PipelineSteps.COLLECT.value: collect_initial_snap_data,
+        PipelineSteps.FILTER.value: filter_snaps_meeting_minimum_criteria,
+        PipelineSteps.EXTRA_FIELDS.value: fetch_extra_fields,
+        PipelineSteps.SCORE.value: calculate_scores,
+    }
+
+    if step_name not in steps_map:
+        abort(400, "Invalid step name")
+
+    step_function = steps_map[step_name]
+
+    def run_step(app_context):
+        app_context.push()
+        step_function()
+
+    threading.Thread(
+        target=run_step,
+        args=(current_app.app_context(),),
+    ).start()
+
+    # TODO: tmp fix until we add "in_progress" to steps
+    flash(
+        f"Pipeline step '{step_name}' started, please don't trigger again until last run time is updated",
+        "success",
+    )
+
+    return redirect(url_for("dashboard.settings"))
+
+def format_response(snaps: list[Snap]) -> list[dict]:
     return [
         {
             "snap_id": snap.snap_id,
