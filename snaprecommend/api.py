@@ -15,6 +15,7 @@ from snaprecommend.logic import (
     include_snap_in_category,
     get_snap_by_name,
     get_most_recent_pipeline_step_logs,
+    exclude_snap_from_category,
 )
 from snaprecommend.sso import login_required
 from snaprecommend.editorials import (
@@ -304,6 +305,18 @@ def run_pipeline_step():
         "status": "success",
         "message": f"Pipeline step '{step_name}' started, please don't trigger again until last run time is updated",
     }, 200
+
+
+@api_blueprint.route("/api/exclude_snap", methods=["POST"])
+@login_required
+def exclude_snap():
+    data = flask.request.get_json()
+    snap_id = data.get("snap_id")
+    category = data.get("category")
+    if snap_id and category:
+        exclude_snap_from_category(category, snap_id)
+    return flask.jsonify({"status": "success"}), 200
+
 
 
 def format_response(snaps: list[Snap]) -> list[dict]:
