@@ -16,7 +16,7 @@ export const CategoryList = ({ category, label }: { category: string, label: str
 
     const excludeSnap = async (snap: Snap) => {
         try {
-            const response = await fetch("/dashboard/api/exclude_snap", {
+            const response = await fetch("/api/exclude_snap", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

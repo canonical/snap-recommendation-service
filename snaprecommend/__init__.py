@@ -1,4 +1,4 @@
-from flask import Flask, render_template, redirect
+from flask import Flask, render_template
 from flask_cors import CORS
 import datetime
 import logging
@@ -16,10 +16,6 @@ logging.basicConfig(
 
 db = SQLAlchemy()
 migrate = Migrate()
-
-OLD_PATHS = [
-    "settings",
-]
 
 
 def create_app(config_class=Config):
@@ -46,8 +42,6 @@ def create_app(config_class=Config):
     @app.route("/v2/dashboard/<path:path>")
     @login_required
     def serve_react_app(path=None):
-        if path in OLD_PATHS:
-            return redirect(f"/dashboard/{path}")
         return render_template("index.html")
 
     app.url_map.strict_slashes = False
