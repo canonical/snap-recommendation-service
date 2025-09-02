@@ -7,10 +7,11 @@ from collector.ratings.generated import (
     ratings_features_app_pb2 as ratings_features_app,
     ratings_features_app_pb2_grpc as ratings_features_app_grpc,
 )
+import os
 
 logger = logging.getLogger("ratings_collector")
 
-RATINGS_ADDRESS = "ratings.staging.ubuntu.com"
+RATINGS_ADDRESS = os.getenv("FLASK_RATINGS_BACKEND")
 
 USER_ID = sha256(b"snaprecommend").hexdigest()
 

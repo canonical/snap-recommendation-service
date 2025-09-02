@@ -19,3 +19,8 @@ env:
     secretKeyRef:
       key: postgresql-db-connect-string
       name: snaprecommend
+  - name: FLASK_RATINGS_BACKEND
+    configMapKeyRef:
+      key: ratings-backend
+      name: snaprecommend
+

@@ -38,3 +38,8 @@ config:
       description: The team that is requested from U1 SSO.
       type: string
       required: true
+    ratings-backend:
+      description: The URL of the ratings backend service.
+      type: string
+      required: true
+
