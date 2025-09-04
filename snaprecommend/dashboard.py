@@ -2,7 +2,7 @@ from flask import (
     Blueprint,
     redirect,
 )
-from snaprecommend.sso import login_required
+from snaprecommend.auth.decorators import login_required
 
 
 dashboard_blueprint = Blueprint("dashboard", __name__)

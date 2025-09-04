@@ -1,27 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useApi } from "./useApi";
 
 export function useFetchData<T>(path: string) {
-    const [data, setData] = useState<T | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { data, error, loading, sendRequest } = useApi<T>()
 
-    const fetchData = async () => {
-        try {
-            const response = await fetch(path);
-            if (!response.ok) {
-                throw new Error("Failed to fetch data.");
-            }
+    const fetchData = async () => sendRequest(path);
 
-            const parsedResult = await response.json();
-            setData(parsedResult);
-            setLoading(false);
-        } catch {
-            setError("An error occurred.");
-            setLoading(false);
-        }
-    }
 
-     
     useEffect(() => {
         void fetchData();
     }, []);

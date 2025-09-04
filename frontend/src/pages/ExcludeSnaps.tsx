@@ -1,8 +1,8 @@
-import { useState } from "react";
 import { SnapCard } from "../components/SnapCard/SnapCard";
 import { useFetchData } from "../hooks/useFetchData";
 import type { Snap } from "../types/snap";
 import { AsyncBoundary } from "../components/AsyncBoundary/AsyncBoundary";
+import { useApi } from "../hooks/useApi";
 
 type ExcludedSnapResponse = Array<{
     "category": {
@@ -14,31 +14,20 @@ type ExcludedSnapResponse = Array<{
 
 export function ExcludeSnaps() {
     const { error, loading, data, refetch } = useFetchData<ExcludedSnapResponse>('/api/excluded_snaps');
-
-    const [includeError, setIncludeError] = useState<string | null>(null)
+    const { sendRequest, error: includeError } = useApi();
 
     const includeSnap = async (snap: Snap, category: string) => {
-        try {
-            const response = await fetch("/api/include_snap", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    "snap_id": snap.snap_id,
-                    "category": category
-                }),
-            })
-
-            if (!response.ok) {
-                throw new Error("Failed to exclude snap.");
-            }
-            setIncludeError(null)
-
-            await refetch()
-        } catch {
-            setIncludeError("An error occurred")
-        }
+        await sendRequest("/api/include_snap", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                "snap_id": snap.snap_id,
+                "category": category
+            }),
+        });
+        await refetch();
     }
 
     return (
