@@ -6,7 +6,6 @@ export function useFetchData<T>(path: string) {
 
     const fetchData = async () => sendRequest(path);
 
-
     useEffect(() => {
         void fetchData();
     }, []);

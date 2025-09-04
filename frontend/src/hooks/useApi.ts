@@ -22,8 +22,8 @@ export function useApi<T>() {
             const parsedResult = await response.json();
             setData(parsedResult);
             setLoading(false);
-        } catch (err: any) {
-            setError(err.message || "An error occurred.");
+        } catch {
+            setError("An error occurred.");
             setLoading(false);
         }
     }
