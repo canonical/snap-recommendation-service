@@ -17,7 +17,6 @@ from snaprecommend.logic import (
     get_most_recent_pipeline_step_logs,
     exclude_snap_from_category,
 )
-from snaprecommend.sso import login_required
 from snaprecommend.editorials import (
     get_all_editorial_slices,
     get_editorial_slice_with_snaps,
@@ -36,9 +35,9 @@ from collector.main import (
     fetch_extra_fields,
     calculate_scores,
 )
+from snaprecommend.featuredsnaps.utils import get_fetaured_snaps
 
 api_blueprint = Blueprint("api", __name__)
-
 
 @api_blueprint.route("/categories")
 def categories():
@@ -115,7 +114,6 @@ def popular_snaps():
 
 
 @api_blueprint.route("/excluded_snaps")
-@login_required
 def excluded_snaps():
     excluded_snaps = []
     for category in get_all_categories():
@@ -130,7 +128,6 @@ def excluded_snaps():
 
 
 @api_blueprint.route("/include_snap", methods=["POST"])
-@login_required
 def include_snap():
     data = flask.request.get_json()
     snap_id = data.get("snap_id")
@@ -150,14 +147,12 @@ def serialize_editorial_slice(editorial_slice):
 
 
 @api_blueprint.route("/editorial_slices")
-@login_required
 def editorial_slices():
     slices = get_all_editorial_slices()
     return flask.jsonify([serialize_editorial_slice(slice) for slice in slices],), 200
 
 
 @api_blueprint.route("/editorial_slice", methods=["POST"])
-@login_required
 def create_slice():
     data = flask.request.get_json()
     name = data.get("name")
@@ -172,7 +167,6 @@ def create_slice():
 
 
 @api_blueprint.route("/editorial_slice/<string:slice_id>")
-@login_required
 def editorial_slice(slice_id):
     slice = get_editorial_slice_with_snaps(slice_id)
     if not slice:
@@ -189,7 +183,6 @@ def editorial_slice(slice_id):
 @api_blueprint.route(
     "/editorial_slice/<string:slice_id>", methods=["DELETE"]
 )
-@login_required
 def delete_slice(slice_id):
     deleted = delete_editorial_slice(slice_id)
     if not deleted:
@@ -200,7 +193,6 @@ def delete_slice(slice_id):
 @api_blueprint.route(
     "/editorial_slice/<string:slice_id>", methods=["POST"]
 )
-@login_required
 def edit_slice(slice_id):
     data = flask.request.get_json()
     name = data.get("name")
@@ -217,7 +209,6 @@ def edit_slice(slice_id):
 @api_blueprint.route(
     "/editorial_slice/<string:slice_id>/snaps", methods=["POST"]
 )
-@login_required
 def add_snap_to_slice(slice_id):
     data = flask.request.get_json()
     snap_name = data.get("name")
@@ -241,7 +232,6 @@ def add_snap_to_slice(slice_id):
 @api_blueprint.route(
     "/editorial_slice/<string:slice_id>/remove_snap", methods=["POST"]
 )
-@login_required
 def remove_snap_from_slice(slice_id):
     data = flask.request.get_json()
     snap_name = data.get("name")
@@ -256,7 +246,6 @@ def remove_snap_from_slice(slice_id):
 
 
 @api_blueprint.route("/settings")
-@login_required
 def get_collector_info():
     pipeline_steps = get_most_recent_pipeline_step_logs()
 
@@ -272,7 +261,6 @@ def get_collector_info():
 
 
 @api_blueprint.route("/run_pipeline_step", methods=["POST"])
-@login_required
 def run_pipeline_step():
     data = flask.request.get_json()
     step_name = data.get("step_name")
@@ -307,8 +295,7 @@ def run_pipeline_step():
     }, 200
 
 
-@api_blueprint.route("/api/exclude_snap", methods=["POST"])
-@login_required
+@api_blueprint.route("/exclude_snap", methods=["POST"])
 def exclude_snap():
     data = flask.request.get_json()
     snap_id = data.get("snap_id")
@@ -316,6 +303,7 @@ def exclude_snap():
     if snap_id and category:
         exclude_snap_from_category(category, snap_id)
     return flask.jsonify({"status": "success"}), 200
+
 
 
 def format_response(snaps: list[Snap]) -> list[dict]:

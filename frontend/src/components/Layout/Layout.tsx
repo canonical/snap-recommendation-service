@@ -37,6 +37,12 @@ export function Layout() {
                     component: Link,
                     label: "Settings",
                     to: "/v2/dashboard/settings"
+                },
+                {
+                    icon: "show",
+                    component: Link,
+                    label: "Featured",
+                    to: "/v2/dashboard/featured"
                 }]
             }]}
             aside={isOpen ? content : null}
