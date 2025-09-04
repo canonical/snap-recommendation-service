@@ -18,19 +18,14 @@ def login_required(func):
 
 
 def login_required_api(func):
-    """
-    Decorator that checks if a user is logged in and returns
-    a 401 JSON response if not.
-    """
-
     @functools.wraps(func)
     def is_user_logged_in(*args, **kwargs):
-        if "openid" not in flask.session:
+        if not authentication.is_authenticated(flask.session):
+            authentication.empty_session(flask.session)
             return flask.make_response(flask.jsonify({"status": "failed", "error": "Unauthorized"}), 401)
         response = flask.make_response(func(*args, **kwargs))
         response.cache_control.private = True
         return response
-
     return is_user_logged_in
 
 
@@ -54,7 +49,6 @@ def admin_required(func):
     @functools.wraps(func)
     def is_admin(*args, **kwargs):
         if not flask.session["publisher"]["is_admin"]:
-            # flask.abort(403)
             response = {
                 "success": False,
                 "message": "Admin permissions needed",
