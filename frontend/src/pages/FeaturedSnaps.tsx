@@ -77,28 +77,28 @@ export function FeaturedSnaps() {
     };
 
 
-    // const handleAdd = (snap: any) => {
-    //     const transformedSnap: FeaturedSnap = {
-    //         sections: snap.categories,
-    //         summary: snap.package.description,
-    //         title: snap.package.display_name,
-    //         icon_url: snap.package.icon_url,
-    //         package_name: snap.package.name,
-    //         developer_name: snap.publisher.display_name,
-    //         origin: snap.publisher.name,
-    //         developer_validation:
-    //             snap.publisher.validation === "starred"
-    //                 ? "star"
-    //                 : snap.publisher.validation,
-    //     };
-    //     setFeaturedSnaps((items: FeaturedSnap[]) => {
-    //         if (items) {
-    //             return [transformedSnap, ...items];
-    //         }
+    const handleAdd = (snap: any) => {
+        const transformedSnap: FeaturedSnap = {
+            sections: snap.categories,
+            summary: snap.package.description,
+            title: snap.package.display_name,
+            icon_url: snap.package.icon_url,
+            package_name: snap.package.name,
+            developer_name: snap.publisher.display_name,
+            origin: snap.publisher.name,
+            developer_validation:
+                snap.publisher.validation === "starred"
+                    ? "star"
+                    : snap.publisher.validation,
+        };
+        setFeaturedSnaps((items: FeaturedSnap[]) => {
+            if (items) {
+                return [transformedSnap, ...items];
+            }
 
-    //         return [transformedSnap];
-    //     });
-    // };
+            return [transformedSnap];
+        });
+    };
 
     const handleSave = async (event: any) => {
         event.preventDefault();
@@ -122,9 +122,8 @@ export function FeaturedSnaps() {
     };
 
     return <Panel title="Featured Snaps">
-
         <Row>
-            <Col size={3}><FindSnap /></Col>
+            <Col size={3}><FindSnap addSnap={handleAdd} /></Col>
         </Row>
 
         <Row>
@@ -173,7 +172,7 @@ export function FeaturedSnaps() {
                 >
                     {isSaving ? (
                         <>
-                            <Spinner isLight /> <span>Saving</span>
+                            <Spinner isLight style={{ paddingRight: "0.5rem" }} /> <span>Saving</span>
                         </>
                     ) : (
                         "Save"

@@ -1,6 +1,6 @@
 import flask
 
-from snaprecommend.featuredsnaps.utils import get_fetaured_snaps
+from snaprecommend.featuredsnaps.utils import get_fetaured_snaps, get_packages
 from snaprecommend.auth.session import device_gateway,publisher_gateway, dashboard
 from snaprecommend.auth.decorators import login_required, exchange_required, admin_required
 
@@ -76,3 +76,20 @@ def post_featured_snaps():
         return flask.make_response(response, 500)
 
     return flask.make_response({"success": True}, 200)
+
+
+FIELDS = [
+    "title",
+    "summary",
+    "media",
+    "publisher",
+    "categories",
+]
+
+
+@featured_blueprint.route("store.json")
+def get_store_packages():
+    args = dict(flask.request.args)
+
+    res = flask.make_response(get_packages(FIELDS, 15, args))
+    return res
