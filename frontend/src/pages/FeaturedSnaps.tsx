@@ -1,6 +1,5 @@
-import { Button, Col, Panel, Row, Spinner } from "@canonical/react-components";
+import { Button, Col, Notification, Panel, Row, Spinner } from "@canonical/react-components";
 import { useFetchData } from "../hooks/useFetchData";
-
 import {
     DndContext,
     closestCenter,
@@ -20,13 +19,15 @@ import type { FeaturedSnap } from "../types/snap";
 import { useEffect, useState } from "react";
 import { FindSnap } from "../components/FindSnap/FindSnap";
 import { SortableCard } from "../components/SortableCard/SortableCard";
+import LoadingCard from "../components/LoadingCard/LoadingCard";
 
 export function FeaturedSnaps() {
-    const { data } = useFetchData<FeaturedSnap[]>('/featured');
+    const { data, loading, error } = useFetchData<FeaturedSnap[]>('/featured');
 
     const [featuredSnaps, setFeaturedSnaps] = useState<FeaturedSnap[]>([]);
     const [activeId, setActiveId] = useState<string | null>(null);
     const [isSaving, setIsSaving] = useState(false);
+    const [operationError, setOperationError] = useState("");
     console.log(activeId)
     const sensors = useSensors(
 
@@ -101,6 +102,7 @@ export function FeaturedSnaps() {
 
     const handleSave = async (event: any) => {
         event.preventDefault();
+        setOperationError("");
         const data = new FormData();
         data.append("snaps", featuredSnaps.map((snap) => snap.package_name).join(","));
         setIsSaving(true);
@@ -114,6 +116,8 @@ export function FeaturedSnaps() {
 
         if (!response.ok) {
             console.error("Something went wrong");
+            setOperationError("Something went wrong");
+
         }
     };
 
@@ -124,13 +128,17 @@ export function FeaturedSnaps() {
         </Row>
 
         <Row>
-            {/* {isLoading &&
-                    [...Array(16)].map((item, index) => (
-                        <Col size={3} key={index}>
-                            <LoadingCard />
-                        </Col>
-                    ))} */}
-            {/* {isError && <div>Error</div>} */}
+            {
+                (error || operationError) && <Notification severity="negative" title="Error">
+                    {error || operationError}
+                </Notification>
+            }
+            {loading &&
+                [...Array(16)].map((_, index) => (
+                    <Col size={3} key={index}>
+                        <LoadingCard />
+                    </Col>
+                ))}
             {featuredSnaps && (
                 <DndContext
                     sensors={sensors}

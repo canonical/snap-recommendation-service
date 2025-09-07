@@ -53,12 +53,6 @@ def post_featured_snaps():
     )
 
     if delete_response.status_code != 201:
-        try:
-            error_body = delete_response.json() 
-        except ValueError:
-            error_body = delete_response.text 
-
-    if delete_response.status_code != 201:
         response = {
             "success": False,
             "message": "An error occurred while deleting featured snaps",
@@ -73,12 +67,6 @@ def post_featured_snaps():
     update_response = publisher_gateway.update_featured_snaps(
         flask.session["exchanged_developer_token"], payload
     )
-    if update_response.status_code != 201:
-        try:
-            error_body = update_response.json() 
-        except ValueError:
-            error_body = update_response.text
-    print(error_body)
 
     if update_response.status_code != 201:
         response = {

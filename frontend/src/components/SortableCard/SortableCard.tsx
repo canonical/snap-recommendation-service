@@ -59,7 +59,7 @@ export const SortableCard = ({ snap, handleRemove }: SortableCardProps) => {
                         data-testid="package-icon"
                     />
                     <div className="sc-package-card p-media-o bject__details">
-                        <div>{snap.title}</div>
+                        <a href={`https://snapcraft.io/${snap.package_name}`}>{snap.title}</a>
 
                         <div className="card-content__dev_info">
                             <span>{snap.developer_name}</span>
