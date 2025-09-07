@@ -33,17 +33,17 @@ export function Layout() {
                     label: "Editorial Slices",
                     to: "/v2/dashboard/editorial_slices"
                 }, {
+                    icon: "show",
+                    component: Link,
+                    label: "Featured",
+                    to: "/v2/dashboard/featured"
+                }, {
                     icon: "menu",
                     component: Link,
                     label: "Settings",
                     to: "/v2/dashboard/settings"
                 },
-                {
-                    icon: "show",
-                    component: Link,
-                    label: "Featured",
-                    to: "/v2/dashboard/featured"
-                }]
+                ]
             }]}
             aside={isOpen ? content : null}
         >
