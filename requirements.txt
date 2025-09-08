@@ -14,4 +14,3 @@ django-openid-auth==0.17 # TODO: we only need one file from this package, consid
 flask-cors==5.0.0
 grpcio==1.74.0
 protobuf==6.32.0
-canonicalwebteam.store-api==6.7.0

@@ -5,22 +5,6 @@ from snaprecommend.auth import utils
 from snaprecommend.auth.constants import SSO_LOGIN_URL, PERMISSIONS
 
 
-def get_authorization_header(root, discharge):
-    """
-    Bind root and discharge macaroons and return the authorization header.
-    """
-
-    bound = Macaroon.deserialize(root).prepare_for_request(
-        Macaroon.deserialize(discharge)
-    )
-
-    return "macaroon root={}, discharge={}".format(root, bound.serialize())
-
-
-def get_publishergw_authorization_header(developer_token):
-    return {"Authorization ": f"Macaroon {developer_token}"}
-
-
 def is_authenticated(session):
     """
     Checks if the user is authenticated from the session
@@ -67,20 +51,3 @@ def request_macaroon():
 
     return response["macaroon"]
 
-
-def get_refreshed_discharge(discharge):
-    """
-    Get a refresh macaroon if the macaroon is not valid anymore.
-    Returns the new discharge macaroon.
-    """
-    response = utils.get_refreshed_discharge({"discharge_macaroon": discharge})
-
-    return response["discharge_macaroon"]
-
-
-def is_macaroon_expired(headers):
-    """
-    Returns True if the macaroon needs to be refreshed from
-    the header response.
-    """
-    return headers.get("WWW-Authenticate") == ("Macaroon needs_refresh=1")
