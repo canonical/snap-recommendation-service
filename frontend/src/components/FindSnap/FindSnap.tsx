@@ -5,7 +5,7 @@ import "./FindSnap.scss";
 
 export function FindSnap({ addSnap }: { addSnap: (snap: any) => void }) {
     const searchSnap = async (queryString: string): Promise<FeaturedSnap[]> => {
-        const response = await fetch(`/featured/store.json?q=${queryString}`);
+        const response = await fetch(`/store/store.json?q=${queryString}`);
         const responseJson = await response.json();
         return responseJson.packages;
     };

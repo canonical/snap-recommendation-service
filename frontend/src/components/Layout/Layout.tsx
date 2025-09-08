@@ -3,8 +3,6 @@ import { Outlet, Link } from "react-router-dom";
 import { LayoutLogo } from "./LayoutLogo/LayoutLogo";
 import { useAside } from "../../hooks/useAside";
 
-
-
 export function Layout() {
     const { content, isOpen } = useAside();
 

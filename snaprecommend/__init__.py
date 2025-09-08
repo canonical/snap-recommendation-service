@@ -7,7 +7,7 @@ from flask_migrate import Migrate
 from config import Config
 from snaprecommend.cli import cli_blueprint
 
-from snaprecommend.auth.decorators import login_required, exchange_required
+from snaprecommend.auth.decorators import login_required, exchange_required, admin_required
 from snaprecommend.auth.sso import init_sso
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -32,6 +32,7 @@ def create_app(config_class=Config):
     from snaprecommend.api import api_blueprint
     from snaprecommend.dashboard import dashboard_blueprint
     from snaprecommend.featuredsnaps.api import featured_blueprint
+    from snaprecommend.packages.api import store_packages_blueprint
 
     @app.route("/")
     def index():
@@ -41,11 +42,16 @@ def create_app(config_class=Config):
     def status_check():
         return "OK"
 
+    @app.route("/v2/dashboard/featuredsnaps")
+    @exchange_required
+    @admin_required
+    @login_required
+    def serve_featured_snaps():
+        return render_template("index.html")
+
     @app.route("/v2/dashboard")
     @app.route("/v2/dashboard/<path:path>")
-    @exchange_required
     @login_required
-    @exchange_required
     def serve_react_app(path=None):
         return render_template("index.html")
 
@@ -54,6 +60,7 @@ def create_app(config_class=Config):
     app.register_blueprint(api_blueprint, url_prefix="/api")
     app.register_blueprint(dashboard_blueprint, url_prefix="/dashboard")
     app.register_blueprint(featured_blueprint, url_prefix="/featured")
+    app.register_blueprint(store_packages_blueprint, url_prefix="/store")
 
     db.init_app(app)
     migrate.init_app(app, db)
