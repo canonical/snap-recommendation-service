@@ -1,6 +1,7 @@
 import logging
+import sys
+import signal
 import os
-
 from datetime import timedelta, datetime
 from collector.collect import collect_initial_snap_data
 from collector.filter import filter_snaps_meeting_minimum_criteria
@@ -9,6 +10,10 @@ from collector.score import calculate_scores
 from snaprecommend import db
 from config import MACAROON_ENV_PATH
 from snaprecommend.settings import get_setting, set_setting
+import threading
+import time
+
+shutdown_event = threading.Event()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -17,9 +22,11 @@ logging.basicConfig(
 
 logger = logging.getLogger("collector")
 
+
 # TODO: This should be a setting
 DATA_UPDATE_THRESHOLD = timedelta(days=7)
 
+FETCH_INTERVAL = 24 * 3600  # 24 hours in seconds
 
 def collect_data(force_update: bool = False):
     """
@@ -38,12 +45,10 @@ def collect_data(force_update: bool = False):
         return
 
     if not force_update:
-
         last_update = get_setting("last_updated")
-
         if last_update:
-
-            last_update_time = datetime.fromisoformat(last_update.value)
+            last_update_time = datetime.fromisoformat(str(last_update.value))
+            logger.info(f"Last update was at {last_update_time}")
             time_since_last_update = datetime.now() - last_update_time
 
             if time_since_last_update < DATA_UPDATE_THRESHOLD:
@@ -68,3 +73,43 @@ def collect_data(force_update: bool = False):
     set_setting("last_updated", datetime.now().isoformat())
 
     db.session.commit()
+
+
+
+def main_loop():
+    """Main loop that runs the fetch pipeline periodically."""
+    while not shutdown_event.is_set():
+        try:
+            collect_data()
+            logger.info(f"Waiting {FETCH_INTERVAL} seconds until next fetch...")
+            if shutdown_event.wait(timeout=FETCH_INTERVAL):
+                break
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
+            if not shutdown_event.is_set():
+                time.sleep(60)
+    logger.info("Service stopped.")
+
+
+def signal_handler(signum, _):
+    logger.info(f"Received signal {signum}, shutting down...")
+    shutdown_event.set()
+
+
+def run():
+    """Run the service with signal handling."""
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    try:
+        logger.info("Starting collector service...")
+        main_loop()
+    except KeyboardInterrupt:
+        logger.info("Interrupted by user.")
+    except Exception as e:
+        logger.error(f"Service failed: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    run()
