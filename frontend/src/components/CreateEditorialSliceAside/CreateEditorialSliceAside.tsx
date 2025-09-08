@@ -1,6 +1,6 @@
 import { AppAside, Button, Icon, Notification, Panel } from "@canonical/react-components";
-import { useState } from "react";
 import { EditorialSliceForm } from "../EditorialSliceForm/EditorialSliceForm";
+import { useApi } from "../../hooks/useApi";
 
 function CloseAsideButton({ close }: { close: () => void }) {
     return <Button appearance="base" className="u-no-margin--bottom" hasIcon onClick={close}>
@@ -9,30 +9,21 @@ function CloseAsideButton({ close }: { close: () => void }) {
 }
 
 export function CreateEditorialSliceAside({ close, refetch }: { close: () => void, refetch: () => Promise<void> }) {
-    const [error, setError] = useState<string | null>(null)
+    const { sendRequest, error } = useApi();
 
     const createEditorialSlice = async (name: string, description: string) => {
-        try {
-            const response = await fetch("/api/editorial_slice", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    "name": name,
-                    "description": description
-                }),
-            })
-
-            if (!response.ok) {
-                throw new Error("Failed to exclude snap.");
-            }
-            setError(null);
-            await refetch();
-            close();
-        } catch {
-            setError("An error occurred")
-        }
+        await sendRequest("/api/editorial_slice", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                "name": name,
+                "description": description
+            }),
+        })
+        await refetch();
+        close();
     }
 
     return <AppAside>
