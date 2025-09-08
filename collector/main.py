@@ -1,8 +1,8 @@
 import logging
 import sys
-import signal
 import os
-from datetime import timedelta, datetime
+from datetime import  timedelta, datetime
+from time import sleep
 from collector.collect import collect_initial_snap_data
 from collector.filter import filter_snaps_meeting_minimum_criteria
 from collector.extra_fields import fetch_extra_fields
@@ -10,10 +10,6 @@ from collector.score import calculate_scores
 from snaprecommend import db
 from config import MACAROON_ENV_PATH
 from snaprecommend.settings import get_setting, set_setting
-import threading
-import time
-
-shutdown_event = threading.Event()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -76,40 +72,18 @@ def collect_data(force_update: bool = False):
 
 
 
-def main_loop():
-    """Main loop that runs the fetch pipeline periodically."""
-    while not shutdown_event.is_set():
-        try:
-            collect_data()
-            logger.info(f"Waiting {FETCH_INTERVAL} seconds until next fetch...")
-            if shutdown_event.wait(timeout=FETCH_INTERVAL):
-                break
-        except Exception as e:
-            logger.error(f"Unexpected error: {e}")
-            if not shutdown_event.is_set():
-                time.sleep(60)
-    logger.info("Service stopped.")
 
 
-def signal_handler(signum, _):
-    logger.info(f"Received signal {signum}, shutting down...")
-    shutdown_event.set()
-
-
-def run():
+def collector_service():
     """Run the service with signal handling."""
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-
     try:
         logger.info("Starting collector service...")
-        main_loop()
+        while True:
+            collect_data()
+            logger.info(f"Sleeping for {FETCH_INTERVAL} seconds...")
+            sleep(FETCH_INTERVAL)
     except KeyboardInterrupt:
         logger.info("Interrupted by user.")
     except Exception as e:
         logger.error(f"Service failed: {e}")
         sys.exit(1)
-
-
-if __name__ == "__main__":
-    run()

@@ -16,7 +16,8 @@ services:
   collector-scheduler:
     override: merge
     summary: "service to run the collector job"
-    command: python3 collector/main.py
+    command: flask collector service
+    working-dir: /flask/app
     startup: enabled
 
 parts:
