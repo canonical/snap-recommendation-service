@@ -16,7 +16,7 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger("collector")
-
+#TEST
 # TODO: This should be a setting
 DATA_UPDATE_THRESHOLD = timedelta(days=7)
 
