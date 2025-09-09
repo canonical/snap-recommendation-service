@@ -6,7 +6,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from config import Config
 from snaprecommend.cli import cli_blueprint
-from snaprecommend.sso import init_sso, login_required
+from snaprecommend.auth.decorators import dashboard_login
+from snaprecommend.auth.sso import init_sso
 from apscheduler.schedulers.background import BackgroundScheduler
 
 logging.basicConfig(
@@ -40,7 +41,7 @@ def create_app(config_class=Config):
 
     @app.route("/v2/dashboard")
     @app.route("/v2/dashboard/<path:path>")
-    @login_required
+    @dashboard_login
     def serve_react_app(path=None):
         return render_template("index.html")
 

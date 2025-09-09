@@ -1,13 +1,13 @@
 import { Button, Col, Icon, Notification, Panel, Row } from "@canonical/react-components";
 import { useFetchData } from "../hooks/useFetchData";
 import type { CollectorInfo } from "../types/collectorInfo";
-import { useState } from "react";
 import { AsyncBoundary } from "../components";
+import { useApi } from "../hooks/useApi";
 
 export function Settings() {
     const { error, loading, data, refetch } = useFetchData<CollectorInfo>('/api/settings');
-    const [operationError, setOperationError] = useState<string | null>(null);
-    const [message, setMessage] = useState<string | null>(null);
+    const { data: messageData, sendRequest, error: operationError } = useApi<{ message: string }>();
+
 
     const formatDateTime = (date: string) => new Date(date).toLocaleString("en-GB", {
         year: "numeric",
@@ -19,33 +19,22 @@ export function Settings() {
     })
 
     const runPipeline = async (stepId: string) => {
-        try {
-            const response = await fetch("/api/run_pipeline_step", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    "step_name": stepId,
-                }),
-            })
+        await sendRequest("/api/run_pipeline_step", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                "step_name": stepId,
+            }),
+        })
 
-            if (!response.ok) {
-                throw new Error();
-            }
-            setOperationError(null);
-            const parsedResult = await response.json();
-            setMessage(parsedResult.message);
-            await refetch();
-        } catch {
-            setOperationError("An error occurred");
-            setMessage(null);
-        }
+        await refetch();
     }
 
     return <Panel title="Settings">
         <div className="u-fixed-width">
-            {message && <Notification severity="positive">{message}</Notification>}
+            {messageData?.message && <Notification severity="positive">{messageData.message}</Notification>}
             <AsyncBoundary label="Collector" loading={loading} error={error || operationError}>
                 <Row className="p-form__group">
                     <Col size={4}>

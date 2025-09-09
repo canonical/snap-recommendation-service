@@ -1,11 +1,8 @@
-import functools
-
 import flask
 from django_openid_auth.teams import TeamsRequest, TeamsResponse
 from flask_openid import OpenID
-
-SSO_LOGIN_URL = "https://login.ubuntu.com"
-DEFAULT_SSO_TEAM = "canonical-webmonkeys"
+from snaprecommend.auth import authentication
+from snaprecommend.auth.constants import DEFAULT_SSO_TEAM, SSO_LOGIN_URL
 
 
 def init_sso(app: flask.Flask):
@@ -17,10 +14,15 @@ def init_sso(app: flask.Flask):
 
     SSO_TEAM = app.config.get("OPENID_LAUNCHPAD_TEAM", DEFAULT_SSO_TEAM)
 
+    @app.route("/logout")
+    def logout():
+        authentication.empty_session(flask.session)
+        return flask.redirect("/")
+
     @app.route("/login", methods=["GET", "POST"])
     @open_id.loginhandler
     def login():
-        if "openid" in flask.session:
+        if authentication.is_authenticated(flask.session):
             if flask.request.is_secure:
                 return flask.redirect(
                     open_id.get_next_url().replace("http://", "https://")
@@ -43,20 +45,3 @@ def init_sso(app: flask.Flask):
         }
 
         return flask.redirect(open_id.get_next_url())
-
-
-def login_required(func):
-    """
-    Decorator that checks if a user is logged in, and redirects
-    to login page if not.
-    """
-
-    @functools.wraps(func)
-    def is_user_logged_in(*args, **kwargs):
-        if "openid" not in flask.session:
-            return flask.redirect("/login?next=" + flask.request.path)
-        response = flask.make_response(func(*args, **kwargs))
-        response.cache_control.private = True
-        return response
-
-    return is_user_logged_in

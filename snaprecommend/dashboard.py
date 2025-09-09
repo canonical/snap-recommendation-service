@@ -2,13 +2,13 @@ from flask import (
     Blueprint,
     redirect,
 )
-from snaprecommend.sso import login_required
+from snaprecommend.auth.decorators import dashboard_login
 
 
 dashboard_blueprint = Blueprint("dashboard", __name__)
 
 
 @dashboard_blueprint.route("/")
-@login_required
+@dashboard_login
 def dashboard():
     return redirect("/v2/dashboard")

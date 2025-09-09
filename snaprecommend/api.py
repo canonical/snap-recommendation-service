@@ -17,7 +17,7 @@ from snaprecommend.logic import (
     get_most_recent_pipeline_step_logs,
     exclude_snap_from_category,
 )
-from snaprecommend.sso import login_required
+from snaprecommend.auth.decorators import login_required
 from snaprecommend.editorials import (
     get_all_editorial_slices,
     get_editorial_slice_with_snaps,
@@ -307,7 +307,7 @@ def run_pipeline_step():
     }, 200
 
 
-@api_blueprint.route("/api/exclude_snap", methods=["POST"])
+@api_blueprint.route("/exclude_snap", methods=["POST"])
 @login_required
 def exclude_snap():
     data = flask.request.get_json()

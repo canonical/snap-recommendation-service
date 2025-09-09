@@ -4,7 +4,8 @@ import { useFetchData } from "../hooks/useFetchData";
 import { useNavigate, useParams } from "react-router-dom";
 import { EditorialSliceForm } from "../components/EditorialSliceForm/EditorialSliceForm";
 import { SnapCard } from "../components/SnapCard/SnapCard";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useApi } from "../hooks/useApi";
 
 
 export function SliceDetails() {
@@ -12,103 +13,67 @@ export function SliceDetails() {
 
     const navigate = useNavigate();
     const { error, data, refetch } = useFetchData<SliceDetail>(`/api/editorial_slice/${id}`);
-    const [operationError, setOperationError] = useState("");
     const [successText, setSuccessText] = useState("");
-
     const [searchTerm, setSearchTerm] = useState("");
+    const { sendRequest, error: operationError } = useApi();
+
+    useEffect(() => {
+        setSearchTerm("");
+        setSuccessText("");
+    }, [operationError])
 
     const handleUpdate = async (name: string, description: string) => {
-        try {
-            const response = await fetch(`/api/editorial_slice/${id}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name,
-                    description
-                }),
-            })
+        await sendRequest(`/api/editorial_slice/${id}`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                name,
+                description
+            }),
+        });
 
-            if (!response.ok) {
-                throw new Error();
-            }
-            await refetch();
-            setOperationError("");
-            setSuccessText(`Editorial slice '${name}' updated`)
-        } catch {
-            setOperationError("Failed to edit the slice");
-            setSuccessText("")
-        }
+        await refetch();
+        setSuccessText(`'${searchTerm}' added to the '${id}'.`);
     }
 
     const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-
-        try {
-            const response = await fetch(`/api/editorial_slice/${id}/snaps`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name: searchTerm
-                }),
-            })
-
-            if (!response.ok) {
-                throw new Error();
-            }
-
-            await refetch();
-            setOperationError("");
-            setSuccessText(`'${searchTerm}' added to the '${id}'.`);
-            setSearchTerm("");
-        } catch {
-            setOperationError("Failed to add snap to the slice.");
-            setSuccessText("");
-        }
+        await sendRequest(
+            `/api/editorial_slice/${id}/snaps`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                name: searchTerm
+            }),
+        });
+        await refetch();
+        setSuccessText(`'${searchTerm}' added to the '${id}'.`);
+        setSearchTerm("");
     }
 
     const handleDeleteSlice = async () => {
-        try {
-            const response = await fetch(`/api/editorial_slice/${id}`, {
-                method: "DELETE",
-            })
-
-            if (!response.ok) {
-                throw new Error();
-            }
-            setOperationError("");
-
-            navigate("/v2/dashboard/editorial_slices", { replace: true })
-        } catch {
-            setOperationError("Failed to delete the snap.");
-        }
+        await sendRequest(`/api/editorial_slice/${id}`, {
+            method: "DELETE",
+        });
+        navigate("/v2/dashboard/editorial_slices", { replace: true });
     }
 
     const handleDeleteSnap = async (snapName: string) => {
-        try {
-            const response = await fetch(`/api/editorial_slice/${id}/remove_snap`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    name: snapName
-                }),
-            })
-
-            if (!response.ok) {
-                throw new Error();
-            }
-            await refetch();
-            setOperationError("");
-            setSuccessText(`'${snapName}' deleted from the '${id}'.`)
-        } catch {
-            setOperationError("Failed to delete snap from the slice.");
-            setSuccessText("")
-        }
+        await sendRequest(`/api/editorial_slice/${id}/remove_snap`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                name: snapName
+            }),
+        });
+        await refetch();
+        setSuccessText(`'${snapName}' deleted from the '${id}'.`);
     }
 
     return <Panel
