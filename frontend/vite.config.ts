@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => {
       host: '0.0.0.0',
       proxy: {
         '/': {
-          target: 'http://127.0.0.1:5000', // Flask backend
+          target: 'http://web:5000', // Flask backend
           changeOrigin: false,
           bypass: (req) => {
             // Let React handle /v2/dashboard and its subpaths
