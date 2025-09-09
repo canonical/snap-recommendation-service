@@ -2,7 +2,6 @@ import functools
 import flask
 
 from snaprecommend.auth import authentication
-from snaprecommend.auth.session import publisher_gateway
 
 
 def dashboard_login(func):
@@ -27,4 +26,3 @@ def login_required(func):
         response.cache_control.private = True
         return response
     return is_user_logged_in
-
