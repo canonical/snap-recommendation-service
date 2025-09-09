@@ -10,8 +10,9 @@ def dashboard_login(func):
         if not authentication.is_authenticated(flask.session):
             authentication.empty_session(flask.session)
             return flask.redirect(f"/login?next={flask.request.path}")
-
-        return func(*args, **kwargs)
+        response = flask.make_response(func(*args, **kwargs))
+        response.cache_control.private = True
+        return response
 
     return is_user_logged_in
 
