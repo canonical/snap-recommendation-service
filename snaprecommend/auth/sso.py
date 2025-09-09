@@ -31,7 +31,7 @@ def init_sso(app: flask.Flask):
 
         teams_request = TeamsRequest(query_membership=[SSO_TEAM])
         return open_id.try_login(
-            SSO_LOGIN_URL, ask_for=["email", "nickname"], ask_for_optional=["fullname"], extensions=[teams_request]
+            SSO_LOGIN_URL, ask_for=["email"], extensions=[teams_request]
         )
 
     @open_id.after_login
@@ -44,10 +44,4 @@ def init_sso(app: flask.Flask):
             "email": resp.email,
         }
 
-        response = flask.make_response(
-            flask.redirect(
-                open_id.get_next_url(),
-                302,
-            ),
-        )
-        return response
+        return flask.redirect(open_id.get_next_url())
