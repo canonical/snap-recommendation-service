@@ -1,7 +1,7 @@
 import logging
 import sys
 import os
-from datetime import  timedelta, datetime
+from datetime import timedelta, datetime
 from time import sleep
 from collector.collect import collect_initial_snap_data
 from collector.filter import filter_snaps_meeting_minimum_criteria
@@ -23,6 +23,7 @@ logger = logging.getLogger("collector")
 DATA_UPDATE_THRESHOLD = timedelta(days=7)
 
 FETCH_INTERVAL = 24 * 3600  # 24 hours in seconds
+
 
 def collect_data(force_update: bool = False):
     """
@@ -69,9 +70,6 @@ def collect_data(force_update: bool = False):
     set_setting("last_updated", datetime.now().isoformat())
 
     db.session.commit()
-
-
-
 
 
 def collector_service():

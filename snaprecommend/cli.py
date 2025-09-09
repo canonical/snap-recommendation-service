@@ -54,6 +54,7 @@ def score():
 
     calculate_scores()
 
+
 @collector.command()
 def service():
     """Start the collector server to run periodically"""
