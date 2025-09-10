@@ -71,7 +71,6 @@ export function FeaturedSnaps() {
         });
     };
 
-
     const handleAdd = (snap: SearchSnap) => {
         const transformedSnap: FeaturedSnap = {
             sections: snap.categories,

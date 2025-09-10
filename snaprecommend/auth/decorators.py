@@ -39,7 +39,9 @@ def admin_required(func):
                 "message": "Admin permissions needed",
             }
             return flask.make_response(response, 403)
-        return func(*args, **kwargs)
+        response = flask.make_response(func(*args, **kwargs))
+        response.cache_control.private = True
+        return response
 
     return is_admin
 
@@ -54,7 +56,9 @@ def exchange_required(func):
                 )
                 flask.session["developer_token"] = result
                 flask.session["exchanged_developer_token"] = True
-            return func(*args, **kwargs)
+            response = flask.make_response(func(*args, **kwargs))
+            response.cache_control.private = True
+            return response
         except Exception as e:
             print(e)
     return is_exchanged
