@@ -1,15 +1,16 @@
 import flask
 from django_openid_auth.teams import TeamsRequest, TeamsResponse
 from flask_openid import OpenID
+from snaprecommend.auth.macaroon import MacaroonRequest, MacaroonResponse
 from snaprecommend.auth import authentication
-from snaprecommend.auth.constants import DEFAULT_SSO_TEAM, SSO_LOGIN_URL
+from snaprecommend.auth.constants import DEFAULT_SSO_TEAM, LP_CANONICAL_TEAM, LP_ADMIN_TEAM, SSO_LOGIN_URL
 
 
 def init_sso(app: flask.Flask):
     open_id = OpenID(
         store_factory=lambda: None,
         safe_roots=[],
-        extension_responses=[TeamsResponse],
+        extension_responses=[MacaroonResponse, TeamsResponse],
     )
 
     SSO_TEAM = app.config.get("OPENID_LAUNCHPAD_TEAM", DEFAULT_SSO_TEAM)
@@ -29,19 +30,38 @@ def init_sso(app: flask.Flask):
                 )
             return flask.redirect(open_id.get_next_url())
 
-        teams_request = TeamsRequest(query_membership=[SSO_TEAM])
+        try:
+            root = authentication.request_macaroon()
+        except Exception as api_response_error:
+            if api_response_error.status_code == 401:
+                return flask.redirect(flask.url_for(".logout"))
+            else:
+                return flask.abort(502, str(api_response_error))
+
+        openid_macaroon = MacaroonRequest(
+            caveat_id=authentication.get_caveat_id(root)
+        )
+        flask.session["macaroon_root"] = root
+
+        teams_request = TeamsRequest(query_membership=[SSO_TEAM, LP_CANONICAL_TEAM, LP_ADMIN_TEAM])
         return open_id.try_login(
-            SSO_LOGIN_URL, ask_for=["email"], extensions=[teams_request]
+            SSO_LOGIN_URL, ask_for=["email"], extensions=[openid_macaroon, teams_request],
         )
 
     @open_id.after_login
     def after_login(resp):
+        flask.session["macaroon_discharge"] = resp.extensions["macaroon"].discharge
+
         if SSO_TEAM not in resp.extensions["lp"].is_member:
             flask.abort(403)
+
+        is_canonical = LP_CANONICAL_TEAM in resp.extensions["lp"].is_member
 
         flask.session["openid"] = {
             "identity_url": resp.identity_url,
             "email": resp.email,
+            "is_canonical": is_canonical,
+            "is_admin": LP_ADMIN_TEAM in resp.extensions["lp"].is_member,
         }
 
         return flask.redirect(open_id.get_next_url())
