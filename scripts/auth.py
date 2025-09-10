@@ -9,7 +9,6 @@ EXCHANGE_DASHBOARD_ENDPOINT = (
 
 
 def get_auth_header(token):
-
     exchange_value = json.loads(base64.b64decode(token).decode("utf-8"))
 
     root_val = exchange_value["v"]["r"]

@@ -1,6 +1,5 @@
 from flask import Flask, render_template
 from flask_cors import CORS
-import datetime
 import logging
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -8,7 +7,6 @@ from config import Config
 from snaprecommend.cli import cli_blueprint
 from snaprecommend.auth.decorators import dashboard_login
 from snaprecommend.auth.sso import init_sso
-from apscheduler.schedulers.background import BackgroundScheduler
 
 logging.basicConfig(
     level=logging.INFO,
@@ -64,37 +62,3 @@ def create_app(config_class=Config):
 
 
 app = create_app()
-
-scheduler = BackgroundScheduler()
-
-
-def scheduled_collector():
-    from collector.main import collect_data
-
-    with app.app_context():
-        try:
-            collect_data()
-        except Exception as e:
-            app.logger.error(f"Error starting scheduled collector: {e}")
-
-
-# This is a hack to only run the collector scheduler when the server is running
-# not when executing CLI commands
-def is_running_server():
-    import sys
-
-    cli_command = " ".join(sys.argv)
-    return "flask run" in cli_command or "gunicorn" in cli_command
-
-
-if not scheduler.running and is_running_server():
-    scheduler.start()
-    scheduler.add_job(
-        func=scheduled_collector,
-        trigger="interval",
-        # Run on initialization, and then
-        # every 7 days (10 seconds to let the app start)
-        start_date=datetime.datetime.now() + datetime.timedelta(seconds=10),
-        days=7,
-        id="collect_data",
-    )

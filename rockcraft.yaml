@@ -12,6 +12,14 @@ platforms:
 extensions:
     - flask-framework
 
+services:
+  collector-scheduler:
+    override: merge
+    summary: "service to run the collector job"
+    command: flask collector service
+    working-dir: /flask/app
+    startup: enabled
+
 parts:
   frontend:
     plugin: nil
