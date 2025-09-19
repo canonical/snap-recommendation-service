@@ -135,9 +135,7 @@ def add_pipeline_step_log(step_name: str, status: bool, message: str = ""):
     Adds a log entry for a pipeline step.
     """
 
-    log_entry = PipelineStepLog(
-        step=step_name, success=status, message=message
-    )
+    log_entry = PipelineStepLog(step=step_name, success=status, message=message)
     db.session.add(log_entry)
     db.session.commit()
 

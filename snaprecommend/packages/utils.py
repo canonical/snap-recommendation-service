@@ -5,11 +5,7 @@ from snaprecommend.utils import get_icon
 
 Package = TypedDict(
     "Package",
-    {
-        "package": Dict[
-            str, Union[Dict[str, str], List[str], List[Dict[str, str]]]
-        ]
-    },
+    {"package": Dict[str, Union[Dict[str, str], List[str], List[Dict[str, str]]]]},
 )
 
 

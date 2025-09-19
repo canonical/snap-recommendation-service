@@ -37,9 +37,7 @@ def get_editorial_slice_with_snaps(slice_id: str) -> EditorialSlice:
             )
         return editorial_slice
     except Exception as e:
-        logger.error(
-            f"Error fetching editorial slice with snaps {slice_id}: {e}"
-        )
+        logger.error(f"Error fetching editorial slice with snaps {slice_id}: {e}")
         raise
 
 
@@ -77,9 +75,7 @@ def create_editorial_slice(name: str, description: str = None):
     try:
         slice_id = slugify(name)
         if db.session.query(EditorialSlice).filter_by(id=slice_id).first():
-            raise ValueError(
-                f"Editorial slice with id '{slice_id}' already exists."
-            )
+            raise ValueError(f"Editorial slice with id '{slice_id}' already exists.")
 
         editorial_slice = EditorialSlice(
             id=slice_id, name=name, description=description
@@ -102,9 +98,7 @@ def update_editorial_slice(slice_id: str, name: str, description: str = None):
             db.session.query(EditorialSlice).filter_by(id=slice_id).first()
         )
         if not editorial_slice:
-            raise ValueError(
-                f"Editorial slice with id '{slice_id}' not found."
-            )
+            raise ValueError(f"Editorial slice with id '{slice_id}' not found.")
 
         editorial_slice.name = name
         editorial_slice.description = description
@@ -129,9 +123,7 @@ def add_snap_to_editorial_slice(slice_id: str, snap_id: str):
         return editorial_slice_snap
     except Exception as e:
         db.session.rollback()
-        logger.error(
-            f"Error adding snap {snap_id} to editorial slice {slice_id}: {e}"
-        )
+        logger.error(f"Error adding snap {snap_id} to editorial slice {slice_id}: {e}")
         raise
 
 
@@ -146,9 +138,7 @@ def remove_snap_from_editorial_slice(slice_id: str, snap_id: str):
             .first()
         )
         if not editorial_slice_snap:
-            raise ValueError(
-                f"Snap {snap_id} not found in editorial slice {slice_id}."
-            )
+            raise ValueError(f"Snap {snap_id} not found in editorial slice {slice_id}.")
 
         db.session.delete(editorial_slice_snap)
         db.session.commit()
@@ -170,9 +160,7 @@ def delete_editorial_slice(slice_id: str):
             db.session.query(EditorialSlice).filter_by(id=slice_id).first()
         )
         if not editorial_slice:
-            raise ValueError(
-                f"Editorial slice with id '{slice_id}' not found."
-            )
+            raise ValueError(f"Editorial slice with id '{slice_id}' not found.")
 
         db.session.delete(editorial_slice)
         db.session.commit()

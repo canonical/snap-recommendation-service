@@ -11,17 +11,11 @@ class BaseSession:
 
     def requests(self, method, url, timeout=12, **kwargs):
         try:
-            return super().request(
-                method=method, url=url, timeout=timeout, **kwargs
-            )
+            return super().request(method=method, url=url, timeout=timeout, **kwargs)
         except Timeout:
-            raise Exception(
-                "The request to {} took too long".format(url)
-            )
+            raise Exception("The request to {} took too long".format(url))
         except ConnectionError:
-            raise Exception(
-                "Failed to establish connection to {}.".format(url)
-            )
+            raise Exception("Failed to establish connection to {}.".format(url))
 
 
 class Session(BaseSession, RequestsSession):

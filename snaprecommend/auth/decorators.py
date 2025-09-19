@@ -23,10 +23,13 @@ def login_required(func):
     def is_user_logged_in(*args, **kwargs):
         if not authentication.is_authenticated(flask.session):
             authentication.empty_session(flask.session)
-            return flask.make_response(flask.jsonify({"success": False, "error": "Unauthorized"}), 401)
+            return flask.make_response(
+                flask.jsonify({"success": False, "error": "Unauthorized"}), 401
+            )
         response = flask.make_response(func(*args, **kwargs))
         response.cache_control.private = True
         return response
+
     return is_user_logged_in
 
 
@@ -39,7 +42,7 @@ def admin_required(func):
                 "error": "Admin permissions needed",
             }
             return flask.make_response(response, 403)
-        return  flask.make_response(func(*args, **kwargs))
+        return flask.make_response(func(*args, **kwargs))
 
     return is_admin
 
@@ -49,15 +52,17 @@ def exchange_required(func):
     def is_exchanged(*args, **kwargs):
         try:
             if "exchanged_developer_token" not in flask.session:
-                result = publisher_gateway.exchange_dashboard_macaroons(
-                    flask.session
-                )
+                result = publisher_gateway.exchange_dashboard_macaroons(flask.session)
                 flask.session["developer_token"] = result
                 flask.session["exchanged_developer_token"] = True
-            return  flask.make_response(func(*args, **kwargs))
-        except Exception as e:
-            flask.make_response({
-                "success": False,
-                "error": "Unauthorized",
-            }, 401)
+            return flask.make_response(func(*args, **kwargs))
+        except Exception:
+            flask.make_response(
+                {
+                    "success": False,
+                    "error": "Unauthorized",
+                },
+                401,
+            )
+
     return is_exchanged

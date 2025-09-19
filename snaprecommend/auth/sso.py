@@ -3,8 +3,13 @@ from django_openid_auth.teams import TeamsRequest, TeamsResponse
 from flask_openid import OpenID
 from snaprecommend.auth.macaroon import MacaroonRequest, MacaroonResponse
 from snaprecommend.auth import authentication
-from snaprecommend.auth.session import dashboard, publisher_gateway
-from snaprecommend.auth.constants import DEFAULT_SSO_TEAM, LP_CANONICAL_TEAM, LP_ADMIN_TEAM, SSO_LOGIN_URL
+from snaprecommend.auth.session import publisher_gateway
+from snaprecommend.auth.constants import (
+    DEFAULT_SSO_TEAM,
+    LP_CANONICAL_TEAM,
+    LP_ADMIN_TEAM,
+    SSO_LOGIN_URL,
+)
 
 
 def init_sso(app: flask.Flask):
@@ -33,12 +38,12 @@ def init_sso(app: flask.Flask):
                 return flask.redirect(flask.url_for(".logout"))
             else:
                 return flask.abort(502, str(api_response_error))
-        openid_macaroon = MacaroonRequest(
-            caveat_id=authentication.get_caveat_id(root)
-        )
+        openid_macaroon = MacaroonRequest(caveat_id=authentication.get_caveat_id(root))
         flask.session["macaroon_root"] = root
 
-        teams_request = TeamsRequest(query_membership=[SSO_TEAM, LP_CANONICAL_TEAM, LP_ADMIN_TEAM])
+        teams_request = TeamsRequest(
+            query_membership=[SSO_TEAM, LP_CANONICAL_TEAM, LP_ADMIN_TEAM]
+        )
 
         return open_id.try_login(
             SSO_LOGIN_URL,
@@ -59,7 +64,7 @@ def init_sso(app: flask.Flask):
             dev_token = publisher_gateway.exchange_dashboard_macaroons(flask.session)
             flask.session["developer_token"] = dev_token
             flask.session["exchanged_developer_token"] = True
-        except Exception as e:
+        except Exception:
             authentication.empty_session(flask.session)
             flask.abort(502, "Failed to exchange macaroons")
 

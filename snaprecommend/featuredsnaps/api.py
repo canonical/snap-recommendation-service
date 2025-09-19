@@ -1,13 +1,14 @@
 import flask
-import os
 from snaprecommend.featuredsnaps.utils import get_fetaured_snaps
-from snaprecommend.auth.session import device_gateway, publisher_gateway, dashboard, api_session, api_publisher_session
-from snaprecommend.auth.decorators import login_required, exchange_required, admin_required
-from config import MACAROON_ENV_PATH
-import requests
+from snaprecommend.auth.session import publisher_gateway
+from snaprecommend.auth.decorators import (
+    login_required,
+    exchange_required,
+    admin_required,
+)
 
 featured_blueprint = flask.Blueprint("featured", __name__)
-MACAROON = "AgEQYXBpLnNuYXBjcmFmdC5pbwImAwoQdaHnNfcOsE97M4aht5DANhIBMBoOCgVsb2dpbhIFbG9naW4AAid0aW1lLWJlZm9yZSAyMDI1LTExLTEzVDIxOjAwOjQzLjAwMDIzNFoAAiZ0aW1lLXNpbmNlIDIwMjUtMDktMTdUMDU6NDg6MTYuNTI1Mjk1WgACL3Nlc3Npb24taWQgOTkyY2NiMzktZTFhOS0xOWUwLTU3NDEtNGQ1ODQ5MTE3YzU1AAI5ZGVjbGFyZWQgdXNlcmlkIHVzc286aHR0cHM6Ly9sb2dpbi51YnVudHUuY29tLytpZC9OZXM3ZEVLAAIvZXh0cmEgeyJwZXJtaXNzaW9ucyI6IFsicGFja2FnZS12aWV3LW1ldHJpY3MiXX0AAAYgoKeXGOOYkcRr8JVMC-_rpFMukq0ACgDPvm0TM9uGGtU"
+
 
 @featured_blueprint.route("/")
 def featured_snaps():

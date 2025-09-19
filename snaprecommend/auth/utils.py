@@ -1,5 +1,9 @@
 from snaprecommend.auth.session import api_session
-from snaprecommend.auth.constants import SNAPSTORE_DASHBOARD_API_URL, HEADERS, SSO_LOGIN_URL
+from snaprecommend.auth.constants import (
+    SNAPSTORE_DASHBOARD_API_URL,
+    HEADERS,
+    SSO_LOGIN_URL,
+)
 
 
 def process_response(response):
@@ -9,9 +13,7 @@ def process_response(response):
     try:
         body = response.json()
     except Exception as error:
-        api_error_exception = Exception(
-            "JSON decoding failed: {}".format(error)
-        )
+        api_error_exception = Exception("JSON decoding failed: {}".format(error))
         raise api_error_exception
 
     return body

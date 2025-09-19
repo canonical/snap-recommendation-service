@@ -153,7 +153,12 @@ def serialize_editorial_slice(editorial_slice):
 @login_required
 def editorial_slices():
     slices = get_all_editorial_slices()
-    return flask.jsonify([serialize_editorial_slice(slice) for slice in slices],), 200
+    return (
+        flask.jsonify(
+            [serialize_editorial_slice(slice) for slice in slices],
+        ),
+        200,
+    )
 
 
 @api_blueprint.route("/editorial_slice", methods=["POST"])
@@ -166,7 +171,10 @@ def create_slice():
     try:
         create_editorial_slice(name, description)
     except ValueError:
-        return flask.jsonify({"status": "failed", "error": "Slice cannot be created."}), 500
+        return (
+            flask.jsonify({"status": "failed", "error": "Slice cannot be created."}),
+            500,
+        )
 
     return flask.jsonify({"status": "success"}), 200
 
@@ -178,17 +186,20 @@ def editorial_slice(slice_id):
     if not slice:
         return {"error": "Slice not found"}, 404
 
-    return flask.jsonify({
-        "id": slice.id,
-        "name": slice.name,
-        "description": slice.description,
-        "snaps": [serialize_snap(snap) for snap in slice.snaps]
-    }), 200
+    return (
+        flask.jsonify(
+            {
+                "id": slice.id,
+                "name": slice.name,
+                "description": slice.description,
+                "snaps": [serialize_snap(snap) for snap in slice.snaps],
+            }
+        ),
+        200,
+    )
 
 
-@api_blueprint.route(
-    "/editorial_slice/<string:slice_id>", methods=["DELETE"]
-)
+@api_blueprint.route("/editorial_slice/<string:slice_id>", methods=["DELETE"])
 @login_required
 def delete_slice(slice_id):
     deleted = delete_editorial_slice(slice_id)
@@ -197,9 +208,7 @@ def delete_slice(slice_id):
     return flask.jsonify({"status": "success"}), 200
 
 
-@api_blueprint.route(
-    "/editorial_slice/<string:slice_id>", methods=["POST"]
-)
+@api_blueprint.route("/editorial_slice/<string:slice_id>", methods=["POST"])
 @login_required
 def edit_slice(slice_id):
     data = flask.request.get_json()
@@ -209,14 +218,15 @@ def edit_slice(slice_id):
     try:
         update_editorial_slice(slice_id, name, description)
     except ValueError:
-        return flask.jsonify({"status": "failed", "error": "Slice cannot be created."}), 500
+        return (
+            flask.jsonify({"status": "failed", "error": "Slice cannot be created."}),
+            500,
+        )
 
     return flask.jsonify({"status": "success"}), 200
 
 
-@api_blueprint.route(
-    "/editorial_slice/<string:slice_id>/snaps", methods=["POST"]
-)
+@api_blueprint.route("/editorial_slice/<string:slice_id>/snaps", methods=["POST"])
 @login_required
 def add_snap_to_slice(slice_id):
     data = flask.request.get_json()
@@ -238,9 +248,7 @@ def add_snap_to_slice(slice_id):
         return {"error": "Snap not found"}, 404
 
 
-@api_blueprint.route(
-    "/editorial_slice/<string:slice_id>/remove_snap", methods=["POST"]
-)
+@api_blueprint.route("/editorial_slice/<string:slice_id>/remove_snap", methods=["POST"])
 @login_required
 def remove_snap_from_slice(slice_id):
     data = flask.request.get_json()
@@ -265,10 +273,15 @@ def get_collector_info():
     if last_updated.value:
         last_updated = datetime.fromisoformat(last_updated.value)
 
-    return flask.jsonify({
-        "pipeline_steps": pipeline_steps,
-        "last_updated": last_updated,
-    }), 200
+    return (
+        flask.jsonify(
+            {
+                "pipeline_steps": pipeline_steps,
+                "last_updated": last_updated,
+            }
+        ),
+        200,
+    )
 
 
 @api_blueprint.route("/run_pipeline_step", methods=["POST"])

@@ -72,9 +72,7 @@ class SnapRecommendationScore(db.Model):
     )
     score: Mapped[float] = mapped_column(Float)
     exclude: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
 
 class SnapRecommendationScoreHistory(db.Model):
@@ -125,9 +123,7 @@ class EditorialSliceSnap(db.Model):
         ForeignKey("snap.snap_id", ondelete="CASCADE"),
         primary_key=True,
     )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
 
 class Settings(db.Model):
@@ -151,12 +147,8 @@ class PipelineStepLog(db.Model):
     This table is used to store the status of each step in the pipeline.
     """
 
-    id: Mapped[int] = mapped_column(
-        Integer, primary_key=True, autoincrement=True
-    )
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     step: Mapped[PipelineSteps] = mapped_column(Enum(PipelineSteps))
     success: Mapped[bool] = mapped_column(Boolean)
     message: Mapped[str] = mapped_column(String)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.now
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
