@@ -20,12 +20,17 @@ def get_fetaured_snaps():
         ]
     )
 
-    # TODO add pagination
-    featured_snaps_response = device_gateway.get_featured_snaps(fields=fields)
-    featured_snaps = featured_snaps_response.get("_embedded", {}).get(
-        "clickindex:package", []
-    )
-    print("featured snapcount:", len(featured_snaps))
-    for snap in featured_snaps:
+    currently_featured_snaps = []
+
+    next = True
+    while next:
+        featured_snaps = device_gateway.get_featured_snaps(fields=fields)
+        currently_featured_snaps.extend(
+            featured_snaps.get("_embedded", {}).get("clickindex:package", [])
+        )
+        next = featured_snaps.get("_links", {}).get("next", False)
+
+    for snap in currently_featured_snaps:
         snap["icon_url"] = get_icon(snap["media"])
-    return featured_snaps
+
+    return currently_featured_snaps
