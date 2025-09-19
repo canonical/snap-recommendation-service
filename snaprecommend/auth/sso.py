@@ -3,7 +3,9 @@ from django_openid_auth.teams import TeamsRequest, TeamsResponse
 from flask_openid import OpenID
 from snaprecommend.auth.macaroon import MacaroonRequest, MacaroonResponse
 from snaprecommend.auth import authentication
+from snaprecommend.auth.session import dashboard, publisher_gateway
 from snaprecommend.auth.constants import DEFAULT_SSO_TEAM, LP_CANONICAL_TEAM, LP_ADMIN_TEAM, SSO_LOGIN_URL
+from snaprecommend.auth.utils import get_stores
 
 
 def init_sso(app: flask.Flask):
@@ -24,44 +26,90 @@ def init_sso(app: flask.Flask):
     @open_id.loginhandler
     def login():
         if authentication.is_authenticated(flask.session):
-            if flask.request.is_secure:
-                return flask.redirect(
-                    open_id.get_next_url().replace("http://", "https://")
-                )
             return flask.redirect(open_id.get_next_url())
-
         try:
             root = authentication.request_macaroon()
+            print("root macroon requested")
         except Exception as api_response_error:
             if api_response_error.status_code == 401:
                 return flask.redirect(flask.url_for(".logout"))
             else:
                 return flask.abort(502, str(api_response_error))
-
         openid_macaroon = MacaroonRequest(
             caveat_id=authentication.get_caveat_id(root)
         )
         flask.session["macaroon_root"] = root
 
         teams_request = TeamsRequest(query_membership=[SSO_TEAM, LP_CANONICAL_TEAM, LP_ADMIN_TEAM])
+
         return open_id.try_login(
-            SSO_LOGIN_URL, ask_for=["email"], extensions=[openid_macaroon, teams_request],
+            SSO_LOGIN_URL,
+            ask_for=["email", "nickname"],
+            ask_for_optional=["fullname"],
+            extensions=[openid_macaroon, teams_request],
         )
 
     @open_id.after_login
     def after_login(resp):
+        flask.session["macaroon_root"] = flask.session.get("macaroon_root")
         flask.session["macaroon_discharge"] = resp.extensions["macaroon"].discharge
 
         if SSO_TEAM not in resp.extensions["lp"].is_member:
             flask.abort(403)
 
-        is_canonical = LP_CANONICAL_TEAM in resp.extensions["lp"].is_member
+        account = dashboard.get_account(flask.session)
+        validation_sets = dashboard.get_validation_sets(flask.session)
+       
+        try:
+            dev_token = publisher_gateway.exchange_dashboard_macaroons(flask.session)
+            # If the gateway returns a plain string token:
+            flask.session["developer_token"] = dev_token
+            flask.session["exchanged_developer_token"] = True
+        except Exception as e:
+            # fallback: log and force re-login if exchange fails
+            print("exchange failed:", e)
+            # If you prefer: try refresh flow here (shown below)
+            # For now, clear session and abort to keep things simple/safe:
+            authentication.empty_session(flask.session)
+            flask.abort(502, "Failed to exchange macaroons")
+        print("GOT DEV TOKEN")
 
-        flask.session["openid"] = {
-            "identity_url": resp.identity_url,
-            "email": resp.email,
-            "is_canonical": is_canonical,
-            "is_admin": LP_ADMIN_TEAM in resp.extensions["lp"].is_member,
-        }
+        if account:
+            is_canonical = LP_CANONICAL_TEAM in resp.extensions["lp"].is_member
+            
+            flask.session["publisher"] = {
+                "identity_url": resp.identity_url,
+                "nickname": account["username"],
+                "fullname": account["displayname"],
+                "email": account["email"],
+                "is_canonical": is_canonical,
+                "is_admin": LP_ADMIN_TEAM in resp.extensions["lp"].is_member,
+            }
 
-        return flask.redirect(open_id.get_next_url())
+            if get_stores(
+                account["stores"], roles=["admin", "review", "view"]
+            ):
+                flask.session["publisher"]["has_stores"] = (
+                    len(dashboard.get_stores(flask.session)) > 0
+                )
+
+            flask.session["publisher"]["has_validation_sets"] = (
+                validation_sets is not None
+                and len(validation_sets["assertions"]) > 0
+            )
+        else:
+            flask.session["publisher"] = {
+                "identity_url": resp.identity_url,
+                "nickname": resp.nickname,
+                "fullname": resp.fullname,
+                "image": resp.image,
+                "email": resp.email,
+            }
+
+        response = flask.make_response(
+            flask.redirect(
+                open_id.get_next_url(),
+                302,
+            ),
+        )
+        return response

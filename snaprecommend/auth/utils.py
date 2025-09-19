@@ -29,3 +29,18 @@ def get_refreshed_discharge(json):
     response = api_session.post(url=url, headers=HEADERS, json=json)
 
     return process_response(response)
+
+
+def get_stores(stores, roles):
+    """Get list of stores where the user has the specified roles
+    :param stores: The account stores
+    :param roles: The requested roles to filter
+    :return: A list of stores
+    """
+    user_stores = []
+
+    for store in stores:
+        if not set(roles).isdisjoint(store["roles"]):
+            user_stores.append(store)
+
+    return user_stores

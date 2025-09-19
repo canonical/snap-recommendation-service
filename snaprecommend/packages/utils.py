@@ -57,6 +57,7 @@ def paginate(
 
 def parse_package_for_card(package: Dict[str, Any]) -> Package:
     resp = {
+        "snap_id": "",
         "package": {
             "description": "",
             "display_name": "",
@@ -68,9 +69,10 @@ def parse_package_for_card(package: Dict[str, Any]) -> Package:
         "publisher": {"display_name": "", "name": "", "validation": ""},
         "categories": [],
     }
-
+    print(package)
     snap = package.get("snap", {})
     publisher = snap.get("publisher", {})
+    resp["snap_id"] = package.get("snap-id", "")
     resp["package"]["description"] = snap.get("summary", "")
     resp["package"]["display_name"] = snap.get("title", "")
     resp["package"]["type"] = "snap"
@@ -99,6 +101,7 @@ def get_packages(
     packages_per_page = paginate(packages, page, size, total_pages)
     parsed_packages = []
     for package in packages_per_page:
+        print(package)
         parsed_packages.append(parse_package_for_card(package))
     res = parsed_packages
 

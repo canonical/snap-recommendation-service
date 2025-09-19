@@ -55,10 +55,8 @@ export function FeaturedSnaps() {
                     const newIndex = items.findIndex(
                         (item) => item.package_name === over?.id,
                     );
-
                     return arrayMove(items, oldIndex, newIndex);
                 }
-
                 return items;
             });
         }
@@ -73,6 +71,7 @@ export function FeaturedSnaps() {
 
     const handleAdd = (snap: SearchSnap) => {
         const transformedSnap: FeaturedSnap = {
+            snap_id: snap.snap_id,
             sections: snap.categories,
             summary: snap.package.description,
             title: snap.package.display_name,
@@ -84,6 +83,7 @@ export function FeaturedSnaps() {
                 snap.publisher.validation === "starred"
                     ? "star"
                     : snap.publisher.validation,
+
         };
         setFeaturedSnaps((items: FeaturedSnap[]) => {
             if (items) {
@@ -98,7 +98,7 @@ export function FeaturedSnaps() {
         event.preventDefault();
         setOperationError("");
         const data = new FormData();
-        data.append("snaps", featuredSnaps.map((snap) => snap.package_name).join(","));
+        data.append("snaps", featuredSnaps.map((snap) => snap.snap_id).join(","));
         setIsSaving(true);
 
         const response = await fetch("/featured", {

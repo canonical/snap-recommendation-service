@@ -33,15 +33,13 @@ def login_required(func):
 def admin_required(func):
     @functools.wraps(func)
     def is_admin(*args, **kwargs):
-        if not flask.session["openid"]["is_admin"]:
+        if not flask.session["publisher"].get("is_admin", False):
             response = {
                 "success": False,
                 "message": "Admin permissions needed",
             }
             return flask.make_response(response, 403)
-        response = flask.make_response(func(*args, **kwargs))
-        response.cache_control.private = True
-        return response
+        return  flask.make_response(func(*args, **kwargs))
 
     return is_admin
 
@@ -56,9 +54,7 @@ def exchange_required(func):
                 )
                 flask.session["developer_token"] = result
                 flask.session["exchanged_developer_token"] = True
-            response = flask.make_response(func(*args, **kwargs))
-            response.cache_control.private = True
-            return response
+            return  flask.make_response(func(*args, **kwargs))
         except Exception as e:
             print(e)
     return is_exchanged

@@ -37,6 +37,7 @@ export type FeaturedSnap = {
     developer_name: string;
     origin: string;
     developer_validation: string;
+    snap_id: string;
 }
 
 export type SearchSnap = {
@@ -54,4 +55,5 @@ export type SearchSnap = {
         validation: string;
         name: string;
     }
+    snap_id: string;
 }
