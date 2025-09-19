@@ -22,4 +22,5 @@ COPY . .
 COPY --from=frontend /frontend/dist/static/ ./snaprecommend/static/
 COPY --from=frontend /frontend/dist/index.html ./snaprecommend/templates/index.html
 
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["flask", "run", "--host=0.0.0.0", "--port=80"]
