@@ -30,18 +30,16 @@ def is_authenticated(session):
         "publisher" in session
         and "macaroon_discharge" in session
         and "macaroon_root" in session
-    ) or ("publisher" in session and "macaroons" in session)
+    )
 
 
 def empty_session(session):
     """
     Empty the session, used to logout.
     """
-    session.pop("macaroons", None)
     session.pop("macaroon_root", None)
     session.pop("macaroon_discharge", None)
     session.pop("publisher", None)
-    session.pop("github_auth_secret", None)
 
 
 def get_caveat_id(root):
@@ -66,21 +64,3 @@ def request_macaroon():
     response = utils.post_macaroon({"permissions": PERMISSIONS})
 
     return response["macaroon"]
-
-
-def get_refreshed_discharge(discharge):
-    """
-    Get a refresh macaroon if the macaroon is not valid anymore.
-    Returns the new discharge macaroon.
-    """
-    response = utils.get_refreshed_discharge({"discharge_macaroon": discharge})
-
-    return response["discharge_macaroon"]
-
-
-def is_macaroon_expired(headers):
-    """
-    Returns True if the macaroon needs to be refreshed from
-    the header response.
-    """
-    return headers.get("WWW-Authenticate") == ("Macaroon needs_refresh=1")
