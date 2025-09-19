@@ -119,7 +119,7 @@ export function FeaturedSnaps() {
 
     return <Panel title="Featured Snaps">
         <Row>
-            <Col size={3}><FindSnap addSnap={handleAdd} /></Col>
+            <Col size={4}><FindSnap addSnap={handleAdd} /></Col>
         </Row>
 
         <Row>

@@ -31,7 +31,7 @@ export const SortableCard = ({ snap, handleRemove }: SortableCardProps) => {
         : snap.developer_validation
 
     return (
-        <Col size={3} className="card" style={style} ref={setNodeRef}>
+        <Col size={4} className="card" style={style} ref={setNodeRef}>
             <Card className="u-no-margin--bottom card-content">
                 <div className="card-content__buttons">
                     <div className="card-content__drag" {...listeners} {...attributes}>
