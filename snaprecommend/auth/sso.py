@@ -30,7 +30,7 @@ def init_sso(app: flask.Flask):
     @open_id.loginhandler
     def login():
         if authentication.is_authenticated(flask.session):
-            return flask.redirect(open_id.get_next_url())
+            return flask.redirect(open_id.get_next_url().replace("http://", "https://"))
         try:
             root = authentication.request_macaroon()
         except Exception as api_response_error:
@@ -78,7 +78,7 @@ def init_sso(app: flask.Flask):
 
         response = flask.make_response(
             flask.redirect(
-                open_id.get_next_url(),
+                open_id.get_next_url().replace("http://", "https://"),
                 302,
             ),
         )
