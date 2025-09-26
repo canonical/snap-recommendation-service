@@ -21,12 +21,6 @@ def init_sso(app: flask.Flask):
 
     SSO_TEAM = app.config.get("OPENID_LAUNCHPAD_TEAM", DEFAULT_SSO_TEAM)
 
-    @app.before_request
-    def enforce_https():
-        if not flask.request.is_secure:
-            url = flask.request.url.replace("http://", "https://", 1)
-            return flask.redirect(url, code=301)
-        
     @app.route("/logout")
     def logout():
         authentication.empty_session(flask.session)
@@ -36,7 +30,7 @@ def init_sso(app: flask.Flask):
     @open_id.loginhandler
     def login():
         if authentication.is_authenticated(flask.session):
-            return flask.redirect(open_id.get_next_url())
+            return flask.redirect(open_id.get_next_url().replace("http://", "https://", 1))
         try:
             root = authentication.request_macaroon()
         except Exception as api_response_error:
@@ -84,7 +78,7 @@ def init_sso(app: flask.Flask):
 
         response = flask.make_response(
             flask.redirect(
-                open_id.get_next_url(),
+                open_id.get_next_url().replace("http://", "https://", 1),
                 302,
             ),
         )
