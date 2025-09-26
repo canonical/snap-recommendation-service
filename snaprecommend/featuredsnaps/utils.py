@@ -1,4 +1,4 @@
-from snaprecommend.auth.session import device_gateway, api_session
+from snaprecommend.auth.session import device_gateway
 from snaprecommend.utils import get_icon
 
 
@@ -25,7 +25,7 @@ def get_fetaured_snaps():
         "Pragma": "no-cache",
         "Expires": "0",
     })
-    currently_featured_snaps =  featured_snaps.get("_embedded", {}).get("clickindex:package", [])
+    currently_featured_snaps = featured_snaps.get("_embedded", {}).get("clickindex:package", [])
 
     for snap in currently_featured_snaps:
         snap["icon_url"] = get_icon(snap["media"])
