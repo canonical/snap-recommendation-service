@@ -7,7 +7,6 @@ from config import Config
 from snaprecommend.cli import cli_blueprint
 from snaprecommend.auth.decorators import dashboard_login, exchange_required, admin_required
 from snaprecommend.auth.sso import init_sso
-from werkzeug.middleware.proxy_fix import ProxyFix
 
 logging.basicConfig(
     level=logging.INFO,
@@ -22,7 +21,6 @@ def create_app(config_class=Config):
     app = Flask(__name__, static_folder="static", template_folder="templates")
     app.config.from_object(config_class)
     app.config.from_prefixed_env()
-    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     init_sso(app)
 
