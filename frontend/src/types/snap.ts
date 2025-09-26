@@ -21,3 +21,22 @@ export type Snap = {
     license: string;
     last_updated: string;
 }
+
+
+type SnapCategory = {
+    display_name: string;
+    name: string;
+    featured: boolean;
+}
+
+export type FeaturedSnap = {
+    sections: SnapCategory[];
+    summary: string;
+    title: string;
+    icon_url: string;
+    package_name: string;
+    developer_name: string;
+    origin: string;
+    developer_validation: string;
+    snap_id: string;
+}
