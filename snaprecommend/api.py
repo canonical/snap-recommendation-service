@@ -69,7 +69,6 @@ def category(id: str):
 @api_blueprint.route("/slices")
 def slices():
     slices = get_all_slices()
-
     return [
         {
             "id": slice.id,
