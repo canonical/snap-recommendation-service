@@ -35,7 +35,7 @@ def create_app(config_class=Config):
 
     @app.route("/_status/check")
     def status_check():
-        return "OK"
+        return "OK!"
 
     @app.route("/v2/dashboard/featuredsnaps")
     @exchange_required
