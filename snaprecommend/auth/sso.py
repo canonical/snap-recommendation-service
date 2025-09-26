@@ -21,6 +21,12 @@ def init_sso(app: flask.Flask):
 
     SSO_TEAM = app.config.get("OPENID_LAUNCHPAD_TEAM", DEFAULT_SSO_TEAM)
 
+    @app.before_request
+    def enforce_https():
+        if not flask.request.is_secure:
+            url = flask.request.url.replace("http://", "https://", 1)
+            return flask.redirect(url, code=301)
+
     @app.route("/logout")
     def logout():
         authentication.empty_session(flask.session)
