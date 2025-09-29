@@ -16,7 +16,7 @@ def init_sso(app: flask.Flask):
     open_id = OpenID(
         store_factory=lambda: None,
         safe_roots=[],
-        extension_responses=[TeamsResponse],
+        extension_responses=[MacaroonResponse, TeamsResponse],
     )
 
     SSO_TEAM = app.config.get("OPENID_LAUNCHPAD_TEAM", DEFAULT_SSO_TEAM)

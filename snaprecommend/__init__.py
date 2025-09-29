@@ -31,7 +31,7 @@ def create_app(config_class=Config):
 
     @app.route("/")
     def index():
-        return "Snap recommendations API - Copyright 2025 Canonical~"
+        return "Snap recommendations API - Copyright 2025 Canonical~!"
 
     @app.route("/_status/check")
     def status_check():
