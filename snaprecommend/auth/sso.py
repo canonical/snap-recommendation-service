@@ -29,10 +29,6 @@ def init_sso(app: flask.Flask):
     @open_id.loginhandler
     def login():
         if authentication.is_authenticated(flask.session):
-            if flask.request.is_secure:
-                return flask.redirect(
-                    open_id.get_next_url().replace("http://", "https://")
-                )
             return flask.redirect(open_id.get_next_url())
         try:
             root = authentication.request_macaroon()
