@@ -3,7 +3,6 @@ from django_openid_auth.teams import TeamsRequest, TeamsResponse
 from flask_openid import OpenID
 from snaprecommend.auth.macroon import MacaroonRequest, MacaroonResponse
 from snaprecommend.auth import authentication
-from snaprecommend.auth.session import publisher_gateway
 from snaprecommend.auth.constants import (
     DEFAULT_SSO_TEAM,
     LP_CANONICAL_TEAM,
@@ -35,23 +34,23 @@ def init_sso(app: flask.Flask):
                     open_id.get_next_url().replace("http://", "https://")
                 )
             return flask.redirect(open_id.get_next_url())
-        try:
-            root = authentication.request_macaroon()
-        except Exception as api_response_error:
-            if api_response_error.status_code == 401:
-                return flask.redirect(flask.url_for(".logout"))
-            else:
-                return flask.abort(502, str(api_response_error))
-        openid_macaroon = MacaroonRequest(caveat_id=authentication.get_caveat_id(root))
-        flask.session["macaroon_root"] = root
+        root = authentication.request_macaroon()
+        # try:
+        #     root = authentication.request_macaroon()
+        # except Exception as api_response_error:
+        #     if api_response_error.status_code == 401:
+        #         return flask.redirect(flask.url_for(".logout"))
+        #     else:
+        #         return flask.abort(502, str(api_response_error))
+        # openid_macaroon = MacaroonRequest(caveat_id=authentication.get_caveat_id(root))
+        # flask.session["macaroon_root"] = root
 
         teams_request = TeamsRequest(
             query_membership=[SSO_TEAM, LP_CANONICAL_TEAM, LP_ADMIN_TEAM]
         )
 
-        teams_request = TeamsRequest(query_membership=[SSO_TEAM])
         return open_id.try_login(
-            SSO_LOGIN_URL, ask_for=["email"], extensions=[openid_macaroon, teams_request]
+            SSO_LOGIN_URL, ask_for=["email"], extensions=[teams_request]
         )
 
     @open_id.after_login
