@@ -49,7 +49,7 @@ def init_sso(app: flask.Flask):
         )
 
         return open_id.try_login(
-            SSO_LOGIN_URL, ask_for=["email"], extensions=[teams_request]
+            SSO_LOGIN_URL, ask_for=["email"], extensions=[openid_macaroon, teams_request]
         )
 
     @open_id.after_login
