@@ -41,7 +41,7 @@ def init_sso(app: flask.Flask):
                 return flask.redirect(flask.url_for(".logout"))
             else:
                 return flask.abort(502, str(api_response_error))
-        # openid_macaroon = MacaroonRequest(caveat_id=authentication.get_caveat_id(root))
+        openid_macaroon = MacaroonRequest(caveat_id=authentication.get_caveat_id(root))
         flask.session["macaroon_root"] = root
 
         teams_request = TeamsRequest(
