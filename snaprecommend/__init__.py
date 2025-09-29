@@ -24,7 +24,7 @@ def create_app(config_class=Config):
     app.config.from_prefixed_env()
     # added to fix insecure form submission warning
     app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
-    
+
     init_sso(app)
 
     app.register_blueprint(cli_blueprint)
