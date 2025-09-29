@@ -34,16 +34,15 @@ def init_sso(app: flask.Flask):
                     open_id.get_next_url().replace("http://", "https://")
                 )
             return flask.redirect(open_id.get_next_url())
-        root = authentication.request_macaroon()
-        # try:
-        #     root = authentication.request_macaroon()
-        # except Exception as api_response_error:
-        #     if api_response_error.status_code == 401:
-        #         return flask.redirect(flask.url_for(".logout"))
-        #     else:
-        #         return flask.abort(502, str(api_response_error))
+        try:
+            root = authentication.request_macaroon()
+        except Exception as api_response_error:
+            if api_response_error.status_code == 401:
+                return flask.redirect(flask.url_for(".logout"))
+            else:
+                return flask.abort(502, str(api_response_error))
         # openid_macaroon = MacaroonRequest(caveat_id=authentication.get_caveat_id(root))
-        # flask.session["macaroon_root"] = root
+        flask.session["macaroon_root"] = root
 
         teams_request = TeamsRequest(
             query_membership=[SSO_TEAM, LP_CANONICAL_TEAM, LP_ADMIN_TEAM]
