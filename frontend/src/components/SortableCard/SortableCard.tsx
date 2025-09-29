@@ -1,20 +1,54 @@
-import { Card, Col } from "@canonical/react-components";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+import { Button, Card, Col, Icon } from "@canonical/react-components";
 import type { FeaturedSnap } from "../../types/snap";
 import "./SortableCard.scss";
 
 type SortableCardProps = {
     snap: FeaturedSnap;
+    handleRemove: (id: string) => void;
 };
 
-export const SortableCard = ({ snap}: SortableCardProps) => {
- 
+export const SortableCard = ({ snap, handleRemove }: SortableCardProps) => {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: snap.package_name });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : 1,
+    };
+
     const developerValidation = snap.developer_validation === "starred"
         ? "star"
         : snap.developer_validation
 
     return (
-        <Col size={4} className="card" >
+        <Col size={4} className="card" style={style} ref={setNodeRef}>
             <Card className="u-no-margin--bottom card-content">
+                <div className="card-content__buttons">
+                    <div className="card-content__drag" {...listeners} {...attributes}>
+                        <Icon name="drag" />
+                    </div>
+
+                    <Button
+                        appearance="base"
+                        className="card-content__delete"
+                        hasIcon
+                        onClick={() => handleRemove(snap.package_name)}
+                    >
+                        <Icon name="delete" />
+                    </Button>
+                </div>
+
+
                 <div className="p-media-object">
                     <img
                         src={snap.icon_url}
