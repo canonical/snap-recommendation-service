@@ -2,7 +2,7 @@ from openid.extension import Extension as OpenIDExtension
 
 
 class MacaroonRequest(OpenIDExtension):
-    ns_uri = "https://ns.login.ubuntu.com/2016/openid-macaroon"
+    ns_uri = "http://ns.login.ubuntu.com/2016/openid-macaroon"
     ns_alias = "macaroon"
 
     def __init__(self, caveat_id):
