@@ -31,6 +31,7 @@ def create_app(config_class=Config):
 
     from snaprecommend.api import api_blueprint
     from snaprecommend.dashboard import dashboard_blueprint
+    from snaprecommend.featuredsnaps.api import featured_blueprint
 
     @app.route("/")
     def index():
@@ -57,6 +58,7 @@ def create_app(config_class=Config):
 
     app.register_blueprint(api_blueprint, url_prefix="/api")
     app.register_blueprint(dashboard_blueprint, url_prefix="/dashboard")
+    app.register_blueprint(featured_blueprint, url_prefix="/featured")
 
     db.init_app(app)
     migrate.init_app(app, db)
