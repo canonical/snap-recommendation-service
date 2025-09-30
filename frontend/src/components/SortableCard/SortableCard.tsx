@@ -24,7 +24,7 @@ export const SortableCard = ({ snap}: SortableCardProps) => {
                         className="p-media-object__image"
                         data-testid="package-icon"
                     />
-                    <div className="sc-package-card p-media-o bject__details">
+                    <div className="sc-package-card p-media-object__details">
                         <a href={`https://snapcraft.io/${snap.package_name}`}>{snap.title}</a>
 
                         <div className="card-content__dev_info">
@@ -52,11 +52,8 @@ export const SortableCard = ({ snap}: SortableCardProps) => {
                                         className="sc-package-publisher-icon"
                                     />
                                 )}
-
                         </div>
-
                     </div>
-
                 </div>
                 <div className="u-line-clamp">{snap.summary}</div>
             </Card>
