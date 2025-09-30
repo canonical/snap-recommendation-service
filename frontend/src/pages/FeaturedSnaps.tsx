@@ -17,7 +17,6 @@ export function FeaturedSnaps() {
     }, [data])
 
     return <Panel title="Featured Snaps">
-
         <Row>
             {
                 (error) && <Notification severity="negative" title="Error">
