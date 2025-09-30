@@ -3,9 +3,10 @@ from flask_cors import CORS
 import logging
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 from snaprecommend.cli import cli_blueprint
-from snaprecommend.auth.decorators import dashboard_login
+from snaprecommend.auth.decorators import dashboard_login, exchange_required, admin_required
 from snaprecommend.auth.sso import init_sso
 
 logging.basicConfig(
@@ -21,6 +22,8 @@ def create_app(config_class=Config):
     app = Flask(__name__, static_folder="static", template_folder="templates")
     app.config.from_object(config_class)
     app.config.from_prefixed_env()
+    # added to fix insecure form submission warning
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
     init_sso(app)
 
@@ -36,6 +39,13 @@ def create_app(config_class=Config):
     @app.route("/_status/check")
     def status_check():
         return "OK"
+
+    @app.route("/v2/dashboard/featuredsnaps")
+    @exchange_required
+    @admin_required
+    @dashboard_login
+    def serve_featured_snaps():
+        return render_template("index.html")
 
     @app.route("/v2/dashboard")
     @app.route("/v2/dashboard/<path:path>")
