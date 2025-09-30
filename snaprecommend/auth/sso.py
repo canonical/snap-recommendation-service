@@ -1,7 +1,7 @@
 import flask
 from django_openid_auth.teams import TeamsRequest, TeamsResponse
 from flask_openid import OpenID
-from snaprecommend.auth.macroon import MacaroonRequest, MacaroonResponse
+from snaprecommend.auth.macaroon import MacaroonRequest, MacaroonResponse
 from snaprecommend.auth import authentication
 from snaprecommend.auth.session import publisher_gateway
 from snaprecommend.auth.constants import (
