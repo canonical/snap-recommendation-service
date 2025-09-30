@@ -2,7 +2,7 @@ from snaprecommend.auth.session import device_gateway
 from snaprecommend.utils import get_icon
 
 
-def get_fetaured_snaps():
+def get_featured_snaps():
     fields = ",".join(
         [
             "package_name",
