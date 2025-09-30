@@ -318,6 +318,19 @@ def exclude_snap():
     return flask.jsonify({"status": "success"}), 200
 
 
+@api_blueprint.route("/recently-updated", methods=["GET"])
+def recenty_updated():
+    page = int(flask.request.args.get("page", 1))
+    size = int(flask.request.args.get("size", 10))
+
+    snaps = Snap.query.order_by(Snap.last_updated.desc()).paginate(page=page, per_page=size, max_per_page=50, error_out=False).items
+    return flask.jsonify({
+        "page": page,
+        "size": min(size, 50),
+        "snaps": [serialize_snap(snap) for snap in snaps],
+    }), 200
+
+
 def format_response(snaps: list[Snap]) -> list[dict]:
     return [
         {
