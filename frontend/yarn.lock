@@ -185,7 +185,7 @@
     react-table "7.8.0"
     react-useportal "1.0.19"
 
-"@canonical/react-components@^2.16.1":
+"@canonical/react-components@2.16.1":
   version "2.16.1"
   resolved "https://registry.yarnpkg.com/@canonical/react-components/-/react-components-2.16.1.tgz#4c814dd6b64549a4ccda94eb0df5d0ba0d35b41b"
   integrity sha512-8qoTl/4cci8JzDX+XJXP0/dHJQXhY0skQDYX5jynFXS9lUnjdgAlVehiulghFRZWGXUKrinRqwVYIXR88xEZww==
@@ -201,7 +201,7 @@
     prop-types "15.8.1"
     react-table "7.8.0"
 
-"@canonical/store-components@^0.54.2":
+"@canonical/store-components@0.54.2":
   version "0.54.2"
   resolved "https://registry.yarnpkg.com/@canonical/store-components/-/store-components-0.54.2.tgz#d281835da2519530dda2b0b4faeaa6d10dac86ce"
   integrity sha512-FzKAHNk1d0knvICPpOcis0fGnDU3ozJ4Fnx+X6iXX5K82ZKXB5bCYlcOPwKFmuSpbvjGkpM08WS2xBqHLgn1bw==
