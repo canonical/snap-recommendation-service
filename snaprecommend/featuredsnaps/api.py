@@ -15,6 +15,7 @@ def featured_snaps():
     featured = get_featured_snaps()
     return flask.jsonify(featured), 200
 
+
 @featured_blueprint.route("/", methods=["POST"])
 @exchange_required
 @login_required
