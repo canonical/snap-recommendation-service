@@ -42,7 +42,6 @@ export function FindSnap({ addSnap }: { addSnap: (snap: SearchSnap) => void }) {
             inputRef.current.value = "";
         }
         setFocused(false);
-        console.log(snap)
         addSnap(snap);
     };
 

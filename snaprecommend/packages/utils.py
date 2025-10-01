@@ -1,30 +1,9 @@
 from snaprecommend.auth.session import device_gateway
-from typing import List, Dict, TypedDict, Any, Union
 from snaprecommend.utils import get_icon
 
 
-Package = TypedDict(
-    "Package",
-    {"package": Dict[str, Union[Dict[str, str], List[str], List[Dict[str, str]]]]},
-)
-
-
-Packages = TypedDict(
-    "Packages",
-    {
-        "packages": List[
-            Dict[
-                str,
-                Union[Dict[str, Union[str, List[str]]], List[Dict[str, str]]],
-            ]
-        ]
-    },
-)
-
-
-def fetch_packages(fields: List[str], query_params) -> Packages:
+def fetch_packages(fields, query_params):
     query = query_params.get("q", "")
-
     args = {
         "fields": fields,
         "query": query,
@@ -36,8 +15,8 @@ def fetch_packages(fields: List[str], query_params) -> Packages:
 
 
 def paginate(
-    packages: List[Packages], page: int, size: int, total_pages: int
-) -> List[Packages]:
+    packages, page: int, size: int, total_pages: int
+):
     if page > total_pages:
         page = total_pages
     if page < 1:
@@ -51,7 +30,7 @@ def paginate(
     return packages[start:end]
 
 
-def parse_package_for_card(package: Dict[str, Any]) -> Package:
+def parse_package_for_card(package):
     resp = {
         "snap_id": "",
         "package": {
@@ -81,16 +60,10 @@ def parse_package_for_card(package: Dict[str, Any]) -> Package:
     return resp
 
 
-def get_packages(
-    fields: List[str],
-    size: int = 10,
-    query_params: Dict[str, Any] = {},
-) -> List[Dict[str, Any]]:
+def get_packages(fields, size=10, query_params={}):
     packages = fetch_packages(fields, query_params)
-
     total_pages = -(len(packages) // -size)
 
-    total_pages = -(len(packages) // -size)
     total_items = len(packages)
     page = int(query_params.get("page", 1))
     packages_per_page = paginate(packages, page, size, total_pages)

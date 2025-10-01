@@ -30,11 +30,6 @@ def post_featured_snaps():
         return flask.make_response(response, 500)
 
     token = flask.session.get("developer_token")
-    if not token:
-        return flask.make_response(
-            {"success": False, "message": "Missing authentication token"},
-            401,
-        )
 
     # currently_featured_snap is the list of featured snaps to be deleted
     currently_featured_snaps = []
@@ -59,7 +54,7 @@ def post_featured_snaps():
             "success": False,
             "message": "An error occurred while deleting featured snaps",
         }
-        return flask.make_response(response, 500)
+        return flask.make_response(response, 400)
 
     snap_ids = featured_snaps.split(",")
     payload = {"packages": snap_ids}
