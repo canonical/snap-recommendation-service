@@ -10,8 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@canonical/react-components": "^2.16.1",
-    "@canonical/store-components": "^0.54.2",
+    "@canonical/react-components": "2.16.1",
+    "@canonical/store-components": "0.54.2",
     "formik": "^2.4.6",
     "react": "19.1.1",
     "react-dom": "19.1.1",
