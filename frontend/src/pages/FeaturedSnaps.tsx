@@ -3,7 +3,7 @@ import { useFetchData } from "../hooks/useFetchData";
 import type { FeaturedSnap } from "../types/snap";
 import { useEffect, useState } from "react";
 import { SortableCard } from "../components/SortableCard/SortableCard";
-import { LoadingCard } from "../components/LoadingCard/LoadingCard";
+import { LoadingCard } from "@canonical/store-components";
 
 export function FeaturedSnaps() {
     const { data, loading, error } = useFetchData<FeaturedSnap[]>('/featured');
