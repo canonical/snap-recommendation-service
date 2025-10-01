@@ -25,20 +25,16 @@ export function FeaturedSnaps() {
             }
             {loading &&
                 [...Array(16)].map((_, index) => (
-                    <Col size={3} key={index}>
+                    <Col size={4} key={index}>
                         <LoadingCard />
                     </Col>
                 ))}
-            {featuredSnaps && (
-                <div>
-                    {featuredSnaps.map((snap) => (
-                        <SortableCard
-                            key={snap.package_name}
-                            snap={snap}
-                        />
-                    ))}
-                </div>
-            )}
+            {featuredSnaps && featuredSnaps.map((snap) => (
+                <SortableCard
+                    key={snap.package_name}
+                    snap={snap}
+                />
+            ))}
         </Row>
     </Panel>
 }
