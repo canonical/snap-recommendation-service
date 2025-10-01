@@ -61,11 +61,15 @@ def post_featured_snaps():
     update_response = publisher_gateway.update_featured_snaps(token, payload)
 
     if update_response.status_code in (401, 403):
+        publisher_gateway.update_featured_snaps(token, {"packages": currently_featured_snap_ids})
+
         return flask.make_response(
             {"success": False, "message": "Unauthorized to update featured snaps"},
             update_response.status_code,
         )
     if update_response.status_code != 201:
+        publisher_gateway.update_featured_snaps(token, {"packages": currently_featured_snap_ids})
+
         return flask.make_response(
             {
                 "success": False,
@@ -73,5 +77,6 @@ def post_featured_snaps():
             },
             500,
         )
+
 
     return flask.make_response({"success": True}, 200)
