@@ -78,5 +78,4 @@ def post_featured_snaps():
             500,
         )
 
-
     return flask.make_response({"success": True}, 200)
