@@ -40,3 +40,21 @@ export type FeaturedSnap = {
     developer_validation: string;
     snap_id: string;
 }
+
+export type SearchSnap = {
+    categories: SnapCategory[];
+    package: {
+        description: string;
+        display_name: string;
+        icon_url: string;
+        name: string;
+        platforms: string[];
+        type: string;
+    }
+    publisher: {
+        display_name: string;
+        validation: string;
+        name: string;
+    }
+    snap_id: string;
+}
