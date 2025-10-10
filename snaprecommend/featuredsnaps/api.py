@@ -21,6 +21,7 @@ def featured_snaps():
 @login_required
 @admin_required
 def post_featured_snaps():
+    # ['wShl4osatuO4sXk2TfzrxE6hZF0biJhS', 'bIb4p4yWWjyZdo2EU64whkZhw9QYYsMH', 'hHiqKR3Bgg6i591bUdkHAzscVywZbpQP', 'wVB1RfBgsZY8dmVifSFeMkTE6UN41osI', 'kvAx1DJUbiqow1LgLfW5OzjksfqUEcqJ', 'ZtF4mLp5Bededu3S65ocO6HfGXCtcvZ9', '6JBjLwyVchga4cOSDqhWJd9NgQfrTYam', 'lfWUNpR7PrPGsDfuxIhVxbj0wZHoH7bK', 'wZo5sef6NuUKCW6DP83fJ6zIZyd5R1sA', 'G9GFr0OFxXrWLDuyfXXD07GFG8UflpJN', 'SfUqQ280Y4bJ0k64qtBKTTXq5ml46tvQ', 'wtlQQaUNASoWxqfxRflcRjU3au6cQ3X0', 'roFhaRzMw8ted6zNEL8NQnNrkFdIHnHv', 'qYBYNvfcQaSWRQAhY89lwrtniZeZMWRH', 'DtXxirDGfOc8LeUJVENXGTir4Oq0F7Ts', 'JbSwFezsVhBG8EpYeNqD4HX31U5WIzdY']
     featured_snaps = flask.request.form.get("snaps")
     if not featured_snaps:
         response = {
@@ -45,21 +46,31 @@ def post_featured_snaps():
         snap["snap_id"] for snap in currently_featured_snaps
     ]
 
-    delete_response = publisher_gateway.delete_featured_snaps(
-        token, {"packages": currently_featured_snap_ids}
-    )
+    if len(currently_featured_snap_ids) > 0:
+        delete_response = publisher_gateway.delete_featured_snaps(
+            token, {"packages": currently_featured_snap_ids}
+        )
 
-    if delete_response.status_code != 201:
-        response = {
-            "success": False,
-            "message": "An error occurred while deleting featured snaps",
-        }
-        return flask.make_response(response, 400)
+        # Print status code
+        print("Status Code:", delete_response.status_code)
+
+        # Print response body
+        print("Response Body:", delete_response.text)
+        if delete_response.status_code != 201:
+            response = {
+                "success": False,
+                "message": "An error occurred while deleting featured snaps",
+            }
+            return flask.make_response(response, 400)
 
     snap_ids = featured_snaps.split(",")
     payload = {"packages": snap_ids}
     update_response = publisher_gateway.update_featured_snaps(token, payload)
+   # Print status code
+    print("Status Code:", update_response.status_code)
 
+    # Print response body
+    print("Response Body:", update_response.text)
     if update_response.status_code in (401, 403):
         publisher_gateway.update_featured_snaps(token, {"packages": currently_featured_snap_ids})
 
