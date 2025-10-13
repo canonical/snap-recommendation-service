@@ -17,6 +17,7 @@ from snaprecommend.logic import (
     get_most_recent_pipeline_step_logs,
     exclude_snap_from_category,
 )
+
 from snaprecommend.auth.decorators import login_required
 from snaprecommend.editorials import (
     get_all_editorial_slices,
