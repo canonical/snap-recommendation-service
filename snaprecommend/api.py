@@ -44,7 +44,6 @@ api_blueprint = Blueprint("api", __name__)
 @api_blueprint.route("/categories")
 def categories():
     categories = get_all_categories()
-
     return [
         {
             "id": category.id,
