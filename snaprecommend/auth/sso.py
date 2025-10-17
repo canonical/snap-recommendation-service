@@ -38,6 +38,7 @@ def init_sso(app: flask.Flask):
                 return flask.redirect(flask.url_for(".logout"))
             else:
                 return flask.abort(502, str(api_response_error))
+        openid_macaroon = MacaroonRequest(caveat_id=authentication.get_caveat_id(root))
         flask.session["macaroon_root"] = root
 
         teams_request = TeamsRequest(
@@ -48,17 +49,37 @@ def init_sso(app: flask.Flask):
             SSO_LOGIN_URL,
             ask_for=["email", "nickname"],
             ask_for_optional=["fullname"],
-            extensions=[teams_request],
+            extensions=[openid_macaroon, teams_request],
         )
 
     @open_id.after_login
     def after_login(resp):
+        flask.session["macaroon_root"] = flask.session.get("macaroon_root")
+        flask.session["macaroon_discharge"] = resp.extensions["macaroon"].discharge
+
         if SSO_TEAM not in resp.extensions["lp"].is_member:
             flask.abort(403)
 
-        flask.session["openid"] = {
+        try:
+            dev_token = publisher_gateway.exchange_dashboard_macaroons(flask.session)
+            flask.session["developer_token"] = dev_token
+            flask.session["exchanged_developer_token"] = True
+        except Exception:
+            authentication.empty_session(flask.session)
+            flask.abort(502, "Failed to exchange macaroons")
+
+        flask.session["publisher"] = {
             "identity_url": resp.identity_url,
+            "nickname": resp.nickname,
+            "fullname": resp.fullname,
             "email": resp.email,
+            "is_admin": LP_ADMIN_TEAM in resp.extensions["lp"].is_member,
         }
 
-        return flask.redirect(open_id.get_next_url())
+        response = flask.make_response(
+            flask.redirect(
+                open_id.get_next_url(),
+                302,
+            ),
+        )
+        return response
