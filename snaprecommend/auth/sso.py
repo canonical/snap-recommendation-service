@@ -1,4 +1,6 @@
 import flask
+import logging
+import os
 from django_openid_auth.teams import TeamsRequest, TeamsResponse
 from flask_openid import OpenID
 from snaprecommend.auth.macaroon import MacaroonRequest, MacaroonResponse
@@ -10,6 +12,8 @@ from snaprecommend.auth.constants import (
     LP_ADMIN_TEAM,
     SSO_LOGIN_URL,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def init_sso(app: flask.Flask):
@@ -29,28 +33,71 @@ def init_sso(app: flask.Flask):
     @app.route("/login", methods=["GET", "POST"])
     @open_id.loginhandler
     def login():
+        logger.info("=== LOGIN ENDPOINT CALLED ===")
+        logger.info(f"Request method: {flask.request.method}")
+        logger.info(f"Request path: {flask.request.path}")
+        logger.info(f"Request headers: {dict(flask.request.headers)}")
+
+        # Log proxy environment variables
+        logger.info(f"HTTP_PROXY env: {os.environ.get('HTTP_PROXY', 'Not set')}")
+        logger.info(f"HTTPS_PROXY env: {os.environ.get('HTTPS_PROXY', 'Not set')}")
+        logger.info(f"NO_PROXY env: {os.environ.get('NO_PROXY', 'Not set')}")
+        logger.info(f"http_proxy env: {os.environ.get('http_proxy', 'Not set')}")
+        logger.info(f"https_proxy env: {os.environ.get('https_proxy', 'Not set')}")
+        logger.info(f"no_proxy env: {os.environ.get('no_proxy', 'Not set')}")
+
         if authentication.is_authenticated(flask.session):
+            logger.info("User already authenticated, redirecting")
             return flask.redirect(open_id.get_next_url())
+
+        logger.info("User not authenticated, requesting macaroon from dashboard API")
         try:
             root = authentication.request_macaroon()
+            logger.info("Successfully received macaroon from dashboard API")
         except Exception as api_response_error:
-            if api_response_error.status_code == 401:
-                return flask.redirect(flask.url_for(".logout"))
+            logger.error(f"Failed to request macaroon: {type(api_response_error).__name__}")
+            logger.error(f"Error message: {str(api_response_error)}")
+            logger.error(f"Error details: {repr(api_response_error)}", exc_info=True)
+
+            # Check if the exception has a status_code attribute
+            if hasattr(api_response_error, 'status_code'):
+                logger.error(f"API response status code: {api_response_error.status_code}")
+                if api_response_error.status_code == 401:
+                    logger.info("Received 401, redirecting to logout")
+                    return flask.redirect(flask.url_for(".logout"))
+                else:
+                    logger.error(f"Aborting with 502: {str(api_response_error)}")
+                    return flask.abort(502, str(api_response_error))
             else:
+                logger.error("Exception has no status_code attribute - likely a connection or proxy error")
+                logger.error(f"Aborting with 502: {str(api_response_error)}")
                 return flask.abort(502, str(api_response_error))
-        openid_macaroon = MacaroonRequest(caveat_id=authentication.get_caveat_id(root))
+
+        logger.info("Creating OpenID macaroon request")
+        try:
+            openid_macaroon = MacaroonRequest(caveat_id=authentication.get_caveat_id(root))
+            logger.info("Successfully created OpenID macaroon request")
+        except Exception as e:
+            logger.error(f"Failed to create OpenID macaroon: {type(e).__name__}: {str(e)}", exc_info=True)
+            return flask.abort(500, f"Failed to create OpenID macaroon: {str(e)}")
+
         flask.session["macaroon_root"] = root
 
         teams_request = TeamsRequest(
             query_membership=[SSO_TEAM, LP_CANONICAL_TEAM, LP_ADMIN_TEAM]
         )
 
-        return open_id.try_login(
-            SSO_LOGIN_URL,
-            ask_for=["email", "nickname"],
-            ask_for_optional=["fullname"],
-            extensions=[openid_macaroon, teams_request],
-        )
+        logger.info(f"Initiating OpenID login flow to {SSO_LOGIN_URL}")
+        try:
+            return open_id.try_login(
+                SSO_LOGIN_URL,
+                ask_for=["email", "nickname"],
+                ask_for_optional=["fullname"],
+                extensions=[openid_macaroon, teams_request],
+            )
+        except Exception as e:
+            logger.error(f"Failed in try_login: {type(e).__name__}: {str(e)}", exc_info=True)
+            return flask.abort(500, f"OpenID login failed: {str(e)}")
 
     @open_id.after_login
     def after_login(resp):
