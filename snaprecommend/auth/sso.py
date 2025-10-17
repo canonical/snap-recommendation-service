@@ -1,4 +1,5 @@
 import flask
+import os
 from django_openid_auth.teams import TeamsRequest, TeamsResponse
 from flask_openid import OpenID
 from snaprecommend.auth.macroon import MacaroonRequest, MacaroonResponse
@@ -10,6 +11,12 @@ from snaprecommend.auth.constants import (
     LP_ADMIN_TEAM,
     SSO_LOGIN_URL,
 )
+
+# Monkey-patch urllib to disable proxy for OpenID verification requests
+# This prevents 403 Forbidden errors when production proxy blocks SSO endpoints
+import urllib.request
+_original_proxy_handler = urllib.request.ProxyHandler
+urllib.request.ProxyHandler = lambda proxies=None: _original_proxy_handler({})
 
 
 def init_sso(app: flask.Flask):
