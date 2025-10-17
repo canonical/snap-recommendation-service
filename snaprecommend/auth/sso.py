@@ -1,5 +1,4 @@
 import flask
-import logging
 from django_openid_auth.teams import TeamsRequest, TeamsResponse
 from flask_openid import OpenID
 from snaprecommend.auth.macaroon import MacaroonRequest, MacaroonResponse
@@ -11,8 +10,6 @@ from snaprecommend.auth.constants import (
     LP_ADMIN_TEAM,
     SSO_LOGIN_URL,
 )
-
-logger = logging.getLogger(__name__)
 
 
 def init_sso(app: flask.Flask):
@@ -32,58 +29,34 @@ def init_sso(app: flask.Flask):
     @app.route("/login", methods=["GET", "POST"])
     @open_id.loginhandler
     def login():
-        logger.info("=== LOGIN ENDPOINT CALLED ===")
-        logger.info(f"Request method: {flask.request.method}")
-        logger.info(f"Request path: {flask.request.path}")
-
+        print("login")
         if authentication.is_authenticated(flask.session):
-            logger.info("User already authenticated, redirecting")
+            print("authenticated")
             return flask.redirect(open_id.get_next_url())
-
         try:
-            logger.info("Requesting macaroon from dashboard API")
+            print("before request macaroon")
             root = authentication.request_macaroon()
-            logger.info("Successfully received macaroon")
+            print("after request macaroon")
         except Exception as api_response_error:
-            logger.error(f"Failed to request macaroon: {type(api_response_error).__name__}: {str(api_response_error)}")
-            logger.error(f"Exception details: {repr(api_response_error)}", exc_info=True)
-
-            # Check if the exception has a status_code attribute
-            if hasattr(api_response_error, 'status_code'):
-                logger.error(f"API response status code: {api_response_error.status_code}")
-                if api_response_error.status_code == 401:
-                    return flask.redirect(flask.url_for(".logout"))
-                else:
-                    return flask.abort(502, str(api_response_error))
+            print("error", api_response_error.status_code)
+            if api_response_error.status_code == 401:
+                return flask.redirect(flask.url_for(".logout"))
             else:
-                # If there's no status_code, it's a different kind of error
-                logger.error("Exception has no status_code attribute - likely a connection or parsing error")
-                return flask.abort(500, f"Login error: {str(api_response_error)}")
-
-        try:
-            logger.info("Creating OpenID macaroon request")
-            openid_macaroon = MacaroonRequest(caveat_id=authentication.get_caveat_id(root))
-            logger.info("Successfully created OpenID macaroon")
-        except Exception as e:
-            logger.error(f"Failed to create OpenID macaroon: {type(e).__name__}: {str(e)}", exc_info=True)
-            return flask.abort(500, f"Failed to create OpenID macaroon: {str(e)}")
-
+                return flask.abort(502, str(api_response_error))
+        print("before openid_macaroon")
+        openid_macaroon = MacaroonRequest(caveat_id=authentication.get_caveat_id(root))
+        print("after openid_macaroon")
         flask.session["macaroon_root"] = root
         teams_request = TeamsRequest(
             query_membership=[SSO_TEAM, LP_CANONICAL_TEAM, LP_ADMIN_TEAM]
         )
-        logger.info("Initiating OpenID login flow")
-
-        try:
-            return open_id.try_login(
-                SSO_LOGIN_URL,
-                ask_for=["email", "nickname"],
-                ask_for_optional=["fullname"],
-                extensions=[openid_macaroon, teams_request],
-            )
-        except Exception as e:
-            logger.error(f"Failed in try_login: {type(e).__name__}: {str(e)}", exc_info=True)
-            return flask.abort(500, f"OpenID login failed: {str(e)}")
+        print("teams_request DONE")
+        return open_id.try_login(
+            SSO_LOGIN_URL,
+            ask_for=["email", "nickname"],
+            ask_for_optional=["fullname"],
+            extensions=[openid_macaroon, teams_request],
+        )
 
     @open_id.after_login
     def after_login(resp):
