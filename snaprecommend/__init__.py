@@ -1,7 +1,6 @@
 from flask import Flask, render_template
 from flask_cors import CORS
 import logging
-import sys
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from werkzeug.middleware.proxy_fix import ProxyFix
@@ -10,12 +9,9 @@ from snaprecommend.cli import cli_blueprint
 from snaprecommend.auth.decorators import dashboard_login, exchange_required, admin_required
 from snaprecommend.auth.sso import init_sso
 
-# Configure logging to go to stderr for better Juju visibility
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-    stream=sys.stderr,
-    force=True,
 )
 
 db = SQLAlchemy()

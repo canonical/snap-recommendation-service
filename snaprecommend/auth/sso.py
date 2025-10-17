@@ -32,9 +32,6 @@ def init_sso(app: flask.Flask):
     @app.route("/login", methods=["GET", "POST"])
     @open_id.loginhandler
     def login():
-        print("=== LOGIN ENDPOINT CALLED ===", flush=True)
-        print(f"Request method: {flask.request.method}", flush=True)
-        print(f"Request path: {flask.request.path}", flush=True)
         logger.info("=== LOGIN ENDPOINT CALLED ===")
         logger.info(f"Request method: {flask.request.method}")
         logger.info(f"Request path: {flask.request.path}")
@@ -59,7 +56,8 @@ def init_sso(app: flask.Flask):
                 else:
                     return flask.abort(502, str(api_response_error))
             else:
-                logger.error("Exception has no status_code attribute -- likely a connection or parsing error")
+                # If there's no status_code, it's a different kind of error
+                logger.error("Exception has no status_code attribute - likely a connection or parsing error")
                 return flask.abort(500, f"Login error: {str(api_response_error)}")
 
         try:
