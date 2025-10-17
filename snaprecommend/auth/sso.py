@@ -38,14 +38,6 @@ def init_sso(app: flask.Flask):
         logger.info(f"Request path: {flask.request.path}")
         logger.info(f"Request headers: {dict(flask.request.headers)}")
 
-        # Log proxy environment variables
-        logger.info(f"HTTP_PROXY env: {os.environ.get('HTTP_PROXY', 'Not set')}")
-        logger.info(f"HTTPS_PROXY env: {os.environ.get('HTTPS_PROXY', 'Not set')}")
-        logger.info(f"NO_PROXY env: {os.environ.get('NO_PROXY', 'Not set')}")
-        logger.info(f"http_proxy env: {os.environ.get('http_proxy', 'Not set')}")
-        logger.info(f"https_proxy env: {os.environ.get('https_proxy', 'Not set')}")
-        logger.info(f"no_proxy env: {os.environ.get('no_proxy', 'Not set')}")
-
         if authentication.is_authenticated(flask.session):
             logger.info("User already authenticated, redirecting")
             return flask.redirect(open_id.get_next_url())
