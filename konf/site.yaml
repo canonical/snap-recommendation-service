@@ -23,3 +23,8 @@ env:
     configMapKeyRef:
       key: ratings-backend
       name: snaprecommend
+  - name: NO_PROXY
+    value: "dashboard.snapcraft.io,login.ubuntu.com,localhost,127.0.0.1"
+  - name: no_proxy
+    value: "dashboard.snapcraft.io,login.ubuntu.com,localhost,127.0.0.1"
+
