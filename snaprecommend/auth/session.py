@@ -9,8 +9,6 @@ from canonicalwebteam.store_api.dashboard import Dashboard
 class BaseSession:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Disable proxy usage to prevent 403 Forbidden errors in production
-        self.trust_env = False
 
     def requests(self, method, url, timeout=12, **kwargs):
         try:
