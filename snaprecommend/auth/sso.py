@@ -31,24 +31,12 @@ def init_sso(app: flask.Flask):
     def login():
         if authentication.is_authenticated(flask.session):
             return flask.redirect(open_id.get_next_url())
-        try:
-            root = authentication.request_macaroon()
-        except Exception as api_response_error:
-            if api_response_error.status_code == 401:
-                return flask.redirect(flask.url_for(".logout"))
-            else:
-                return flask.abort(502, str(api_response_error))
-        flask.session["macaroon_root"] = root
-
         teams_request = TeamsRequest(
             query_membership=[SSO_TEAM, LP_CANONICAL_TEAM, LP_ADMIN_TEAM]
         )
 
         return open_id.try_login(
-            SSO_LOGIN_URL,
-            ask_for=["email", "nickname"],
-            ask_for_optional=["fullname"],
-            extensions=[teams_request],
+            SSO_LOGIN_URL, ask_for=["email"], extensions=[teams_request]
         )
 
     @open_id.after_login
