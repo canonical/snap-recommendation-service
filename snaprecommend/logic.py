@@ -19,7 +19,6 @@ def get_category_top_snaps(category: str, limit: int = 50) -> list[Snap]:
     """
     Returns the top snaps for a given category.
     """
-
     snaps = (
         db.session.query(Snap)
         .join(
