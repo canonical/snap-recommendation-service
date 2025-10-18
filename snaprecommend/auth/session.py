@@ -29,12 +29,10 @@ class PublisherSession(BaseSession, RequestsSession):
 
 
 api_session = Session()
-# Disable proxy usage by setting proxies to empty dict
-api_session.proxies = {}
+api_session.trust_env = False  # Ignore HTTP_PROXY/HTTPS_PROXY env vars
 
 api_publisher_session = PublisherSession()
-# Disable proxy usage by setting proxies to empty dict
-api_publisher_session.proxies = {}
+api_publisher_session.trust_env = False  # Ignore HTTP_PROXY/HTTPS_PROXY env vars
 
 dashboard = Dashboard(api_session)
 device_gateway = DeviceGW("snap", api_session)
