@@ -81,12 +81,17 @@ def init_sso(app: flask.Flask):
 
         logger.info(f"Initiating OpenID login flow to {SSO_LOGIN_URL}")
         try:
-            return open_id.try_login(
+            response = open_id.try_login(
                 SSO_LOGIN_URL,
                 ask_for=["email", "nickname"],
                 ask_for_optional=["fullname"],
                 extensions=[openid_macaroon, teams_request],
             )
+            logger.info(f"OpenID try_login response status: {response.status if hasattr(response, 'status') else response.status_code}")
+            logger.info(f"OpenID try_login response headers: {dict(response.headers) if hasattr(response, 'headers') else 'N/A'}")
+            if hasattr(response, 'location'):
+                logger.info(f"Redirect location: {response.location}")
+            return response
         except Exception as e:
             logger.error(f"Failed in try_login: {type(e).__name__}: {str(e)}", exc_info=True)
             return flask.abort(500, f"OpenID login failed: {str(e)}")
