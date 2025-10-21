@@ -87,7 +87,7 @@ def init_sso(app: flask.Flask):
                 query_membership=[SSO_TEAM, LP_CANONICAL_TEAM, LP_ADMIN_TEAM]
             )
             response =  open_id.try_login(
-                SSO_LOGIN_URL, ask_for=["email"], extensions=[openid_macaroon]
+                SSO_LOGIN_URL, ask_for=["email"], extensions=[teams_request, openid_macaroon]
             )
             logger.info(f"OpenID try_login response status: {response.status if hasattr(response, 'status') else response.status_code}")
             logger.info(f"OpenID try_login response headers: {dict(response.headers) if hasattr(response, 'headers') else 'N/A'}")
