@@ -183,3 +183,9 @@ go.work.sum
 
 *.creds
 *.rock
+
+node_modules
+static
+
+# This file will be created and placed after running the build command
+snaprecommend/templates/index.html

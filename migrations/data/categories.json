@@ -13,5 +13,10 @@
     "id": "recent",
     "name": "Recently updated snaps",
     "description": "Snaps that have been updated recently"
+  },
+  {
+    "id": "top_rated",
+    "name": "Top rated snaps",
+    "description": "Snaps with the highest user ratings"
   }
 ]
