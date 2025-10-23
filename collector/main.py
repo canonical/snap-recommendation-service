@@ -1,7 +1,8 @@
 import logging
+import sys
 import os
-
 from datetime import timedelta, datetime
+from time import sleep
 from collector.collect import collect_initial_snap_data
 from collector.filter import filter_snaps_meeting_minimum_criteria
 from collector.extra_fields import fetch_extra_fields
@@ -17,8 +18,11 @@ logging.basicConfig(
 
 logger = logging.getLogger("collector")
 
+
 # TODO: This should be a setting
 DATA_UPDATE_THRESHOLD = timedelta(days=7)
+
+FETCH_INTERVAL = 24 * 3600  # 24 hours in seconds
 
 
 def collect_data(force_update: bool = False):
@@ -38,12 +42,10 @@ def collect_data(force_update: bool = False):
         return
 
     if not force_update:
-
         last_update = get_setting("last_updated")
-
         if last_update:
-
-            last_update_time = datetime.fromisoformat(last_update.value)
+            last_update_time = datetime.fromisoformat(str(last_update.value))
+            logger.info(f"Last update was at {last_update_time}")
             time_since_last_update = datetime.now() - last_update_time
 
             if time_since_last_update < DATA_UPDATE_THRESHOLD:
@@ -68,3 +70,18 @@ def collect_data(force_update: bool = False):
     set_setting("last_updated", datetime.now().isoformat())
 
     db.session.commit()
+
+
+def collector_service():
+    """Run the service with signal handling."""
+    try:
+        logger.info("Starting collector service...")
+        while True:
+            collect_data()
+            logger.info(f"Sleeping for {FETCH_INTERVAL} seconds...")
+            sleep(FETCH_INTERVAL)
+    except KeyboardInterrupt:
+        logger.info("Interrupted by user.")
+    except Exception as e:
+        logger.error(f"Service failed: {e}")
+        sys.exit(1)

@@ -53,3 +53,11 @@ def score():
     from collector.score import calculate_scores
 
     calculate_scores()
+
+
+@collector.command()
+def service():
+    """Start the collector server to run periodically"""
+    from collector.main import collector_service
+
+    collector_service()

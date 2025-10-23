@@ -129,7 +129,6 @@ def bulk_upsert_snaps(session: Session, snaps: list):
 
     snap_data = []
     for snap in snaps:
-
         snap_data.append(parse_snap_from_response(snap))
 
     if snap_data:

@@ -15,6 +15,7 @@ If running for the first time, you must run the following to apply migrations:
 ```
 docker compose exec web flask db upgrade
 ```
+The pages can be access from 'http://localhost:5173/' 
 
 #### Manual Setup
 
@@ -30,12 +31,34 @@ pip install -r requirements.txt
 flask collector start
 ```
 
-### Server
+#### Starting the local environment
+In development for hot module reloding the backend api's accessed through flask. If the user enters any paths other than the ones that are listed in the vite configuration they are navigated to react frontend otherwise they are navigated to the corresponding backend api.
 
+You can start the local by using `docker compose up -d` but if you like to run it without docker:
+
+Change the 'target' entry in the vite.config.ts to 'http://127.0.0.1:5000'
+
+To make it work 
+Terminal 1
 ```bash
 flask run
 ```
 
+Terminal 2
+```bash
+cd frontend
+yarn
+yarn dev
+```
+
+In dev mode, Vite runs on port 5173 and proxies API calls to Flask on port 5000.
+
+### Troubleshoot
+- If you got an error that is related with connection to server at "db", change the "db" in the POSTGRESQL_DB_CONNECT_STRING to "localhost" in the .env file.
+
+## Production
+
+In production there is one server. Flask serve the built React files plus API endpoints.
 
 ## Architecture
 The Snap Recommendation Service consists of two main components:
