@@ -114,10 +114,14 @@ def calculate_top_rated_score(rating, metadata_score, dev_score):
     return rating * 0.8 + metadata_score * 0.1 + dev_score * 0.1
 
 
-def calculate_category_scores(category: str):
-    """Calculate the scores for all recommendable snaps in a category."""
-
-    logger.info(f"Calculating scores for category: {category}")
+def calculate_category_scores():
+    """Calculate scores with balanced category assignment.
+    This function calculates scores for each snap in four categories:
+    popular, recent, trending, and top-rated. It then assigns snaps to
+    categories such that each snap is assigned to the category with
+    the highest score. This prevents overlap across categories and
+    keeps a uniform distribution.
+    """
 
     session = db.session
 
@@ -132,72 +136,119 @@ def calculate_category_scores(category: str):
 
     snaps = session.query(Snap).filter(filter_condition).all()
 
-    for snaps_batch in batched(snaps, 100):
-        scores_to_insert = []
-        for snap in snaps_batch:
-            # Normalize fields with log scaling for active devices
-            active_devices_normalized = log_scale(
-                snap.active_devices, min_active_devices, max_active_devices
-            )
+    snap_scores = []
+    for snap in snaps:
+        active_devices_normalized = log_scale(
+            snap.active_devices, min_active_devices, max_active_devices
+        )
 
-            last_updated_normalized = (
-                (snap.last_updated - min_last_updated).total_seconds()
-                / (max_last_updated - min_last_updated).total_seconds()
-                if max_last_updated != min_last_updated
-                else 1
-            )
+        last_updated_normalized = (
+            (snap.last_updated - min_last_updated).total_seconds()
+            / (max_last_updated - min_last_updated).total_seconds()
+            if max_last_updated != min_last_updated
+            else 1
+        )
 
-            metadata_score = calculate_metadata_score(snap)
-            dev_score = calculate_dev_score(snap)
+        metadata_score = calculate_metadata_score(snap)
+        dev_score = calculate_dev_score(snap)
 
-            # TODO: formula will be a field in category eventually
-            if category == "popular":
-                score = calculate_popularity_score(
-                    active_devices_normalized, metadata_score, dev_score
-                )
-            elif category == "recent":
-                score = calculate_recency_score(
-                    last_updated_normalized, metadata_score, dev_score
-                )
-            elif category == "trending":
-                score = calculate_trending_score(
-                    last_updated_normalized,
-                    active_devices_normalized,
-                    metadata_score,
-                    dev_score,
-                )
-            elif category == "top_rated":
-                score = calculate_top_rated_score(
-                    snap.raw_rating or 0, metadata_score, dev_score
-                )
-            else:
-                raise ValueError(f"Invalid category: {category}")
+        popularity_score = calculate_popularity_score(
+            active_devices_normalized, metadata_score, dev_score
+        )
+        recency_score = calculate_recency_score(
+            last_updated_normalized, metadata_score, dev_score
+        )
+        trending_score = calculate_trending_score(
+            last_updated_normalized,
+            active_devices_normalized,
+            metadata_score,
+            dev_score,
+        )
+        top_rated_score = calculate_top_rated_score(
+            snap.raw_rating or 0, metadata_score, dev_score
+        )
 
+        snap_scores.append(
+            {
+                "snap_id": snap.snap_id,
+                "popular": popularity_score,
+                "recent": recency_score,
+                "trending": trending_score,
+                "top_rated": top_rated_score,
+            }
+        )
+
+    assigned_snaps = set()
+    scores_to_insert = []
+
+    # Calculate how many snaps per category (balanced distribution)
+    total_snaps = len(snap_scores)
+    snaps_per_category = total_snaps // 4  # 4 categories
+
+    logger.info(
+        f"Assigning {snaps_per_category} snaps per category from "
+        f"{total_snaps} total snaps"
+    )
+
+    categories = ["popular", "recent", "trending", "top_rated"]
+
+    for category in categories:
+        sorted_snaps = sorted(
+            snap_scores, key=lambda x: x[category], reverse=True
+        )
+
+        assigned_count = 0
+        for snap_data in sorted_snaps:
+            if (
+                snap_data["snap_id"] not in assigned_snaps
+                and assigned_count < snaps_per_category
+            ):
+                scores_to_insert.append(
+                    {
+                        "snap_id": snap_data["snap_id"],
+                        "category": category,
+                        "score": snap_data[category],
+                    }
+                )
+                assigned_snaps.add(snap_data["snap_id"])
+                assigned_count += 1
+
+    for snap_data in snap_scores:
+        if snap_data["snap_id"] not in assigned_snaps:
+            scores = {
+                "popular": snap_data["popular"],
+                "recent": snap_data["recent"],
+                "trending": snap_data["trending"],
+                "top_rated": snap_data["top_rated"],
+            }
+            best_category = max(scores, key=scores.get)
             scores_to_insert.append(
-                {"snap_id": snap.snap_id, "category": category, "score": score}
+                {
+                    "snap_id": snap_data["snap_id"],
+                    "category": best_category,
+                    "score": scores[best_category],
+                }
             )
 
-        if scores_to_insert:
-            stmt = insert(SnapRecommendationScore).values(scores_to_insert)
-            update_stmt = stmt.on_conflict_do_update(
-                index_elements=["snap_id", "category"],
-                set_={"score": stmt.excluded.score},
-            )
-            session.execute(update_stmt)
+    for scores_batch in batched(scores_to_insert, 100):
+        if scores_batch:
+            stmt = insert(SnapRecommendationScore).values(scores_batch)
+            session.execute(stmt)
             session.commit()
+
+    logger.info(f"Assigned {len(scores_to_insert)} snaps across categories")
 
 
 def calculate_scores():
-    """Calculate the scores for all recommendable snaps."""
+    """Calculate scores with exclusive assignment to prevent overlap."""
 
     try:
         delete_old_scores()
         migrate_current_scores()
 
-        calculate_category_scores("popular")
-        calculate_category_scores("recent")
-        calculate_category_scores("trending")
-        calculate_category_scores("top_rated")
+        clear_current_scores()
+
+        calculate_category_scores()
 
         add_pipeline_step_log(PipelineSteps.SCORE, True)
     except Exception as e:
@@ -249,5 +300,16 @@ def migrate_current_scores():
     logger.info(
         f"Migrated {len(scores_to_insert)} current scores to history table"
     )
+
+    session.commit()
+
+
+def clear_current_scores():
+    """Clear all current scores to prepare for exclusive assignment."""
+    session = db.session
+    logger.info("Clearing all current scores")
+
+    deleted = session.query(SnapRecommendationScore).delete()
+    logger.info(f"Cleared {deleted} current scores")
 
     session.commit()
