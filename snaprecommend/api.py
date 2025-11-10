@@ -330,6 +330,50 @@ def recenty_updated():
     }), 200
 
 
+@api_blueprint.route("/collected_snaps/search", methods=["GET"])
+@login_required
+def search_collected_snaps():
+    """
+    Search through collected snaps in the database.
+    Returns results in a format compatible with the store API.
+    """
+    query = flask.request.args.get("q", "")
+
+    if not query or len(query) < 3:
+        return flask.jsonify({"packages": []}), 200
+
+    search_pattern = f"%{query}%"
+    snaps = Snap.query.filter(
+        (Snap.title.ilike(search_pattern)) |
+        (Snap.name.ilike(search_pattern)) |
+        (Snap.summary.ilike(search_pattern))
+    ).limit(15).all()
+
+    # Format results to match the store API format
+    packages = [
+        {
+            "snap_id": snap.snap_id,
+            "package": {
+                "name": snap.name,
+                "display_name": snap.title,
+                "description": snap.summary,
+                "icon_url": snap.icon,
+                "type": "app",
+                "platforms": []
+            },
+            "publisher": {
+                "display_name": snap.publisher,
+                "name": snap.publisher,
+                "validation": snap.developer_validation
+            },
+            "categories": []
+        }
+        for snap in snaps
+    ]
+
+    return flask.jsonify({"packages": packages}), 200
+
+
 def format_response(snaps: list[Snap]) -> list[dict]:
     return [
         {

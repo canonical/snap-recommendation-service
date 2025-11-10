@@ -3,9 +3,14 @@ import type { SearchSnap } from "../../types/snap";
 import { Spinner } from "@canonical/react-components";
 import "./FindSnap.scss";
 
-export function FindSnap({ addSnap }: { addSnap: (snap: SearchSnap) => void }) {
+type FindSnapProps = {
+    addSnap: (snap: SearchSnap) => void;
+    searchEndpoint?: string;
+}
+
+export function FindSnap({ addSnap, searchEndpoint = "/store/store.json" }: FindSnapProps) {
     const searchSnap = async (queryString: string): Promise<SearchSnap[]> => {
-        const response = await fetch(`/store/store.json?q=${queryString}`);
+        const response = await fetch(`${searchEndpoint}?q=${queryString}`);
         const responseJson = await response.json();
         return responseJson.packages;
     };
