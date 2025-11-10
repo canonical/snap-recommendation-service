@@ -15,6 +15,14 @@ If running for the first time, you must run the following to apply migrations:
 ```
 docker compose exec web flask db upgrade
 ```
+
+To make collector to collect snaps: 
+```
+docker compose exec web flask collector initial
+docker compose exec web flask collector filter
+docker compose exec web flask collector score
+```
+
 The pages can be access from 'http://localhost:5173/' 
 
 #### Manual Setup
