@@ -12,10 +12,9 @@ from snaprecommend.models import (
 from sqlalchemy.dialects.postgresql import insert
 from snaprecommend import db
 from collector.extra_fields import batched
-import math
 from snaprecommend.logic import add_pipeline_step_log
 import logging
-from math import ceil, inf
+from math import log1p, ceil, inf
 
 logger = logging.getLogger("scorer")
 
@@ -32,9 +31,9 @@ def log_scale(value, min_value, max_value):
     if value <= 0:
         return 0
 
-    log_min = math.log1p(min_value)  # log(1 + min_value)
-    log_max = math.log1p(max_value)  # log(1 + max_value)
-    log_value = math.log1p(value)  # log(1 + value)
+    log_min = log1p(min_value)  # log(1 + min_value)
+    log_max = log1p(max_value)  # log(1 + max_value)
+    log_value = log1p(value)  # log(1 + value)
 
     if log_max == log_min:
         return 1  # Avoid division by zero, treat as uniform scaling
@@ -263,7 +262,7 @@ def calculate_category_scores():
     # to shift all the remaining elements every time)
     snaps_queue = sorted(snap_scores, key=get_best_adjusted_score)
 
-    while (len(snaps_queue) > 0):
+    while len(snaps_queue) > 0:
         snap = snaps_queue.pop()
         best_score = get_best_adjusted_score(snap)
         best_category = get_best_category(snap)
