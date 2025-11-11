@@ -193,7 +193,7 @@ def calculate_category_scores():
     sum of S_ij*X_ij.
 
     General solution:
-    This is a many-to-one assigment problem, which can be transformed into a
+    This is a many-to-one assignment problem, which can be transformed into a
     minimum-cost maximum flow (MCMF) problem on a graph:
         - each snap i is a node,
         - each category j is a node,
@@ -212,7 +212,7 @@ def calculate_category_scores():
     a category that isn't full yet (conversely, we can pick the highest S_ij
     that satisfies the same condition).
 
-    Assigment algorithm:
+    Assignment algorithm:
     For each snap i we compute:
         - adjusted score vector AS_ij = S_ij if j has space or -inf otherwise,
         - max category score MS_i = max(AS_ij)
@@ -228,7 +228,7 @@ def calculate_category_scores():
     total_snaps = len(snap_scores)
     snaps_per_category = ceil(total_snaps / len(categories))
 
-    # number of snaps assigned to each category
+    # counters with number of snaps currently assigned to each category
     snaps_in_category = {c: 0 for c in categories}
 
     logger.info(
@@ -257,7 +257,7 @@ def calculate_category_scores():
         scores = get_adjusted_scores(snap)
         return max(scores.values())
 
-    # Dirty and bad implementation of a max priority queue, list is sorted i
+    # Dirty and bad implementation of a max priority queue, list is sorted in
     # ascending MS_i order so best scores are at the end; this is to make the
     # implementation less bad (we pop from the end of the list to avoid having
     # to shift all the remaining elements every time)
@@ -270,10 +270,11 @@ def calculate_category_scores():
 
         """
         assert snaps_in_category[best_category] < snaps_per_category
-        # ^ this assertion is redundant because this situation can't happen:
+        # ^ this assertion is redundant because it will always be true:
         # a full category implies that its associated scores are -inf, which
         # means the snap shouldn't have been picked for this category in the
-        # first place
+        # first place (unless all categories are full and there are still
+        # snaps in the queue, which is impossible)
         """
 
         # assign the snap to its best category
@@ -289,7 +290,7 @@ def calculate_category_scores():
         if snaps_in_category[best_category] == snaps_per_category:
             # this category bucket is now full, the queue must be updated to
             # reflect this => from now on all adjusted scores for the current
-            # `best_category` will be -1
+            # `best_category` will be -inf
             snaps_queue.sort(key=get_best_adjusted_score)
 
     for scores_batch in batched(scores_to_insert, 100):
