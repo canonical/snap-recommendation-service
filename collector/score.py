@@ -201,9 +201,11 @@ def calculate_category_scores():
         - each category is connected to a sink node by an arc with cost 0
             and capacity equal to ceil(N / C).
     MCMF problems can be solved by using the successive shortest paths
-    algorithm, which picks among all possible flow paths with non-zero
-    capacity the one with the lowest cost at each iteration until all arcs
-    leading to the sink node are saturated.
+    algorithm:
+        1. compute all possible flow paths that have some remaining capacity
+        2. pick the path with the lowest total cost
+        3. increase flow and saturate the path
+    The algorithm ends when all arcs leading to the sink node are saturated.
 
     In our case, the only graph arcs that have a cost are the ones between a
     snap and a category, meaning that we don't need to compute any shortest
@@ -216,10 +218,10 @@ def calculate_category_scores():
         - adjusted score vector AS_ij = S_ij if j has space or -inf otherwise,
         - max category score MS_i = max(AS_ij)
         - best category MC_i = argmax(AS_ij)
-    We insert snaps in a max priority queue sorted by MS_i; while the list has
+    We insert snaps in a max priority queue sorted by MS_i; while the queue has
     snaps, we pop the one with the highest MS_i and assign it to MC_i.
     Once a category is full, scores for that category are "removed" (by setting
-    them to -inf), MS_i gets computed again and the priority list is updated.
+    them to -inf), MS_i gets computed again and the priority queue is updated.
     """
 
     categories = ["popular", "recent", "trending", "top_rated"]
