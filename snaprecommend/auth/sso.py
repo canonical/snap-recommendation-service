@@ -1,6 +1,5 @@
 import flask
 import logging
-import os
 from django_openid_auth.teams import TeamsRequest, TeamsResponse
 from flask_openid import OpenID
 from snaprecommend.auth.macaroon import MacaroonRequest, MacaroonResponse

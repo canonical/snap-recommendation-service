@@ -12,9 +12,9 @@ from snaprecommend.models import (
 from sqlalchemy.dialects.postgresql import insert
 from snaprecommend import db
 from collector.extra_fields import batched
-import math
 from snaprecommend.logic import add_pipeline_step_log
 import logging
+from math import log1p, ceil, inf
 
 logger = logging.getLogger("scorer")
 
@@ -31,9 +31,9 @@ def log_scale(value, min_value, max_value):
     if value <= 0:
         return 0
 
-    log_min = math.log1p(min_value)  # log(1 + min_value)
-    log_max = math.log1p(max_value)  # log(1 + max_value)
-    log_value = math.log1p(value)  # log(1 + value)
+    log_min = log1p(min_value)  # log(1 + min_value)
+    log_max = log1p(max_value)  # log(1 + max_value)
+    log_value = log1p(value)  # log(1 + value)
 
     if log_max == log_min:
         return 1  # Avoid division by zero, treat as uniform scaling
@@ -178,57 +178,121 @@ def calculate_category_scores():
             }
         )
 
-    assigned_snaps = set()
-    scores_to_insert = []
+    """
+    Problem statement:
+    We have N snaps and C categories, with N >> C. Each (snap, category) pair
+    (i, j) has an associated score S_ij in [0, 1] (higher is better) and a X_ij
+    binary variable that indicates whether that snap is assigned to that
+    category.
 
-    # Calculate how many snaps per category (balanced distribution)
+    Each snap can only be assigned to one category, each category can fit at
+    most ceil(N / C) snaps.
+
+    Snaps must be assigned to a category in such a way that we maximize the
+    sum of S_ij*X_ij.
+
+    General solution:
+    This is a many-to-one assignment problem, which can be transformed into a
+    minimum-cost maximum flow (MCMF) problem on a graph:
+        - each snap i is a node,
+        - each category j is a node,
+        - each (i, j) pair is connected by an arc with an associated "cost"
+            equal to (1 - S_ij) and capacity of 1,
+        - each category is connected to a sink node by an arc with cost 0
+            and capacity equal to ceil(N / C).
+    MCMF problems can be solved by using the successive shortest paths
+    algorithm:
+        1. compute all possible flow paths that have some remaining capacity
+        2. pick the path with the lowest total cost
+        3. increase flow and saturate the path
+    The algorithm ends when all arcs leading to the sink node are saturated.
+
+    In our case, the only graph arcs that have a cost are the ones between a
+    snap and a category, meaning that we don't need to compute any shortest
+    path, we just need to pick the lowest cost (1 - S_ij) between a snap and
+    a category that isn't full yet (conversely, we can pick the highest S_ij
+    that satisfies the same condition).
+
+    Assignment algorithm:
+    For each snap i we compute:
+        - adjusted score vector AS_ij = S_ij if j has space or -inf otherwise,
+        - max category score MS_i = max(AS_ij)
+        - best category MC_i = argmax(AS_ij)
+    We insert snaps in a max priority queue sorted by MS_i; while the queue has
+    snaps, we pop the one with the highest MS_i and assign it to MC_i.
+    Once a category is full, scores for that category are "removed" (by setting
+    them to -inf), MS_i gets computed again and the priority queue is updated.
+    """
+
+    categories = ["popular", "recent", "trending", "top_rated"]
+    scores_to_insert = []
     total_snaps = len(snap_scores)
-    snaps_per_category = total_snaps // 4  # 4 categories
+    snaps_per_category = ceil(total_snaps / len(categories))
+
+    # counters with number of snaps currently assigned to each category
+    snaps_in_category = {c: 0 for c in categories}
 
     logger.info(
         f"Assigning {snaps_per_category} snaps per category from "
         f"{total_snaps} total snaps"
     )
 
-    categories = ["popular", "recent", "trending", "top_rated"]
+    def get_adjusted_scores(snap):  # our AS_ij
+        """
+        Adjust `snap`'s scores according to whether the related category is
+        full or not. When selecting the category to assign `snap` to, we always
+        pick the max score, so if the bucket is full the score will be adjusted
+        to `-inf` to make sure the associated category won't get picked
+        """
+        adjusted_scores = {
+            c: snap[c] if snaps_in_category[c] < snaps_per_category else -inf
+            for c in categories
+        }
+        return adjusted_scores
 
-    for category in categories:
-        sorted_snaps = sorted(
-            snap_scores, key=lambda x: x[category], reverse=True
+    def get_best_category(snap):  # our MC_i function
+        scores = get_adjusted_scores(snap)
+        return max(scores, key=scores.get)
+
+    def get_best_adjusted_score(snap):  # our MS_i function
+        scores = get_adjusted_scores(snap)
+        return max(scores.values())
+
+    # Dirty and bad implementation of a max priority queue, list is sorted in
+    # ascending MS_i order so best scores are at the end; this is to make the
+    # implementation less bad (we pop from the end of the list to avoid having
+    # to shift all the remaining elements every time)
+    snaps_queue = sorted(snap_scores, key=get_best_adjusted_score)
+
+    while len(snaps_queue) > 0:
+        snap = snaps_queue.pop()
+        best_score = get_best_adjusted_score(snap)
+        best_category = get_best_category(snap)
+
+        """
+        assert snaps_in_category[best_category] < snaps_per_category
+        # ^ this assertion is redundant because it will always be true:
+        # a full category implies that its associated scores are -inf, which
+        # means the snap shouldn't have been picked for this category in the
+        # first place (unless all categories are full and there are still
+        # snaps in the queue, which is impossible)
+        """
+
+        # assign the snap to its best category
+        snaps_in_category[best_category] += 1
+        scores_to_insert.append(
+            {
+                "snap_id": snap["snap_id"],
+                "category": best_category,
+                "score": best_score,
+            }
         )
 
-        assigned_count = 0
-        for snap_data in sorted_snaps:
-            if (
-                snap_data["snap_id"] not in assigned_snaps
-                and assigned_count < snaps_per_category
-            ):
-                scores_to_insert.append(
-                    {
-                        "snap_id": snap_data["snap_id"],
-                        "category": category,
-                        "score": snap_data[category],
-                    }
-                )
-                assigned_snaps.add(snap_data["snap_id"])
-                assigned_count += 1
-
-    for snap_data in snap_scores:
-        if snap_data["snap_id"] not in assigned_snaps:
-            scores = {
-                "popular": snap_data["popular"],
-                "recent": snap_data["recent"],
-                "trending": snap_data["trending"],
-                "top_rated": snap_data["top_rated"],
-            }
-            best_category = max(scores, key=scores.get)
-            scores_to_insert.append(
-                {
-                    "snap_id": snap_data["snap_id"],
-                    "category": best_category,
-                    "score": scores[best_category],
-                }
-            )
+        if snaps_in_category[best_category] == snaps_per_category:
+            # this category bucket is now full, the queue must be updated to
+            # reflect this => from now on all adjusted scores for the current
+            # `best_category` will be -inf
+            snaps_queue.sort(key=get_best_adjusted_score)
 
     for scores_batch in batched(scores_to_insert, 100):
         if scores_batch:
