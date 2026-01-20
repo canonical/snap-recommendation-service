@@ -28,6 +28,7 @@ from snaprecommend.editorials import (
     update_editorial_slice,
 )
 from snaprecommend.settings import get_setting
+from snaprecommend.utils import api_response
 from snaprecommend.models import PipelineSteps
 import threading
 from collector.main import (
@@ -340,7 +341,7 @@ def search_collected_snaps():
     query = flask.request.args.get("q", "")
 
     if not query or len(query) < 3:
-        return flask.jsonify({"packages": []}), 200
+        return api_response({"packages": []})
 
     search_pattern = f"%{query}%"
     snaps = Snap.query.filter(
@@ -371,7 +372,7 @@ def search_collected_snaps():
         for snap in snaps
     ]
 
-    return flask.jsonify({"packages": packages}), 200
+    return api_response({"packages": packages})
 
 
 def format_response(snaps: list[Snap]) -> list[dict]:

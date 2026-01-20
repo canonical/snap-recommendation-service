@@ -11,7 +11,7 @@ export function SnapCard({ snap, actionButton }: { snap: Snap, actionButton: Rea
                         <img
                             src={snap.icon}
                             alt={snap.name}
-                            className="u-icon category-list__item-img" />
+                            className="category-list__item-img" />
                     )}
                     <h4>
                         <a href={`https://snapcraft.io/${snap.name}`} target="_blank">{snap.name}</a>
