@@ -12,7 +12,7 @@ export function FindSnap({ addSnap, searchEndpoint = "/store/store.json" }: Find
     const searchSnap = async (queryString: string): Promise<SearchSnap[]> => {
         const response = await fetch(`${searchEndpoint}?q=${queryString}`);
         const responseJson = await response.json();
-        return responseJson.data.packages;
+        return responseJson.data ? responseJson.data.packages : responseJson.packages;
     };
 
     const inputRef = useRef<HTMLInputElement>(null);
