@@ -28,6 +28,7 @@ from snaprecommend.editorials import (
     update_editorial_slice,
 )
 from snaprecommend.settings import get_setting
+from snaprecommend.utils import api_response
 from snaprecommend.models import PipelineSteps
 import threading
 from collector.main import (
@@ -328,6 +329,50 @@ def recenty_updated():
         "size": min(size, 50),
         "snaps": [serialize_snap(snap) for snap in snaps],
     }), 200
+
+
+@api_blueprint.route("/collected_snaps/search", methods=["GET"])
+@login_required
+def search_collected_snaps():
+    """
+    Search through collected snaps in the database.
+    Returns results in a format compatible with the store API.
+    """
+    query = flask.request.args.get("q", "")
+
+    if not query or len(query) < 3:
+        return api_response({"packages": []})
+
+    search_pattern = f"%{query}%"
+    snaps = Snap.query.filter(
+        (Snap.title.ilike(search_pattern)) |
+        (Snap.name.ilike(search_pattern)) |
+        (Snap.summary.ilike(search_pattern))
+    ).limit(15).all()
+
+    # Format results to match the store API format
+    packages = [
+        {
+            "snap_id": snap.snap_id,
+            "package": {
+                "name": snap.name,
+                "display_name": snap.title,
+                "description": snap.summary,
+                "icon_url": snap.icon,
+                "type": "app",
+                "platforms": []
+            },
+            "publisher": {
+                "display_name": snap.publisher,
+                "name": snap.publisher,
+                "validation": snap.developer_validation
+            },
+            "categories": []
+        }
+        for snap in snaps
+    ]
+
+    return api_response({"packages": packages})
 
 
 def format_response(snaps: list[Snap]) -> list[dict]:

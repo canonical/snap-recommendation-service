@@ -1,4 +1,4 @@
-import { Button, Col, Form, Input, Notification, Panel, Row } from "@canonical/react-components";
+import { Button, Col, Notification, Panel, Row } from "@canonical/react-components";
 import type { SliceDetail } from "../types/slice";
 import { useFetchData } from "../hooks/useFetchData";
 import { useNavigate, useParams } from "react-router-dom";
@@ -6,6 +6,9 @@ import { EditorialSliceForm } from "../components/EditorialSliceForm/EditorialSl
 import { SnapCard } from "../components/SnapCard/SnapCard";
 import { useEffect, useState } from "react";
 import { useApi } from "../hooks/useApi";
+import { FindSnap } from "../components/FindSnap/FindSnap";
+import type { SearchSnap } from "../types/snap";
+import "./SliceDetails.scss";
 
 
 export function SliceDetails() {
@@ -14,11 +17,9 @@ export function SliceDetails() {
     const navigate = useNavigate();
     const { error, data, refetch } = useFetchData<SliceDetail>(`/api/editorial_slice/${id}`);
     const [successText, setSuccessText] = useState("");
-    const [searchTerm, setSearchTerm] = useState("");
     const { sendRequest, error: operationError } = useApi();
 
     useEffect(() => {
-        setSearchTerm("");
         setSuccessText("");
     }, [operationError])
 
@@ -35,11 +36,10 @@ export function SliceDetails() {
         });
 
         await refetch();
-        setSuccessText(`'${searchTerm}' added to the '${id}'.`);
+        setSuccessText(`Slice '${name}' updated successfully.`);
     }
 
-    const handleSearch = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
+    const handleAddSnap = async (snap: SearchSnap) => {
         await sendRequest(
             `/api/editorial_slice/${id}/snaps`, {
             method: "POST",
@@ -47,12 +47,11 @@ export function SliceDetails() {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                name: searchTerm
+                name: snap.package.name
             }),
         });
         await refetch();
-        setSuccessText(`'${searchTerm}' added to the '${id}'.`);
-        setSearchTerm("");
+        setSuccessText(`'${snap.package.display_name}' added to the slice.`);
     }
 
     const handleDeleteSlice = async () => {
@@ -81,6 +80,7 @@ export function SliceDetails() {
         controls={
             <Button className="u-no-margin--bottom" appearance="negative" onClick={handleDeleteSlice}>Delete Slice</Button>
         }
+        contentClassName={"slice-details-panel"}
     >
         {successText && <Row>
             <Col size={12}>
@@ -106,10 +106,7 @@ export function SliceDetails() {
             <Col size={8}>
                 <h4>Snaps</h4>
 
-                <Form inline onSubmit={handleSearch}>
-                    <Input type="text" id="snap-search" name="snapName" autoComplete="off" placeholder="Enter snap name" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                    <Button appearance="positive" type="submit">Add Snap</Button>
-                </Form>
+                <FindSnap addSnap={handleAddSnap} searchEndpoint="/api/collected_snaps/search" />
 
                 <ul className="p-list" style={{ maxHeight: "650px", overflow: "scroll" }}>
                     {
