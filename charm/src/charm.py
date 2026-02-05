@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 class SnaprecommendCharm(paas_charm.flask.Charm):
     """Flask Charm service."""
+    # Ensure the Pebble service is named 'flask' as expected by the framework.
+    # Prevents KeyError('flask') during flask-app-pebble-ready.
+    workload_service_name = "flask"
 
     def __init__(self, *args: typing.Any) -> None:
         """Initialize the instance.
