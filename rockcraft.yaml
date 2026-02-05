@@ -13,6 +13,12 @@ extensions:
     - flask-framework
 
 services:
+  flask:
+    override: replace
+    summary: "Snaprecommend Flask web service"
+    command: gunicorn --bind 0.0.0.0:8000 app:app
+    working-dir: /flask/app
+    startup: enabled
   collector-scheduler:
     override: merge
     summary: "service to run the collector job"
