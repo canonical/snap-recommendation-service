@@ -162,10 +162,10 @@ jobs:
           echo "image_id=$IMAGE_ID" >> $GITHUB_OUTPUT
           echo "Pulled image ID: $IMAGE_ID"
 
-          # Verify the image has the expected content
+          # Verify the image has the expected content (override entrypoint since rock uses pebble)
           echo "Verifying image content..."
-          docker run --rm ${{ steps.set_image_url.outputs.image_url }} ls -la /flask || echo "WARNING: /flask directory check failed"
-          docker run --rm ${{ steps.set_image_url.outputs.image_url }} cat /etc/os-release
+          docker run --rm --entrypoint "" ${{ steps.set_image_url.outputs.image_url }} ls -la /flask
+          docker run --rm --entrypoint "" ${{ steps.set_image_url.outputs.image_url }} cat /etc/os-release
 
       - name: Checkout code
         uses: actions/checkout@v4
