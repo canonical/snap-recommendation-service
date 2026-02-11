@@ -15,9 +15,6 @@ on:
           - Production
           - Staging
 
-env:
-  ROCK_NAME: snaprecommend
-
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -28,14 +25,8 @@ jobs:
       juju_controller_name: ${{ steps.setup-vars.outputs.juju_controller_name }}
       juju_model_name: ${{ steps.setup-vars.outputs.juju_model_name }}
       environment: ${{ steps.setup-vars.outputs.environment }}
-      charm_changed: ${{ steps.check.outputs.charm_changed }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 2
-
-      - name: Setup vars
+      - name: setup vars
         id: setup-vars
         run: |
           echo "charm_name=${{ vars.CHARM_NAME }}" >> $GITHUB_OUTPUT
@@ -44,226 +35,17 @@ jobs:
           echo "juju_model_name=${{ vars.JUJU_MODEL_NAME }}" >> $GITHUB_OUTPUT
           echo "environment=${{ github.event.inputs.environment != '' && github.event.inputs.environment || (github.ref == 'refs/heads/main' && 'Production' || 'Staging') }}" >> $GITHUB_OUTPUT
 
-      - name: Check for charm/ changes
-        id: check
-        run: |
-          if git diff --name-only HEAD~ ${{ github.sha }} | grep '^charm/'; then
-            echo "charm_changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "charm_changed=false" >> "$GITHUB_OUTPUT"
-          fi
-
-  pack-rock:
-    name: Pack Rock
-    runs-on: ubuntu-latest
-    needs: setup
-    environment: ${{ needs.setup.outputs.environment }}
-    outputs:
-      rock_file: ${{ steps.rockcraft.outputs.rock_file }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup LXD
-        uses: canonical/setup-lxd@main
-
-      - name: Setup rockcraft
-        run: sudo snap install rockcraft --classic
-
-      - name: Pack rock
-        id: rockcraft
-        run: |
-          rockcraft pack
-          ROCK_FILE=$(ls *.rock)
-          echo "rock_file=$ROCK_FILE" >> $GITHUB_OUTPUT
-          echo "Built rock: $ROCK_FILE"
-
-      - name: Upload rock
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ needs.setup.outputs.charm_name }}-rock
-          path: ./*.rock
-
-  pack-and-upload-charm:
-    name: Pack and Upload Charm
-    runs-on: ubuntu-latest
-    needs: setup
-    if: needs.setup.outputs.charm_changed == 'true'
-    environment: ${{ needs.setup.outputs.environment }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup LXD
-        uses: canonical/setup-lxd@main
-
-      - name: Setup charmcraft
-        run: sudo snap install charmcraft --classic --channel=3.x/stable
-
-      - name: Fetch libs
-        run: |
-          cd ./charm
-          charmcraft fetch-libs
-
-      - name: Pack charm
-        run: charmcraft pack -v --project-dir ./charm
-
-      - name: Upload charm
-        env:
-          CHARMCRAFT_AUTH: ${{ secrets.CHARMHUB_TOKEN }}
-        run: charmcraft upload ./*.charm
-
-  publish-image-and-release-charm:
-    name: Publish OCI Image and Release Charm
-    runs-on: ubuntu-latest
-    needs: [setup, pack-rock, pack-and-upload-charm]
-    if: always() && !failure() && !cancelled() && needs.pack-rock.result == 'success'
-    environment: ${{ needs.setup.outputs.environment }}
-    outputs:
-      image_url: ${{ steps.set_image_url.outputs.image_url }}
-      resource_revision: ${{ steps.upload_resource.outputs.resource_revision }}
-    steps:
-      - name: Get Rock
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ needs.setup.outputs.charm_name }}-rock
-
-      - name: List downloaded files
-        run: |
-          echo "Downloaded files:"
-          ls -la
-          ls -la *.rock
-
-      - name: Set image URL
-        id: set_image_url
-        run: |
-          IMAGE_URL="ghcr.io/${{ github.repository }}:$(date +%s)-${GITHUB_SHA:0:7}"
-          echo "image_url=$IMAGE_URL" >> $GITHUB_OUTPUT
-          echo "Image URL: $IMAGE_URL"
-
-      - name: Push rock to GHCR
-        run: |
-          ROCK_FILE=$(ls *.rock)
-          echo "Pushing rock file: $ROCK_FILE"
-          skopeo --insecure-policy copy \
-            oci-archive:$ROCK_FILE \
-            docker://${{ steps.set_image_url.outputs.image_url }} \
-            --dest-creds "${{ github.repository_owner }}:${{ secrets.GITHUB_TOKEN }}"
-          echo "Successfully pushed to GHCR"
-
-      - name: Pull and verify image
-        id: pull_image
-        run: |
-          # Pull the specific image we just pushed
-          docker pull ${{ steps.set_image_url.outputs.image_url }}
-
-          # Get the image ID for the specific image we pulled
-          IMAGE_ID=$(docker images --format "{{.ID}}" ${{ steps.set_image_url.outputs.image_url }})
-          echo "image_id=$IMAGE_ID" >> $GITHUB_OUTPUT
-          echo "Pulled image ID: $IMAGE_ID"
-
-          # Verify the image has the expected content (override entrypoint since rock uses pebble)
-          echo "Verifying image content..."
-          docker run --rm --entrypoint "" ${{ steps.set_image_url.outputs.image_url }} ls -la /flask
-          docker run --rm --entrypoint "" ${{ steps.set_image_url.outputs.image_url }} cat /etc/os-release
-
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Determine resource name
-        id: resource_name
-        run: |
-          if grep -q 'flask-framework' charm/charmcraft.yaml; then
-            echo "resource_name=flask-app-image" >> "$GITHUB_OUTPUT"
-          elif grep -q 'django-framework' charm/charmcraft.yaml; then
-            echo "resource_name=django-app-image" >> "$GITHUB_OUTPUT"
-          else
-            echo "resource_name=app-image" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Setup charmcraft
-        run: sudo snap install charmcraft --classic --channel=latest/stable
-
-      - name: Upload OCI image resource
-        id: upload_resource
-        env:
-          CHARMCRAFT_AUTH: ${{ secrets.CHARMHUB_TOKEN }}
-        run: |
-          # Use the specific image ID from the pull step, not head -n 1
-          IMAGE_ID=${{ steps.pull_image.outputs.image_id }}
-          echo "Uploading image with ID: $IMAGE_ID"
-
-          charmcraft upload-resource \
-            ${{ needs.setup.outputs.charm_name }} \
-            ${{ steps.resource_name.outputs.resource_name }} \
-            --image=$IMAGE_ID \
-            --verbosity=trace
-
-          # Get the resource revision that was just uploaded
-          RESOURCE_REVISION=$(charmcraft resource-revisions ${{ needs.setup.outputs.charm_name }} ${{ steps.resource_name.outputs.resource_name }} | awk 'NR==2 {print $1}')
-          echo "resource_revision=$RESOURCE_REVISION" >> $GITHUB_OUTPUT
-          echo "Uploaded resource revision: $RESOURCE_REVISION"
-
-      - name: Release charm with new resource
-        env:
-          CHARMCRAFT_AUTH: ${{ secrets.CHARMHUB_TOKEN }}
-        run: |
-          CHARM_REVISION=$(charmcraft revisions "${{ needs.setup.outputs.charm_name }}" | awk 'NR==2 {print $1}')
-          RESOURCE_REVISION=${{ steps.upload_resource.outputs.resource_revision }}
-
-          echo "Releasing charm revision $CHARM_REVISION with resource revision $RESOURCE_REVISION"
-
-          charmcraft release "${{ needs.setup.outputs.charm_name }}" \
-            --channel=${{ needs.setup.outputs.channel }} \
-            --revision=$CHARM_REVISION \
-            --resource=${{ steps.resource_name.outputs.resource_name }}:$RESOURCE_REVISION
-
   deploy:
-    name: Deploy to Environment
-    runs-on: [self-hosted, self-hosted-linux-amd64-jammy-private-endpoint-medium]
-    if: always() && !failure() && !cancelled() && needs.publish-image-and-release-charm.result == 'success'
-    needs: [setup, publish-image-and-release-charm]
-    environment:
-      name: ${{ needs.setup.outputs.environment }}
-    steps:
-      - name: Install Dependencies
-        run: |
-          sudo snap install juju --classic
-          sudo snap install vault --classic
-
-      - name: Configure Vault and Juju
-        env:
-          VAULT_ADDR: "https://vault.admin.canonical.com:8200"
-          VAULT_ROLE_ID: ${{ secrets.VAULT_APPROLE_ROLE_ID }}
-          VAULT_SECRET_ID: ${{ secrets.VAULT_APPROLE_SECRET_ID }}
-        run: |
-          set -e
-          export CONTROLLER_NAME=${{ needs.setup.outputs.juju_controller_name }}
-          export MODEL_NAME=${{ needs.setup.outputs.juju_model_name }}
-          export VAULT_SECRET_PATH_ROLE=secret/prodstack6/roles/${MODEL_NAME}
-          export VAULT_SECRET_PATH_COMMON=secret/prodstack6/juju/common
-          export VAULT_TOKEN=$(vault write -f -field=token auth/approle/login role_id="$VAULT_ROLE_ID" secret_id="$VAULT_SECRET_ID")
-          mkdir -p ~/.local/share/juju
-          vault read -field=controller_config "${VAULT_SECRET_PATH_COMMON}/controllers/${CONTROLLER_NAME}" | base64 -d > ~/.local/share/juju/controllers.yaml
-          USERNAME=$(vault read -field=username "${VAULT_SECRET_PATH_ROLE}/juju")
-          PASSWORD=$(vault read -field=password "${VAULT_SECRET_PATH_ROLE}/juju")
-          printf "controllers:\n  %s:\n    user: %s\n    password: %s\n" "$CONTROLLER_NAME" "$USERNAME" "$PASSWORD" > ~/.local/share/juju/accounts.yaml
-
-      - name: Deploy Application
-        env:
-          RESOURCE_REVISION: ${{ needs.publish-image-and-release-charm.outputs.resource_revision }}
-        run: |
-          export JUJU_MODEL=admin/${{ needs.setup.outputs.juju_model_name }}
-          export CHARM_NAME=${{ needs.setup.outputs.charm_name }}
-          export CHANNEL=${{ needs.setup.outputs.channel }}
-
-          echo "Deploying with resource revision: $RESOURCE_REVISION"
-
-          # Use the resource revision passed from the previous job instead of querying
-          juju refresh $CHARM_NAME \
-            --channel=$CHANNEL \
-            --resource flask-app-image=$RESOURCE_REVISION
-
-          juju wait-for application $CHARM_NAME \
-            --query="name=='$CHARM_NAME' && (status=='active' || status=='idle')" \
-            --timeout=10m
+    needs: setup
+    name: Deploy
+    uses: canonical/webteam-devops/.github/workflows/deploy.yaml@main
+    with:
+      charm_name: ${{ needs.setup.outputs.charm_name }}
+      channel: ${{ needs.setup.outputs.channel }}
+      juju_controller_name: ${{ needs.setup.outputs.juju_controller_name }}
+      juju_model_name: ${{ needs.setup.outputs.juju_model_name }}
+      environment: ${{ needs.setup.outputs.environment }}
+    secrets:
+      VAULT_APPROLE_ROLE_ID: ${{ secrets.VAULT_APPROLE_ROLE_ID }}
+      VAULT_APPROLE_SECRET_ID: ${{ secrets.VAULT_APPROLE_SECRET_ID }}
+      CHARMHUB_TOKEN: ${{ secrets.CHARMHUB_TOKEN }}
