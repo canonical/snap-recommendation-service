@@ -1,4 +1,4 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, redirect
 from flask_cors import CORS
 import logging
 from flask_sqlalchemy import SQLAlchemy
@@ -30,27 +30,26 @@ def create_app(config_class=Config):
     app.register_blueprint(cli_blueprint)
 
     from snaprecommend.api import api_blueprint
-    from snaprecommend.dashboard import dashboard_blueprint
     from snaprecommend.featuredsnaps.api import featured_blueprint
     from snaprecommend.packages.api import store_packages_blueprint
 
     @app.route("/")
     def index():
-        return "Snap recommendations API - Copyright 2025 Canonical"
+        return redirect("/dashboard")
 
     @app.route("/_status/check")
     def status_check():
         return "OK"
 
-    @app.route("/v2/dashboard/featuredsnaps")
+    @app.route("/dashboard/featuredsnaps")
     @exchange_required
     @admin_required
     @dashboard_login
     def serve_featured_snaps():
         return render_template("index.html")
 
-    @app.route("/v2/dashboard")
-    @app.route("/v2/dashboard/<path:path>")
+    @app.route("/dashboard")
+    @app.route("/dashboard/<path:path>")
     @dashboard_login
     def serve_react_app(path=None):
         return render_template("index.html")
@@ -58,7 +57,6 @@ def create_app(config_class=Config):
     app.url_map.strict_slashes = False
 
     app.register_blueprint(api_blueprint, url_prefix="/api")
-    app.register_blueprint(dashboard_blueprint, url_prefix="/dashboard")
     app.register_blueprint(featured_blueprint, url_prefix="/featured")
     app.register_blueprint(store_packages_blueprint, url_prefix="/store")
 
