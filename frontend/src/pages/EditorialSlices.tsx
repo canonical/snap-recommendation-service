@@ -25,7 +25,7 @@ export function EditorialSlices() {
         </Button>}
     >
         <div className="u-fixed-width">
-            <AsyncBoundary label="Excluded snaps" loading={loading} error={error ? "An error occurred" : undefined}>
+            <AsyncBoundary label="" loading={loading} error={error ? "An error occurred" : undefined}>
                 <table>
                     <thead>
                         <tr>
