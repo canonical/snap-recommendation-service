@@ -16,12 +16,12 @@ export default function App() {
     <AsideProvider>
       <Routes>
         <Route element={<Layout />}>
-          <Route path="/v2/dashboard" element={<Dashboard />} />
-          <Route path="/v2/dashboard/excluded_snaps" element={<ExcludeSnaps />} />
-          <Route path="/v2/dashboard/editorial_slices" element={<EditorialSlices />} />
-          <Route path="/v2/dashboard/editorial_slice/:id" element={<SliceDetails />} />
-          <Route path="/v2/dashboard/settings" element={<Settings />} />
-          <Route path="/v2/dashboard/featured" element={<FeaturedSnaps />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/dashboard/excluded_snaps" element={<ExcludeSnaps />} />
+          <Route path="/dashboard/editorial_slices" element={<EditorialSlices />} />
+          <Route path="/dashboard/editorial_slice/:id" element={<SliceDetails />} />
+          <Route path="/dashboard/settings" element={<Settings />} />
+          <Route path="/dashboard/featured" element={<FeaturedSnaps />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

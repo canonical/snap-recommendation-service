@@ -21,27 +21,27 @@ export function Layout() {
                     icon: "information",
                     component: Link,
                     label: "Dashboard",
-                    to: "/v2/dashboard"
+                    to: "/dashboard"
                 }, {
                     icon: "delete",
                     component: Link,
                     label: "Excluded snaps",
-                    to: "/v2/dashboard/excluded_snaps"
+                    to: "/dashboard/excluded_snaps"
                 }, {
                     icon: "copy",
                     component: Link,
                     label: "Editorial Slices",
-                    to: "/v2/dashboard/editorial_slices"
+                    to: "/dashboard/editorial_slices"
                 }, {
                     icon: "show",
                     component: Link,
                     label: "Featured",
-                    to: "/v2/dashboard/featured"
+                    to: "/dashboard/featured"
                 }, {
                     icon: "menu",
                     component: Link,
                     label: "Settings",
-                    to: "/v2/dashboard/settings"
+                    to: "/dashboard/settings"
                 }]
             }]}
             aside={isOpen ? content : null}

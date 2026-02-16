@@ -43,7 +43,7 @@ export function EditorialSlices() {
                                 <td className="u-align--right">{slice.snaps_count}</td>
                                 <td className="u-align--right">
                                     <Link
-                                        to={`/v2/dashboard/editorial_slice/${slice.id}`}
+                                        to={`/dashboard/editorial_slice/${slice.id}`}
                                         className="p-button"
                                     >
                                         Edit
