@@ -58,7 +58,7 @@ export function SliceDetails() {
         await sendRequest(`/api/editorial_slice/${id}`, {
             method: "DELETE",
         });
-        navigate("/v2/dashboard/editorial_slices", { replace: true });
+        navigate("/dashboard/editorial_slices", { replace: true });
     }
 
     const handleDeleteSnap = async (snapName: string) => {

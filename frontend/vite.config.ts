@@ -1,10 +1,9 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig(({ mode }) => {
-  const isProd = mode === 'production'
+export default defineConfig(() => {
   return {
-    base: isProd ? '/' : '/v2/dashboard/',
+    base: '/',
     plugins: [react()],
     css: {
       preprocessorOptions: {
@@ -22,8 +21,8 @@ export default defineConfig(({ mode }) => {
           target: 'http://web:5000', // Flask backend
           changeOrigin: false,
           bypass: (req) => {
-            // Let React handle /v2/dashboard and its subpaths
-            if (req.url?.startsWith('/v2/dashboard')) {
+            // Let Vite handle its own internal assets
+            if (req.url?.startsWith('/@') || req.url?.startsWith('/src/') || req.url?.startsWith('/node_modules/') || req.url?.startsWith('/dashboard')) {
               return req.url
             }
           }
