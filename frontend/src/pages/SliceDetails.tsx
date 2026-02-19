@@ -1,4 +1,4 @@
-import { Button, Col, Notification, Panel, Row } from "@canonical/react-components";
+import { Button, Col, Notification, Panel, Row, Spinner } from "@canonical/react-components";
 import type { SliceDetail } from "../types/slice";
 import { useFetchData } from "../hooks/useFetchData";
 import { useNavigate, useParams } from "react-router-dom";
@@ -15,7 +15,7 @@ export function SliceDetails() {
     const { id } = useParams<{ id: string }>();
 
     const navigate = useNavigate();
-    const { error, data, refetch } = useFetchData<SliceDetail>(`/api/editorial_slice/${id}`);
+    const { error, data, loading, refetch } = useFetchData<SliceDetail>(`/api/editorial_slice/${id}`);
     const [successText, setSuccessText] = useState("");
     const { sendRequest, error: operationError } = useApi();
 
@@ -98,36 +98,44 @@ export function SliceDetails() {
             </Col>
         </Row>}
 
-        <Row>
-            <Col size={4}>
-                <h4>Details</h4>
-                <EditorialSliceForm buttonLabel="Update" onSubmit={handleUpdate} initialName={data ? data.name : ""} initialDescription={data ? data.description : ""} />
-            </Col>
-            <Col size={8}>
-                <h4>Snaps</h4>
+        {loading ? (
+            <Row>
+                <Col size={12}>
+                    <Spinner text="Loading slice details..." />
+                </Col>
+            </Row>
+        ) : (
+            <Row>
+                <Col size={4}>
+                    <h4>Details</h4>
+                    <EditorialSliceForm buttonLabel="Update" onSubmit={handleUpdate} initialName={data ? data.name : ""} initialDescription={data ? data.description : ""} />
+                </Col>
+                <Col size={8}>
+                    <h4>Snaps</h4>
 
-                <FindSnap addSnap={handleAddSnap} searchEndpoint="/api/collected_snaps/search" />
+                    <FindSnap addSnap={handleAddSnap} searchEndpoint="/api/collected_snaps/search" />
 
-                <ul className="p-list" style={{ maxHeight: "650px", overflow: "scroll" }}>
-                    {
-                        data && data.snaps.map(snap => <SnapCard
-                            key={snap.snap_id}
-                            snap={snap}
-                            actionButton={
-                                <Button
-                                    appearance="negative"
-                                    hasIcon
-                                    onClick={() => handleDeleteSnap(snap.name)}
-                                >
-                                    <i className="p-icon--delete is-dark"></i>
-                                    <span>Remove</span>
-                                </Button>
-                            }
-                        />)
-                    }
+                    <ul className="p-list" style={{ maxHeight: "650px", overflow: "scroll" }}>
+                        {
+                            data && data.snaps.map(snap => <SnapCard
+                                key={snap.snap_id}
+                                snap={snap}
+                                actionButton={
+                                    <Button
+                                        appearance="negative"
+                                        hasIcon
+                                        onClick={() => handleDeleteSnap(snap.name)}
+                                    >
+                                        <i className="p-icon--delete is-dark"></i>
+                                        <span>Remove</span>
+                                    </Button>
+                                }
+                            />)
+                        }
 
-                </ul>
-            </Col>
-        </Row>
+                    </ul>
+                </Col>
+            </Row>
+        )}
     </Panel>
 }
