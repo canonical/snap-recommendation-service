@@ -4,27 +4,18 @@ import type { Snap } from "../types/snap";
 import { AsyncBoundary } from "../components/AsyncBoundary/AsyncBoundary";
 import { useApi } from "../hooks/useApi";
 
-type ExcludedSnapResponse = Array<{
-    "category": {
-        name: string,
-        id: string,
-    },
-    "snaps": Snap[]
-}>
-
 export function ExcludeSnaps() {
-    const { error, loading, data, refetch } = useFetchData<ExcludedSnapResponse>('/api/excluded_snaps');
+    const { error, loading, data, refetch } = useFetchData<Snap[]>('/api/excluded_snaps');
     const { sendRequest, error: includeError } = useApi();
 
-    const includeSnap = async (snap: Snap, category: string) => {
+    const includeSnap = async (snap: Snap) => {
         await sendRequest("/api/include_snap", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                "snap_id": snap.snap_id,
-                "category": category
+                "snap_id": snap.snap_id
             }),
         });
         await refetch();
@@ -39,21 +30,17 @@ export function ExcludeSnaps() {
                 <div className="u-fixed-width">
                     <AsyncBoundary label="Excluded snaps" loading={loading} error={includeError || error ? "An error occurred" : undefined}>
                         <ul className="p-list" style={{ maxHeight: "650px", overflow: "scroll" }}>
-                            {data?.map((info) => (
-                                <div key={info.category.id}>
-                                    <h5>{info.category.name}</h5>
-                                    {info.snaps.map(snap => <SnapCard
-                                        key={snap.snap_id}
-                                        snap={snap}
-                                        actionButton={
-                                            <button className="p-button--positive has-icon" onClick={() => includeSnap(snap, info.category.id)}>
-                                                <i className="p-icon--plus is-dark"></i>
-                                                <span>Include</span>
-                                            </button>
-                                        }
-                                    />)}
-                                </div>
-                            ))}
+                            <h5>Globally excluded (all categories)</h5>
+                            {data?.map(snap => <SnapCard
+                                key={snap.snap_id}
+                                snap={snap}
+                                actionButton={
+                                    <button className="p-button--positive has-icon" onClick={() => includeSnap(snap)}>
+                                        <i className="p-icon--plus is-dark"></i>
+                                        <span>Include</span>
+                                    </button>
+                                }
+                            />)}
                         </ul>
                     </AsyncBoundary>
                 </div>

@@ -20,8 +20,7 @@ export const CategoryList = ({ category, label }: { category: string, label: str
                 "Content-Type": "application/json",
             },
             body: JSON.stringify({
-                "snap_id": snap.snap_id,
-                "category": category
+                "snap_id": snap.snap_id
             }),
         });
         await refetch();

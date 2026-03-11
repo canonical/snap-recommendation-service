@@ -41,6 +41,7 @@ class Snap(db.Model):
     raw_rating: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     total_votes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     reaches_min_threshold: Mapped[bool] = mapped_column(Boolean, default=False)
+    excluded: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
 class RecommendationCategory(db.Model):
@@ -71,7 +72,6 @@ class SnapRecommendationScore(db.Model):
         primary_key=True,
     )
     score: Mapped[float] = mapped_column(Float)
-    exclude: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now
     )
@@ -93,7 +93,6 @@ class SnapRecommendationScoreHistory(db.Model):
         primary_key=True,
     )
     score: Mapped[float] = mapped_column(Float)
-    exclude: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now, primary_key=True
     )
