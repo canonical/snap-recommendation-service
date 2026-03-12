@@ -11,11 +11,11 @@ from snaprecommend.logic import (
     get_slice_snaps,
     get_all_categories,
     get_all_slices,
-    get_category_excluded_snaps,
-    include_snap_in_category,
+    get_excluded_snaps,
+    include_snap as include_snap_globally,
     get_snap_by_name,
     get_most_recent_pipeline_step_logs,
-    exclude_snap_from_category,
+    exclude_snap as exclude_snap_globally,
 )
 from snaprecommend.auth.decorators import login_required
 from snaprecommend.editorials import (
@@ -117,16 +117,10 @@ def popular_snaps():
 @api_blueprint.route("/excluded_snaps")
 @login_required
 def excluded_snaps():
-    excluded_snaps = []
-    for category in get_all_categories():
-        snaps = get_category_excluded_snaps(category.id)
-        excluded_snaps.append(
-            {
-                "category": {"name": category.name, "id": category.id},
-                "snaps": [serialize_snap(snap) for snap in snaps],
-            }
-        )
-    return flask.jsonify(excluded_snaps), 200
+    globally_excluded_snaps = get_excluded_snaps()
+    return flask.jsonify(
+        [serialize_snap(snap) for snap in globally_excluded_snaps]
+    ), 200
 
 
 @api_blueprint.route("/include_snap", methods=["POST"])
@@ -134,9 +128,8 @@ def excluded_snaps():
 def include_snap():
     data = flask.request.get_json()
     snap_id = data.get("snap_id")
-    category = data.get("category")
-    if snap_id and category:
-        include_snap_in_category(category, snap_id)
+    if snap_id:
+        include_snap_globally(snap_id)
     return flask.jsonify({"status": "success"}), 200
 
 
@@ -312,9 +305,8 @@ def run_pipeline_step():
 def exclude_snap():
     data = flask.request.get_json()
     snap_id = data.get("snap_id")
-    category = data.get("category")
-    if snap_id and category:
-        exclude_snap_from_category(category, snap_id)
+    if snap_id:
+        exclude_snap_globally(snap_id)
     return flask.jsonify({"status": "success"}), 200
 
 

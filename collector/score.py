@@ -125,7 +125,7 @@ def calculate_category_scores():
 
     session = db.session
 
-    filter_condition = Snap.reaches_min_threshold.is_(True)
+    filter_condition = Snap.reaches_min_threshold.is_(True) & Snap.excluded.is_(False)
 
     min_active_devices, max_active_devices = normalize_field(
         session, Snap.active_devices, filter_condition=filter_condition
@@ -349,7 +349,6 @@ def migrate_current_scores():
             "snap_id": score.snap_id,
             "category": score.category,
             "created_at": score.created_at,
-            "exclude": score.exclude,
             "score": score.score,
         }
         for score in scores
