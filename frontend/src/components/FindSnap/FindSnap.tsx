@@ -1,14 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import type { SearchSnap } from "../../types/snap";
-import { Spinner } from "@canonical/react-components";
+import { FindSnapResults } from "./FindSnapResults";
 import "./FindSnap.scss";
 
 type FindSnapProps = {
     addSnap: (snap: SearchSnap) => void;
     searchEndpoint?: string;
+    excludedPackageNames?: string[];
+    disabled?: boolean;
 }
 
-export function FindSnap({ addSnap, searchEndpoint = "/store/store.json" }: FindSnapProps) {
+export function FindSnap({ addSnap, searchEndpoint = "/store/store.json", excludedPackageNames = [], disabled = false }: FindSnapProps) {
     const searchSnap = async (queryString: string): Promise<SearchSnap[]> => {
         const response = await fetch(`${searchEndpoint}?q=${queryString}`);
         const responseJson = await response.json();
@@ -46,7 +48,6 @@ export function FindSnap({ addSnap, searchEndpoint = "/store/store.json" }: Find
         if (inputRef.current) {
             inputRef.current.value = "";
         }
-        setFocused(false);
         addSnap(snap);
     };
 
@@ -64,41 +65,14 @@ export function FindSnap({ addSnap, searchEndpoint = "/store/store.json" }: Find
                 onBlur={handleBlur}
                 ref={inputRef}
                 placeholder="Search for a snap"
+                disabled={disabled}
             />
             {focused && searchQuery.length > 2 && (
-                <div className="snap-search__list" onMouseDown={(e) => e.preventDefault()}>
-                    {
-                        loading && <div>
-                            <Spinner isLight className="snap-search__spinner" /> <span>Loading...</span>
-                        </div>
-                    }
-                    {storePackages?.map((snap) => (
-                        <div
-                            key={snap.package.name}
-                            onClick={() => handleClick(snap)}
-                            className="snap-search__item"
-                        >
-                            {snap.package.icon_url && <div>
-                                <img
-                                    src={snap.package.icon_url}
-                                    alt={snap.package.name}
-                                    width="32"
-                                    className="snap-search__item-img"
-                                />
-                            </div>
-                            }
-                            <div>
-                                <h3 className="p-heading--5 u-no-margin u-no-padding">
-                                    {snap.package.display_name}
-                                </h3>
-                                <p className="u-no-margin u-text--muted">
-                                    <em>{snap.publisher.display_name}</em>
-                                </p>
-                                <p className="u-no-margin">{snap.package.description}</p>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                <FindSnapResults
+                    loading={loading}
+                    packages={storePackages?.filter((snap) => !excludedPackageNames.includes(snap.package.name)) ?? []}
+                    onSelect={handleClick}
+                />
             )}
         </div>
 
