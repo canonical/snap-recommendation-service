@@ -51,6 +51,7 @@ export function FindSnap({ addSnap, searchEndpoint = "/store/store.json" }: Find
     };
 
     const handleFocus = () => setFocused(true);
+    const handleBlur = () => setFocused(false);
 
     return (
         <div className="snap-search">
@@ -60,11 +61,12 @@ export function FindSnap({ addSnap, searchEndpoint = "/store/store.json" }: Find
                 name="snap"
                 onChange={handleSearch}
                 onFocus={handleFocus}
+                onBlur={handleBlur}
                 ref={inputRef}
                 placeholder="Search for a snap"
             />
             {focused && searchQuery.length > 2 && (
-                <div className="snap-search__list">
+                <div className="snap-search__list" onMouseDown={(e) => e.preventDefault()}>
                     {
                         loading && <div>
                             <Spinner isLight className="snap-search__spinner" /> <span>Loading...</span>
