@@ -1,4 +1,4 @@
-alembic==1.14.0
+alembic==1.18.4
 Flask==3.1.0
 flake8==7.3.0
 Flask_Migrate==4.0.7
