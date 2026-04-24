@@ -22,6 +22,8 @@ import { FindSnap } from "../components/FindSnap/FindSnap";
 import { SortableCard } from "../components/SortableCard/SortableCard";
 import { LoadingCard } from "@canonical/store-components";
 
+const FEATURED_LIMIT = 16;
+
 export function FeaturedSnaps() {
     const { data, loading, error } = useFetchData<FeaturedSnap[]>('/featured');
 
@@ -119,7 +121,14 @@ export function FeaturedSnaps() {
 
     return <Panel title="Featured Snaps">
         <Row>
-            <Col size={4}><FindSnap addSnap={handleAdd} /></Col>
+            <Col size={4}>
+                <label className="p-form__label">Featured snaps ({featuredSnaps.length}/{FEATURED_LIMIT})</label>
+                <FindSnap
+                    addSnap={handleAdd}
+                    excludedPackageNames={featuredSnaps.map((snap) => snap.package_name)}
+                    disabled={featuredSnaps.length >= FEATURED_LIMIT}
+                />
+            </Col>
         </Row>
 
         <Row>
@@ -155,13 +164,13 @@ export function FeaturedSnaps() {
                 </DndContext>
             )}
             <p style={{ textAlign: "right", maxWidth: "100%" }}>
-                {featuredSnaps.length < 16 && (
-                    <>Please add {16 - featuredSnaps.length} more snaps to save</>
+                {featuredSnaps.length < FEATURED_LIMIT && (
+                    <>Please add {FEATURED_LIMIT - featuredSnaps.length} more snaps to save</>
                 )}
                 <Button
                     appearance="positive"
                     onClick={handleSave}
-                    disabled={featuredSnaps.length < 16}
+                    disabled={featuredSnaps.length < FEATURED_LIMIT}
                     hasIcon={isSaving}
                     inline
                 >
