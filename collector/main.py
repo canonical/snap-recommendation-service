@@ -20,9 +20,9 @@ logger = logging.getLogger("collector")
 
 
 # TODO: This should be a setting
-DATA_UPDATE_THRESHOLD = timedelta(days=1)
+DATA_UPDATE_THRESHOLD = timedelta(hours=12)
 
-FETCH_INTERVAL = 24 * 3600  # 24 hours in seconds
+FETCH_INTERVAL = 12 * 3600  # 12 hours in seconds
 
 
 def collect_data(force_update: bool = False):
@@ -50,8 +50,8 @@ def collect_data(force_update: bool = False):
 
             if time_since_last_update < DATA_UPDATE_THRESHOLD:
                 logger.info(
-                    "Data was updated recently (within %s days). Skipping update.",
-                    DATA_UPDATE_THRESHOLD.days,
+                    "Data was updated recently (within %s). Skipping update.",
+                    DATA_UPDATE_THRESHOLD,
                 )
                 return
     else:
