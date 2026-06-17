@@ -57,8 +57,8 @@ def parse_snap_from_response(snap: dict) -> dict:
         "media": snap["media"],
         "developer_validation": snap["developer_validation"],
         "license": snap["license"],
-        "last_updated": datetime.datetime.fromisoformat(snap["last_updated"]),
-        "date_published": datetime.datetime.fromisoformat(snap["date_published"]) if snap.get("date_published") else None,
+        "last_updated": datetime.datetime.fromisoformat(snap["last_updated"].replace("Z", "+00:00")),
+        "date_published": datetime.datetime.fromisoformat(snap["date_published"].replace("Z", "+00:00")) if snap.get("date_published") else None,
     }
 
 
