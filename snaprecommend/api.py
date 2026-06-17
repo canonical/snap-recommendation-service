@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint
 import flask
 from snaprecommend.models import (
@@ -39,6 +39,26 @@ from collector.main import (
 )
 
 api_blueprint = Blueprint("api", __name__)
+
+
+@api_blueprint.route("/stats")
+def stats():
+    last_24_hours = datetime.now(timezone.utc) - timedelta(hours=24)
+
+    total_tracked = Snap.query.count()
+    new_today = Snap.query.filter(
+        Snap.date_published >= last_24_hours
+    ).count()
+    updated_today = Snap.query.filter(
+        Snap.last_updated >= last_24_hours,
+        Snap.date_published < last_24_hours,
+    ).count()
+
+    return flask.jsonify({
+        "total_tracked": total_tracked,
+        "new_today": new_today,
+        "updated_today": updated_today,
+    }), 200
 
 
 @api_blueprint.route("/categories")

@@ -42,6 +42,7 @@ class Snap(db.Model):
     total_votes: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     reaches_min_threshold: Mapped[bool] = mapped_column(Boolean, default=False)
     excluded: Mapped[bool] = mapped_column(Boolean, default=False)
+    date_published: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
 
 class RecommendationCategory(db.Model):
