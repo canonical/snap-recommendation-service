@@ -37,6 +37,8 @@ jobs:
   deploy:
     needs: setup
     name: Deploy
+    permissions:
+      packages: write
     uses: canonical/webteam-devops/.github/workflows/deploy.yaml@main
     with:
       charm_name: ${{ needs.setup.outputs.charm_name }}
