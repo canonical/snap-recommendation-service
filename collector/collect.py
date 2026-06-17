@@ -13,6 +13,7 @@ FIELDS = (
     "snap_id",
     "package_name",
     "last_updated",
+    "date_published",
     "summary",
     "description",
     "title",
@@ -25,7 +26,7 @@ FIELDS = (
     "license",
 )
 
-URL = f"http://api.snapcraft.io/api/v1/snaps/search?fields={','.join(FIELDS)}&confinement=strict,classic"
+URL = f"http://api.snapcraft.io/api/v1/snaps/search?fields={','.join(FIELDS)}&scope=wide&confinement=strict,classic"
 
 
 logger = logging.getLogger("collector")
@@ -57,6 +58,7 @@ def parse_snap_from_response(snap: dict) -> dict:
         "developer_validation": snap["developer_validation"],
         "license": snap["license"],
         "last_updated": datetime.datetime.fromisoformat(snap["last_updated"]),
+        "date_published": datetime.datetime.fromisoformat(snap["date_published"]) if snap.get("date_published") else None,
     }
 
 
@@ -151,6 +153,7 @@ def bulk_upsert_snaps(session: Session, snaps: list):
                 "developer_validation": stmt.excluded.developer_validation,
                 "license": stmt.excluded.license,
                 "last_updated": stmt.excluded.last_updated,
+                # date_published and created_at are intentionally excluded to preserve original values
             },
         )
 

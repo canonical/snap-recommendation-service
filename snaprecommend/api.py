@@ -41,6 +41,25 @@ from collector.main import (
 api_blueprint = Blueprint("api", __name__)
 
 
+@api_blueprint.route("/stats")
+def stats():
+    from datetime import date
+    today_start = datetime.combine(date.today(), datetime.min.time())
+
+    total_tracked = Snap.query.count()
+    new_today = Snap.query.filter(Snap.date_published >= today_start).count()
+    updated_today = Snap.query.filter(
+        Snap.last_updated >= today_start,
+        Snap.date_published < today_start,
+    ).count()
+
+    return flask.jsonify({
+        "total_tracked": total_tracked,
+        "new_today": new_today,
+        "updated_today": updated_today,
+    }), 200
+
+
 @api_blueprint.route("/categories")
 def categories():
     categories = get_all_categories()
