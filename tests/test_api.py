@@ -272,3 +272,37 @@ def test_slice_not_found(mock_query, client):
     assert response.status_code == 404
     assert response.json == {"error": "Slice not found"}
     mock_query.filter_by.assert_called_once_with(id="nonexistent_id")
+
+
+@patch("snaprecommend.api.Snap.query")
+def test_stats_endpoint(mock_query, client):
+    mock_query.count.return_value = 100
+
+    mock_filter = MagicMock()
+    mock_filter.count.side_effect = [5, 20]  # new_today, updated_today
+    mock_query.filter.return_value = mock_filter
+
+    response = client.get("/stats")
+    assert response.status_code == 200
+    assert response.json == {
+        "total_tracked": 100,
+        "new_today": 5,
+        "updated_today": 20,
+    }
+
+
+@patch("snaprecommend.api.Snap.query")
+def test_stats_endpoint_empty(mock_query, client):
+    mock_query.count.return_value = 0
+
+    mock_filter = MagicMock()
+    mock_filter.count.side_effect = [0, 0]
+    mock_query.filter.return_value = mock_filter
+
+    response = client.get("/stats")
+    assert response.status_code == 200
+    assert response.json == {
+        "total_tracked": 0,
+        "new_today": 0,
+        "updated_today": 0,
+    }

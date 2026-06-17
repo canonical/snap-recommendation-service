@@ -153,7 +153,8 @@ def bulk_upsert_snaps(session: Session, snaps: list):
                 "developer_validation": stmt.excluded.developer_validation,
                 "license": stmt.excluded.license,
                 "last_updated": stmt.excluded.last_updated,
-                # date_published and created_at are intentionally excluded to preserve original values
+                "date_published": stmt.excluded.date_published,
+                # created_at is intentionally excluded to preserve the original value
             },
         )
 
