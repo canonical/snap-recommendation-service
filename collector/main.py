@@ -20,9 +20,19 @@ logger = logging.getLogger("collector")
 
 
 # TODO: This should be a setting
-DATA_UPDATE_THRESHOLD = timedelta(hours=12)
+PIPELINE_UPDATE_THRESHOLD = timedelta(hours=12)
 
-FETCH_INTERVAL = 12 * 3600  # 12 hours in seconds
+INITIAL_STEP_INTERVAL = 1 * 3600   # 1 hour in seconds
+
+
+def _pipeline_ran_recently() -> bool:
+    """Return True if the pipeline completed within PIPELINE_UPDATE_THRESHOLD."""
+    last_update = get_setting("last_updated")
+    if not last_update:
+        return False
+    last_update_time = datetime.fromisoformat(str(last_update.value))
+    logger.info(f"Last update was at {last_update_time}")
+    return datetime.now() - last_update_time < PIPELINE_UPDATE_THRESHOLD
 
 
 def collect_data(force_update: bool = False):
@@ -42,18 +52,12 @@ def collect_data(force_update: bool = False):
         return
 
     if not force_update:
-        last_update = get_setting("last_updated")
-        if last_update:
-            last_update_time = datetime.fromisoformat(str(last_update.value))
-            logger.info(f"Last update was at {last_update_time}")
-            time_since_last_update = datetime.now() - last_update_time
-
-            if time_since_last_update < DATA_UPDATE_THRESHOLD:
-                logger.info(
-                    "Data was updated recently (within %s). Skipping update.",
-                    DATA_UPDATE_THRESHOLD,
-                )
-                return
+        if _pipeline_ran_recently():
+            logger.info(
+                "Data was updated recently (within %s). Skipping update.",
+                PIPELINE_UPDATE_THRESHOLD,
+            )
+            return
     else:
         logger.info("Force update enabled. updating data.")
 
@@ -72,13 +76,40 @@ def collect_data(force_update: bool = False):
 
 
 def collector_service():
-    """Run the service with signal handling."""
+    """Run the service with signal handling.
+
+    The initial data collection step runs every hour. The remaining pipeline
+    steps (filter, extra_fields, score) run at most once every 12 hours.
+    """
     try:
         logger.info("Starting collector service...")
         while True:
-            collect_data()
-            logger.info(f"Sleeping for {FETCH_INTERVAL} seconds...")
-            sleep(FETCH_INTERVAL)
+            if not os.environ.get(MACAROON_ENV_PATH):
+                logger.error("snapstore macaroon secret not given. Quitting")
+                return
+
+            logger.info("Running initial data collection step...")
+            collect_initial_snap_data()
+
+            # Run the remaining pipeline steps every 12 hours
+            run_full_pipeline = not _pipeline_ran_recently()
+            if not run_full_pipeline:
+                logger.info(
+                    "Full pipeline ran recently (within %s). "
+                    "Skipping filter, extra_fields and score steps.",
+                    PIPELINE_UPDATE_THRESHOLD,
+                )
+
+            if run_full_pipeline:
+                filter_snaps_meeting_minimum_criteria()
+                fetch_extra_fields()
+                calculate_scores()
+                set_setting("last_updated", datetime.now().isoformat())
+                db.session.commit()
+                logger.info("Full data collection pipeline complete.")
+
+            logger.info(f"Sleeping for {INITIAL_STEP_INTERVAL} seconds...")
+            sleep(INITIAL_STEP_INTERVAL)
     except KeyboardInterrupt:
         logger.info("Interrupted by user.")
     except Exception as e:
