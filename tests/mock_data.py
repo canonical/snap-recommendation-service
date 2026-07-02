@@ -21,4 +21,5 @@ def mock_snap() -> Snap:
         last_updated="2024-02-17T12:00:00Z",
         active_devices=1000,
         reaches_min_threshold=True,
+        categories=[{"name": "development", "featured": False}],
     )

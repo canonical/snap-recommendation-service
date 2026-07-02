@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     JSON,
     Enum,
+    Index,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 import enum
@@ -43,6 +44,7 @@ class Snap(db.Model):
     reaches_min_threshold: Mapped[bool] = mapped_column(Boolean, default=False)
     excluded: Mapped[bool] = mapped_column(Boolean, default=False)
     date_published: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    categories: Mapped[Optional[JSON]] = mapped_column(JSON, nullable=True)
 
 
 class RecommendationCategory(db.Model):
@@ -96,6 +98,34 @@ class SnapRecommendationScoreHistory(db.Model):
     score: Mapped[float] = mapped_column(Float)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.now, primary_key=True
+    )
+
+
+class FeaturedHistory(db.Model):
+    """
+    One row each time a snap is added to the featured list.
+    """
+
+    __tablename__: str = "featured_history"
+
+    id: Mapped[int] = mapped_column(
+        Integer, primary_key=True, autoincrement=True
+    )
+    snap_id: Mapped[str] = mapped_column(
+        String,
+        ForeignKey("snap.snap_id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    featured_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    is_manual: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    selection_reason: Mapped[Optional[JSON]] = mapped_column(
+        JSON, nullable=True
+    )
+
+    __table_args__ = (
+        Index("ix_featured_history_snap_id_featured_at", "snap_id", "featured_at"),
     )
 
 
