@@ -1,5 +1,6 @@
 import flask
 from snaprecommend.featuredsnaps.utils import get_featured_snaps
+from snaprecommend.logic import record_featured_history
 from snaprecommend.auth.session import publisher_gateway, device_gateway
 from snaprecommend.auth.decorators import (
     login_required,
@@ -45,6 +46,11 @@ def post_featured_snaps():
         snap["snap_id"] for snap in currently_featured_snaps
     ]
 
+    def restore_previous_featured():
+        publisher_gateway.update_featured_snaps(
+            token, {"packages": currently_featured_snap_ids}
+        )
+
     if len(currently_featured_snap_ids) > 0:
         delete_response = publisher_gateway.delete_featured_snaps(
             token, {"packages": currently_featured_snap_ids}
@@ -61,19 +67,46 @@ def post_featured_snaps():
     update_response = publisher_gateway.update_featured_snaps(token, payload)
 
     if update_response.status_code in (401, 403):
-        publisher_gateway.update_featured_snaps(token, {"packages": currently_featured_snap_ids})
+        restore_previous_featured()
 
         return flask.make_response(
             {"success": False, "message": "Unauthorized to update featured snaps"},
             update_response.status_code,
         )
     if update_response.status_code != 201:
-        publisher_gateway.update_featured_snaps(token, {"packages": currently_featured_snap_ids})
+        restore_previous_featured()
 
         return flask.make_response(
             {
                 "success": False,
                 "message": f"Failed to update featured snaps (status {update_response.status_code}).",
+            },
+            500,
+        )
+
+    # Record the manual edit in the shared featured history.
+    publisher = flask.session.get("publisher", {})
+    reason = {
+        "actor": publisher.get("email"),
+        "nickname": publisher.get("nickname"),
+    }
+    events = [
+        {"snap_id": snap_id, "selection_reason": reason}
+        for snap_id in snap_ids
+    ]
+    try:
+        record_featured_history(events, is_manual=True)
+    except Exception:
+        # Keep the store and history all-or-nothing: revert the live list to
+        # what it was before this edit so neither side sticks.
+        restore_previous_featured()
+        flask.current_app.logger.exception(
+            "Failed to record featured history; reverted featured snaps to previous state"
+        )
+        return flask.make_response(
+            {
+                "success": False,
+                "message": "Featured update rolled back due to an internal error.",
             },
             500,
         )

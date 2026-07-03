@@ -1,9 +1,11 @@
+from datetime import datetime
 from snaprecommend.models import (
     Snap,
     SnapRecommendationScore,
     RecommendationCategory,
     EditorialSlice,
     EditorialSliceSnap,
+    FeaturedHistory,
     PipelineStepLog,
     PipelineSteps,
 )
@@ -93,6 +95,62 @@ def get_slice_snaps(slice: str) -> list[Snap]:
     ).all()
 
     return snaps
+
+
+def record_featured_history(
+    events: list[dict], is_manual: bool
+) -> list[FeaturedHistory]:
+    """
+    Records featured-history events.
+    """
+    featured_at = datetime.utcnow()
+    entries = [
+        FeaturedHistory(
+            snap_id=event["snap_id"],
+            featured_at=featured_at,
+            is_manual=is_manual,
+            selection_reason=event.get("selection_reason"),
+        )
+        for event in events
+    ]
+    db.session.add_all(entries)
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
+    return entries
+
+
+def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
+    """
+    Returns featured history for the given snaps, grouped by snap_id with each
+    snap's events ordered newest-first.
+    """
+    if not snap_ids:
+        return {}
+
+    rows = (
+        db.session.query(FeaturedHistory)
+        .filter(FeaturedHistory.snap_id.in_(snap_ids))
+        .order_by(
+            FeaturedHistory.featured_at.desc(),
+            FeaturedHistory.id.desc(),
+        )
+        .all()
+    )
+
+    history: dict[str, list[dict]] = {}
+    for row in rows:
+        history.setdefault(row.snap_id, []).append(
+            {
+                "featured_at": row.featured_at.isoformat(),
+                "is_manual": row.is_manual,
+                "selection_reason": row.selection_reason,
+            }
+        )
+
+    return history
 
 
 def add_pipeline_step_log(step_name: str, status: bool, message: str = ""):
