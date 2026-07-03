@@ -114,7 +114,11 @@ def record_featured_history(
         for event in events
     ]
     db.session.add_all(entries)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
     return entries
 
 
@@ -140,9 +144,7 @@ def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
     for row in rows:
         history.setdefault(row.snap_id, []).append(
             {
-                "featured_at": (
-                    row.featured_at.isoformat() if row.featured_at else None
-                ),
+                "featured_at": row.featured_at.isoformat(),
                 "is_manual": row.is_manual,
                 "selection_reason": row.selection_reason,
             }

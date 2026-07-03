@@ -1,5 +1,4 @@
 import flask
-from snaprecommend import db
 from snaprecommend.featuredsnaps.utils import get_featured_snaps
 from snaprecommend.logic import record_featured_history
 from snaprecommend.auth.session import publisher_gateway, device_gateway
@@ -47,6 +46,11 @@ def post_featured_snaps():
         snap["snap_id"] for snap in currently_featured_snaps
     ]
 
+    def restore_previous_featured():
+        publisher_gateway.update_featured_snaps(
+            token, {"packages": currently_featured_snap_ids}
+        )
+
     if len(currently_featured_snap_ids) > 0:
         delete_response = publisher_gateway.delete_featured_snaps(
             token, {"packages": currently_featured_snap_ids}
@@ -63,14 +67,14 @@ def post_featured_snaps():
     update_response = publisher_gateway.update_featured_snaps(token, payload)
 
     if update_response.status_code in (401, 403):
-        publisher_gateway.update_featured_snaps(token, {"packages": currently_featured_snap_ids})
+        restore_previous_featured()
 
         return flask.make_response(
             {"success": False, "message": "Unauthorized to update featured snaps"},
             update_response.status_code,
         )
     if update_response.status_code != 201:
-        publisher_gateway.update_featured_snaps(token, {"packages": currently_featured_snap_ids})
+        restore_previous_featured()
 
         return flask.make_response(
             {
@@ -95,10 +99,7 @@ def post_featured_snaps():
     except Exception as e:
         # Keep the store and history all-or-nothing: revert the live list to
         # what it was before this edit so neither side sticks.
-        db.session.rollback()
-        publisher_gateway.update_featured_snaps(
-            token, {"packages": currently_featured_snap_ids}
-        )
+        restore_previous_featured()
         return flask.make_response(
             {
                 "success": False,

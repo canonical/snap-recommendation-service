@@ -35,6 +35,19 @@ def client(app):
     return app.test_client()
 
 
+@pytest.fixture
+def admin_client(client):
+    with client.session_transaction() as sess:
+        sess["exchanged_developer_token"] = True
+        sess["developer_token"] = "token"
+        sess["publisher"] = {
+            "is_admin": True,
+            "email": "jane@canonical.com",
+            "nickname": "jane",
+        }
+    return client
+
+
 def test_record_featured_history_manual(app):
     """A manual pick is stored with is_manual=True and the acting user."""
     events = [
@@ -162,7 +175,7 @@ def test_get_featured_snaps_attaches_reason_and_history(mock_gateway, app):
 @patch("snaprecommend.featuredsnaps.api.publisher_gateway")
 @patch("snaprecommend.featuredsnaps.api.device_gateway")
 def test_post_featured_records_manual_history(
-    mock_device, mock_publisher, _mock_auth, client
+    mock_device, mock_publisher, _mock_auth, admin_client
 ):
     mock_device.get_featured_snaps.return_value = {
         "_embedded": {"clickindex:package": []},
@@ -172,16 +185,7 @@ def test_post_featured_records_manual_history(
     update_response.status_code = 201
     mock_publisher.update_featured_snaps.return_value = update_response
 
-    with client.session_transaction() as sess:
-        sess["exchanged_developer_token"] = True
-        sess["developer_token"] = "token"
-        sess["publisher"] = {
-            "is_admin": True,
-            "email": "jane@canonical.com",
-            "nickname": "jane",
-        }
-
-    response = client.post("/featured/", data={"snaps": "snap1,snap2"})
+    response = admin_client.post("/featured/", data={"snaps": "snap1,snap2"})
 
     assert response.status_code == 200
     assert response.get_json()["success"] is True
@@ -202,7 +206,7 @@ def test_post_featured_records_manual_history(
 @patch("snaprecommend.featuredsnaps.api.publisher_gateway")
 @patch("snaprecommend.featuredsnaps.api.device_gateway")
 def test_post_featured_reverts_store_when_history_fails(
-    mock_device, mock_publisher, _mock_auth, mock_record, client
+    mock_device, mock_publisher, _mock_auth, mock_record, admin_client
 ):
     mock_device.get_featured_snaps.return_value = {
         "_embedded": {"clickindex:package": [{"snap_id": "old1"}]},
@@ -217,16 +221,7 @@ def test_post_featured_reverts_store_when_history_fails(
 
     mock_record.side_effect = Exception("db down")
 
-    with client.session_transaction() as sess:
-        sess["exchanged_developer_token"] = True
-        sess["developer_token"] = "token"
-        sess["publisher"] = {
-            "is_admin": True,
-            "email": "jane@canonical.com",
-            "nickname": "jane",
-        }
-
-    response = client.post("/featured/", data={"snaps": "snap1,snap2"})
+    response = admin_client.post("/featured/", data={"snaps": "snap1,snap2"})
 
     assert response.status_code == 500
     assert response.get_json()["success"] is False
