@@ -1,5 +1,7 @@
 import flask
+from snaprecommend import db
 from snaprecommend.featuredsnaps.utils import get_featured_snaps
+from snaprecommend.logic import record_featured_history
 from snaprecommend.auth.session import publisher_gateway, device_gateway
 from snaprecommend.auth.decorators import (
     login_required,
@@ -74,6 +76,33 @@ def post_featured_snaps():
             {
                 "success": False,
                 "message": f"Failed to update featured snaps (status {update_response.status_code}).",
+            },
+            500,
+        )
+
+    # Record the manual edit in the shared featured history.
+    publisher = flask.session.get("publisher", {})
+    reason = {
+        "actor": publisher.get("email"),
+        "nickname": publisher.get("nickname"),
+    }
+    events = [
+        {"snap_id": snap_id, "selection_reason": reason}
+        for snap_id in snap_ids
+    ]
+    try:
+        record_featured_history(events, is_manual=True)
+    except Exception as e:
+        # Keep the store and history all-or-nothing: revert the live list to
+        # what it was before this edit so neither side sticks.
+        db.session.rollback()
+        publisher_gateway.update_featured_snaps(
+            token, {"packages": currently_featured_snap_ids}
+        )
+        return flask.make_response(
+            {
+                "success": False,
+                "message": f"Featured update rolled back: {e}",
             },
             500,
         )
