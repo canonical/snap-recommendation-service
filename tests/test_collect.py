@@ -38,6 +38,7 @@ def sample_snap():
         "media": [{"type": "icon", "url": "https://example.com/icon.png"}],
         "developer_validation": True,
         "license": "MIT",
+        "sections": [{"name": "development", "featured": False}],
     }
 
 
@@ -61,7 +62,7 @@ def test_get_snap_page(mock_get):
     assert len(snaps) == 2
     assert has_next is True
     mock_get.assert_called_once_with(
-        "http://api.snapcraft.io/api/v1/snaps/search?fields=snap_id,package_name,last_updated,date_published,summary,description,title,version,publisher,revision,links,media,developer_validation,license&scope=wide&confinement=strict,classic&page=1"
+        "http://api.snapcraft.io/api/v1/snaps/search?fields=snap_id,package_name,last_updated,date_published,summary,description,title,version,publisher,revision,links,media,developer_validation,license,sections&scope=wide&confinement=strict,classic&page=1"
     )
 
 
@@ -133,6 +134,7 @@ def test_bulk_upsert_snaps(mock_insert, mock_session, sample_snap):
                     sample_snap["last_updated"]
                 ),
                 "date_published": None,
+                "categories": sample_snap["sections"],
             }
         ]
     )

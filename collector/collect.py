@@ -24,6 +24,7 @@ FIELDS = (
     "media",
     "developer_validation",
     "license",
+    "sections",
 )
 
 URL = f"http://api.snapcraft.io/api/v1/snaps/search?fields={','.join(FIELDS)}&scope=wide&confinement=strict,classic"
@@ -59,6 +60,7 @@ def parse_snap_from_response(snap: dict) -> dict:
         "license": snap["license"],
         "last_updated": datetime.datetime.fromisoformat(snap["last_updated"].replace("Z", "+00:00")),
         "date_published": datetime.datetime.fromisoformat(snap["date_published"].replace("Z", "+00:00")) if snap.get("date_published") else None,
+        "categories": snap.get("sections"),
     }
 
 
@@ -154,6 +156,7 @@ def bulk_upsert_snaps(session: Session, snaps: list):
                 "license": stmt.excluded.license,
                 "last_updated": stmt.excluded.last_updated,
                 "date_published": stmt.excluded.date_published,
+                "categories": stmt.excluded.categories,
                 # created_at is intentionally excluded to preserve the original value
             },
         )
