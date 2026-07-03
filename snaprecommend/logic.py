@@ -103,7 +103,7 @@ def record_featured_history(
     """
     Records featured-history events.
     """
-    featured_at = datetime.now()
+    featured_at = datetime.utcnow()
     entries = [
         FeaturedHistory(
             snap_id=event["snap_id"],
