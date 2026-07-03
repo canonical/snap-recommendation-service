@@ -96,14 +96,17 @@ def post_featured_snaps():
     ]
     try:
         record_featured_history(events, is_manual=True)
-    except Exception as e:
+    except Exception:
         # Keep the store and history all-or-nothing: revert the live list to
         # what it was before this edit so neither side sticks.
         restore_previous_featured()
+        flask.current_app.logger.exception(
+            "Failed to record featured history; reverted featured snaps to previous state"
+        )
         return flask.make_response(
             {
                 "success": False,
-                "message": f"Featured update rolled back: {e}",
+                "message": "Featured update rolled back due to an internal error.",
             },
             500,
         )
