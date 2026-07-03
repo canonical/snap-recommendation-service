@@ -159,15 +159,13 @@ def test_get_featured_snaps_attaches_reason_and_history(mock_gateway, app):
     result = get_featured_snaps()
     by_id = {snap["snap_id"]: snap for snap in result}
 
-    assert by_id["snap1"]["selection_reason"]["is_manual"] is True
-    assert (
-        by_id["snap1"]["selection_reason"]["selection_reason"]["actor"]
-        == "jane@canonical.com"
-    )
+    assert by_id["snap1"]["is_manual"] is True
+    assert by_id["snap1"]["selection_reason"]["actor"] == "jane@canonical.com"
     assert len(by_id["snap1"]["featured_history"]) == 1
     assert by_id["snap1"]["icon_url"] == "http://example.com/i.png"
 
     assert by_id["snap2"]["selection_reason"] is None
+    assert by_id["snap2"]["is_manual"] is None
     assert by_id["snap2"]["featured_history"] == []
 
 
