@@ -22,7 +22,7 @@ def upgrade():
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("snap_id", sa.String(), nullable=False),
         sa.Column("featured_at", sa.DateTime(), nullable=False),
-        sa.Column("is_manual", sa.Boolean(), nullable=False),
+        sa.Column("is_manual", sa.Boolean(), nullable=False, server_default=sa.false()),
         sa.Column("selection_reason", sa.JSON(), nullable=True),
         sa.ForeignKeyConstraint(
             ["snap_id"], ["snap.snap_id"], ondelete="CASCADE"
