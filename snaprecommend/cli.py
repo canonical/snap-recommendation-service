@@ -56,6 +56,26 @@ def score():
 
 
 @collector.command()
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Run selection even if featured snaps were updated recently",
+)
+def featured(force):
+    """Run automated featured snap selection"""
+    from collector.featured_selector import select_featured_snaps
+    from collector.main import _featured_ran_recently
+
+    if not force and _featured_ran_recently():
+        click.echo(
+            "Featured snaps were updated recently. Use --force to override."
+        )
+        return
+
+    select_featured_snaps(force=force)
+
+
+@collector.command()
 def service():
     """Start the collector server to run periodically"""
     from collector.main import collector_service

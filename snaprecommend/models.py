@@ -174,6 +174,7 @@ class PipelineSteps(enum.Enum):
     FILTER = "filter"
     EXTRA_FIELDS = "extra_fields"
     SCORE = "score"
+    FEATURED = "featured"
 
 
 class PipelineStepLog(db.Model):
