@@ -17,7 +17,7 @@ from snaprecommend.logic import (
     get_most_recent_pipeline_step_logs,
     exclude_snap as exclude_snap_globally,
 )
-from snaprecommend.auth.decorators import login_required
+from snaprecommend.auth.decorators import login_required, admin_required
 from snaprecommend.editorials import (
     get_all_editorial_slices,
     get_editorial_slice_with_snaps,
@@ -27,7 +27,7 @@ from snaprecommend.editorials import (
     remove_snap_from_editorial_slice,
     update_editorial_slice,
 )
-from snaprecommend.settings import get_setting
+from snaprecommend.settings import get_setting, set_setting
 from snaprecommend.utils import api_response
 from snaprecommend.models import PipelineSteps
 import threading
@@ -318,6 +318,97 @@ def run_pipeline_step():
         "status": "success",
         "message": f"Pipeline step '{step_name}' started, please don't trigger again until last run time is updated",
     }, 200
+
+
+@api_blueprint.route("/featured/select", methods=["POST"])
+@login_required
+@admin_required
+def trigger_featured_selection():
+    """
+    Trigger an automated featured snap selection immediately, using the
+    currently logged-in admin's publisher token so the store list is updated.
+    Runs in a background thread to avoid blocking the request.
+    """
+    from collector.featured_selector import select_featured_snaps
+    from collector.main import _featured_ran_recently
+
+    force = flask.request.get_json(silent=True, force=True) or {}
+    force = bool(force.get("force", False))
+
+    if not force and _featured_ran_recently():
+        return flask.jsonify({
+            "status": "skipped",
+            "message": (
+                "Featured snaps were updated recently. "
+                "Pass {\"force\": true} to override."
+            ),
+        }), 200
+
+    token = flask.session.get("developer_token")
+    app_ctx = flask.current_app.app_context()
+
+    def _run(ctx, publisher_token):
+        ctx.push()
+        select_featured_snaps(token=publisher_token, force=force)
+
+    threading.Thread(target=_run, args=(app_ctx, token), daemon=True).start()
+
+    return flask.jsonify({
+        "status": "success",
+        "message": "Automated featured snap selection started.",
+    }), 200
+
+
+@api_blueprint.route("/featured/settings", methods=["GET"])
+@login_required
+def get_featured_settings():
+    """Return the current featured-selection configuration."""
+    keys = [
+        "featured_update_interval_days",
+        "featured_candidate_pool_size",
+        "featured_category_cap",
+        "featured_min_rating",
+        "featured_recency_days",
+        "featured_history_window_days",
+        "featured_last_updated",
+        "featured_server_cloud_exclusions",
+    ]
+    result = {}
+    for key in keys:
+        s = get_setting(key)
+        result[key] = s.value if s else None
+    return flask.jsonify(result), 200
+
+
+@api_blueprint.route("/featured/settings", methods=["PATCH"])
+@login_required
+@admin_required
+def update_featured_settings():
+    """
+    Update one or more featured-selection settings.
+    Only the known configuration keys are accepted.
+    """
+    allowed_keys = {
+        "featured_update_interval_days",
+        "featured_candidate_pool_size",
+        "featured_category_cap",
+        "featured_min_rating",
+        "featured_recency_days",
+        "featured_history_window_days",
+        "featured_server_cloud_exclusions",
+    }
+    data = flask.request.get_json(silent=True) or {}
+    unknown = set(data.keys()) - allowed_keys
+    if unknown:
+        return flask.jsonify({
+            "status": "error",
+            "message": f"Unknown setting(s): {', '.join(sorted(unknown))}",
+        }), 400
+
+    for key, value in data.items():
+        set_setting(key, value)
+
+    return flask.jsonify({"status": "success"}), 200
 
 
 @api_blueprint.route("/exclude_snap", methods=["POST"])
