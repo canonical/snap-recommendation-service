@@ -200,6 +200,8 @@ def _rank_candidates(candidates: list, recency_days: int) -> list:
 def _enforce_canonical_mix(top3: list, remaining: list) -> tuple:
     """
     Ensure top3 has ≥1 and ≤2 Canonical snaps.
+    Any snap displaced from top3 is returned to *remaining* so it stays
+    eligible for later stages (category reservation and fill).
     Returns (adjusted_top3, adjusted_remaining).
     """
     top3 = list(top3)
@@ -215,7 +217,9 @@ def _enforce_canonical_mix(top3: list, remaining: list) -> tuple:
             )
         insert = canonical_pool[0]
         remaining.remove(insert)
-        top3[-1] = insert  # replace lowest-ranked
+        displaced = top3[-1]          # save before overwriting
+        top3[-1] = insert
+        remaining.append(displaced)   # put displaced snap back into the pool
 
     elif canonical_count == 3:
         non_canonical_pool = [s for s in remaining if s.publisher != CANONICAL_PUBLISHER_ID]
@@ -227,7 +231,9 @@ def _enforce_canonical_mix(top3: list, remaining: list) -> tuple:
         remaining.remove(insert)
         # Remove last Canonical in top3 (lowest-ranked)
         canonicals_in_top3 = [s for s in top3 if s.publisher == CANONICAL_PUBLISHER_ID]
-        top3.remove(canonicals_in_top3[-1])
+        displaced = canonicals_in_top3[-1]
+        top3.remove(displaced)
+        remaining.append(displaced)   # put displaced snap back into the pool
         top3.append(insert)
 
     return top3, remaining

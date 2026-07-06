@@ -321,6 +321,28 @@ def test_canonical_mix_raises_when_no_canonical_available(app):
         _enforce_canonical_mix(top3, remaining)
 
 
+def test_canonical_mix_displaced_snap_returned_to_remaining(app):
+    """
+    When a snap is displaced from top3 to make room for a Canonical,
+    it must be added back to remaining — not silently dropped.
+    This covers the regression where a dev snap at top3[-1] would vanish,
+    leaving later stages short of the required development-snap count.
+    """
+    dev = _dev_snap("dev-displaced")
+    top3 = [_snap_obj("a"), _snap_obj("b"), dev]  # dev at last position
+    canonical = _snap_obj("canon", publisher="canonical")
+    remaining = [canonical, _snap_obj("x")]
+
+    new_top3, new_remaining = _enforce_canonical_mix(top3, remaining)
+
+    # Canonical was inserted
+    assert any(s.publisher == "canonical" for s in new_top3)
+    # Displaced dev snap is back in remaining
+    assert dev in new_remaining
+    # Canonical is no longer in remaining
+    assert canonical not in new_remaining
+
+
 # ---------------------------------------------------------------------------
 # Unit tests: Stage 4 — category spread
 # ---------------------------------------------------------------------------
