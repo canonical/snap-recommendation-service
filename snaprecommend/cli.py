@@ -56,6 +56,54 @@ def score():
 
 
 @collector.command()
+@click.option(
+    "--force",
+    is_flag=True,
+    help="Run selection even if featured snaps were updated recently",
+)
+@click.option(
+    "--dry-run",
+    is_flag=True,
+    help="Compute and print the selection without publishing or recording history",
+)
+def featured(force, dry_run):
+    """Run automated featured snap selection"""
+    from collector.featured_selector import run_selection, select_featured_snaps
+    from collector.main import _featured_ran_recently
+    from snaprecommend.models import Snap
+
+    if dry_run:
+        events, snap_ids = run_selection()
+        names = dict(
+            Snap.query.filter(Snap.snap_id.in_(snap_ids))
+            .with_entities(Snap.snap_id, Snap.name)
+            .all()
+        )
+        click.echo(f"Dry run: {len(events)} snaps would be selected (nothing published).\n")
+        for event in events:
+            reason = event["selection_reason"]
+            score = reason["ranking_value"]
+            score_display = f"{score:.4f}" if score is not None else "n/a"
+            click.echo(
+                f"- {names.get(event['snap_id'], event['snap_id'])} "
+                f"({event['snap_id']}) "
+                f"role={reason['role']} "
+                f"canonical={reason['canonical']} "
+                f"categories={','.join(reason['categories']) or '-'} "
+                f"score={score_display}"
+            )
+        return
+
+    if not force and _featured_ran_recently():
+        click.echo(
+            "Featured snaps were updated recently. Use --force to override."
+        )
+        return
+
+    select_featured_snaps()
+
+
+@collector.command()
 def service():
     """Start the collector server to run periodically"""
     from collector.main import collector_service

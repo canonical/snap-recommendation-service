@@ -1,4 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy.exc import IntegrityError
+
 from snaprecommend.models import (
     Snap,
     SnapRecommendationScore,
@@ -8,8 +11,13 @@ from snaprecommend.models import (
     FeaturedHistory,
     PipelineStepLog,
     PipelineSteps,
+    Settings,
 )
 from snaprecommend import db
+
+
+FEATURED_SELECTION_LOCK_KEY = "featured_selection_lock"
+FEATURED_SELECTION_LOCK_TTL = timedelta(hours=6)
 
 
 def get_snap_by_name(name: str) -> Snap | None:
@@ -97,13 +105,55 @@ def get_slice_snaps(slice: str) -> list[Snap]:
     return snaps
 
 
+def acquire_featured_selection_lock() -> bool:
+    """Acquire a durable lock coordinating featured store/history updates."""
+    now = datetime.now(timezone.utc)
+    lock_row = db.session.query(Settings).filter(
+        Settings.key == FEATURED_SELECTION_LOCK_KEY
+    ).first()
+
+    if lock_row:
+        acquired_at = None
+        try:
+            acquired_at = datetime.fromisoformat(str(lock_row.value))
+        except (TypeError, ValueError):
+            acquired_at = None
+
+        if acquired_at and acquired_at.tzinfo is None:
+            acquired_at = acquired_at.replace(tzinfo=timezone.utc)
+
+        if acquired_at and (now - acquired_at) <= FEATURED_SELECTION_LOCK_TTL:
+            return False
+
+        db.session.delete(lock_row)
+        db.session.commit()
+
+    db.session.add(Settings(key=FEATURED_SELECTION_LOCK_KEY, value=now.isoformat()))
+    try:
+        db.session.commit()
+        return True
+    except IntegrityError:
+        db.session.rollback()
+        return False
+
+
+def release_featured_selection_lock() -> None:
+    """Release the durable featured selection lock if it exists."""
+    lock_row = db.session.query(Settings).filter(
+        Settings.key == FEATURED_SELECTION_LOCK_KEY
+    ).first()
+    if lock_row:
+        db.session.delete(lock_row)
+        db.session.commit()
+
+
 def record_featured_history(
     events: list[dict], is_manual: bool
 ) -> list[FeaturedHistory]:
     """
     Records featured-history events.
     """
-    featured_at = datetime.utcnow()
+    featured_at = datetime.now(timezone.utc)
     entries = [
         FeaturedHistory(
             snap_id=event["snap_id"],
@@ -204,6 +254,7 @@ def get_most_recent_pipeline_step_logs():
             PipelineSteps.FILTER: "Filter",
             PipelineSteps.COLLECT: "Collect",
             PipelineSteps.EXTRA_FIELDS: "Extra fields",
+            PipelineSteps.FEATURED: "Featured",
         }
 
         step_info = {
