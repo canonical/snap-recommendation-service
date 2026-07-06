@@ -7,7 +7,6 @@ from collector.collect import collect_initial_snap_data
 from collector.filter import filter_snaps_meeting_minimum_criteria
 from collector.extra_fields import fetch_extra_fields
 from collector.score import calculate_scores
-from collector.featured_selector import select_featured_snaps
 from snaprecommend import db
 from config import MACAROON_ENV_PATH
 from snaprecommend.settings import get_setting, set_setting
@@ -109,6 +108,7 @@ def collect_data(force_update: bool = False, force_featured: bool = False):
     if force_featured or not _featured_ran_recently():
         logger.info("Running automated featured snap selection.")
         try:
+            from collector.featured_selector import select_featured_snaps
             select_featured_snaps()
         except Exception as exc:
             # Selection failure is logged and notified inside select_featured_snaps;
@@ -160,6 +160,7 @@ def collector_service():
                 if not _featured_ran_recently():
                     logger.info("Running automated featured snap selection.")
                     try:
+                        from collector.featured_selector import select_featured_snaps
                         select_featured_snaps()
                     except Exception as exc:
                         logger.error(

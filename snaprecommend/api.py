@@ -36,9 +36,7 @@ from collector.main import (
     filter_snaps_meeting_minimum_criteria,
     fetch_extra_fields,
     calculate_scores,
-    _featured_ran_recently,
 )
-from collector.featured_selector import select_featured_snaps
 
 api_blueprint = Blueprint("api", __name__)
 
@@ -331,6 +329,9 @@ def trigger_featured_selection():
     currently logged-in admin's publisher token so the store list is updated.
     Runs in a background thread to avoid blocking the request.
     """
+    from collector.featured_selector import select_featured_snaps
+    from collector.main import _featured_ran_recently
+
     force = flask.request.get_json(silent=True, force=True) or {}
     force = bool(force.get("force", False))
 
