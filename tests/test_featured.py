@@ -170,8 +170,8 @@ def test_get_featured_snaps_attaches_reason_and_history(mock_gateway, app):
 
 
 @patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
-@patch("snaprecommend.featuredsnaps.api.publisher_gateway")
-@patch("snaprecommend.featuredsnaps.api.device_gateway")
+@patch("snaprecommend.logic.publisher_gateway")
+@patch("snaprecommend.logic.device_gateway")
 def test_post_featured_records_manual_history(
     mock_device, mock_publisher, _mock_auth, admin_client
 ):
@@ -201,8 +201,8 @@ def test_post_featured_records_manual_history(
 
 @patch("snaprecommend.featuredsnaps.api.record_featured_history")
 @patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
-@patch("snaprecommend.featuredsnaps.api.publisher_gateway")
-@patch("snaprecommend.featuredsnaps.api.device_gateway")
+@patch("snaprecommend.logic.publisher_gateway")
+@patch("snaprecommend.logic.device_gateway")
 def test_post_featured_reverts_store_when_history_fails(
     mock_device, mock_publisher, _mock_auth, mock_record, admin_client
 ):

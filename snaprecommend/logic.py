@@ -1,7 +1,9 @@
+import logging
 from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.exc import IntegrityError
 
+from snaprecommend.auth.session import device_gateway, publisher_gateway
 from snaprecommend.models import (
     Snap,
     SnapRecommendationScore,
@@ -15,9 +17,41 @@ from snaprecommend.models import (
 )
 from snaprecommend import db
 
+logger = logging.getLogger(__name__)
 
 FEATURED_SELECTION_LOCK_KEY = "featured_selection_lock"
 FEATURED_SELECTION_LOCK_TTL = timedelta(hours=6)
+
+
+class FeaturedPublishError(Exception):
+    """Base error raised when publishing the featured list to the store fails."""
+
+    def __init__(self, message: str, status_code: int = 500):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+class FeaturedDeleteError(FeaturedPublishError):
+    """Raised when deleting the currently featured snaps fails."""
+
+    def __init__(self, status_code: int):
+        super().__init__(
+            f"Failed to delete current featured snaps (status {status_code}).",
+            status_code=400,
+        )
+        self.upstream_status_code = status_code
+
+
+class FeaturedUpdateError(FeaturedPublishError):
+    """Raised when updating the store with the new featured list fails."""
+
+    def __init__(self, status_code: int):
+        resolved_status = status_code if status_code in (401, 403) else 500
+        super().__init__(
+            f"Failed to update featured snaps in store (status {status_code}).",
+            status_code=resolved_status,
+        )
+        self.upstream_status_code = status_code
 
 
 def get_snap_by_name(name: str) -> Snap | None:
@@ -145,6 +179,52 @@ def release_featured_selection_lock() -> None:
     if lock_row:
         db.session.delete(lock_row)
         db.session.commit()
+
+
+def get_current_featured_snap_ids() -> list:
+    """Fetch the currently featured snap IDs from the store."""
+    snaps = device_gateway.get_featured_snaps()
+    currently_featured_snaps = snaps.get("_embedded", {}).get("clickindex:package", [])
+    return [snap["snap_id"] for snap in currently_featured_snaps]
+
+
+def publish_featured_snaps(token: str, new_snap_ids: list) -> list:
+    """
+    Replace the live featured list in the store with *new_snap_ids*.
+
+    The store's update (PUT) endpoint does not replace the featured list, it
+    only adds/updates entries, so the currently featured snaps must be
+    deleted first. If the subsequent update fails, a best-effort restore of
+    the previous list is attempted before raising.
+
+    Returns the snap IDs that were featured before this call.
+    Raises FeaturedDeleteError or FeaturedUpdateError on failure.
+    """
+    current_ids = get_current_featured_snap_ids()
+
+    if current_ids:
+        delete_resp = publisher_gateway.delete_featured_snaps(
+            token, {"packages": current_ids}
+        )
+        if delete_resp.status_code != 201:
+            raise FeaturedDeleteError(delete_resp.status_code)
+
+    update_resp = publisher_gateway.update_featured_snaps(
+        token, {"packages": new_snap_ids}
+    )
+    if update_resp.status_code not in (200, 201):
+        rollback_featured_snaps(current_ids, token)
+        raise FeaturedUpdateError(update_resp.status_code)
+
+    return current_ids
+
+
+def rollback_featured_snaps(previous_ids: list, token: str) -> None:
+    """Best-effort restore of the store's featured list to *previous_ids*."""
+    try:
+        publisher_gateway.update_featured_snaps(token, {"packages": previous_ids})
+    except Exception:
+        logger.exception("Failed to roll back featured list in store.")
 
 
 def record_featured_history(

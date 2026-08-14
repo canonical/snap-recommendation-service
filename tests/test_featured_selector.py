@@ -19,8 +19,7 @@ from collector.featured_selector import (
     _apply_hard_gates,
     _enforce_canonical_mix,
     _fill_slots,
-    _get_current_featured_snap_ids,
-    _get_recently_auto_featured_ids,
+    _get_recently_featured_ids,
     _has_any_category,
     _minmax_normalise,
     _rank_candidates,
@@ -29,6 +28,7 @@ from collector.featured_selector import (
     run_selection,
     select_featured_snaps,
 )
+from snaprecommend.logic import get_current_featured_snap_ids
 
 
 # ---------------------------------------------------------------------------
@@ -225,14 +225,14 @@ def test_hard_gates_excludes_recently_featured(app):
     assert not any(s.snap_id == "recent-feat" for s in result)
 
 
-def test_hard_gates_allows_manually_featured_recently(app):
-    """Manual pins bypass the 12-month gate."""
+def test_hard_gates_excludes_manually_featured_recently(app):
+    """Manual pins are now also subject to the 12-month history gate."""
     _make_snap("manual-pin")
     db.session.add(
         FeaturedHistory(
             snap_id="manual-pin",
             featured_at=datetime.utcnow() - timedelta(days=30),
-            is_manual=True,  # manual — should NOT be excluded
+            is_manual=True,  # manual — should still be excluded within the window
         )
     )
     db.session.commit()
@@ -240,7 +240,7 @@ def test_hard_gates_allows_manually_featured_recently(app):
     result = _apply_hard_gates(
         recency_days=180, history_window_days=365, min_rating=4.0
     )
-    assert any(s.snap_id == "manual-pin" for s in result)
+    assert not any(s.snap_id == "manual-pin" for s in result)
 
 
 # ---------------------------------------------------------------------------
@@ -415,12 +415,12 @@ def test_fill_relaxes_cap_when_short(app):
     assert len(filled) > 0
 
 
-def test_fill_rejects_multi_category_if_any_category_is_capped(app):
+def test_fill_allows_multi_category_snap_with_room_in_one_category(app):
     top3 = [_snap_obj(f"t{i}", categories=[{"slug": "utilities"}]) for i in range(3)]
     reserved = [(_snap_obj("r1", categories=[{"slug": "utilities"}]), "reserved")]
 
-    # utilities is already at cap=4; this snap must be rejected in the normal
-    # fill pass even though one of its categories is still below cap.
+    # utilities is already at cap=4, but games still has room, so this snap
+    # should still be admitted via its games category.
     multi = _snap_obj(
         "multi",
         categories=[{"slug": "utilities"}, {"slug": "games"}],
@@ -430,15 +430,15 @@ def test_fill_rejects_multi_category_if_any_category_is_capped(app):
         top3,
         reserved,
         [multi, game_only],
-        target_count=5,
+        target_count=6,
         category_cap=4,
     )
 
     assert game_only in filled
-    assert multi not in filled
+    assert multi in filled
 
 
-@patch("collector.featured_selector.device_gateway")
+@patch("snaprecommend.logic.device_gateway")
 def test_get_current_featured_snap_ids_fetches_once(mock_device):
     mock_device.get_featured_snaps.return_value = {
         "_embedded": {
@@ -450,7 +450,7 @@ def test_get_current_featured_snap_ids_fetches_once(mock_device):
         "_links": {"next": {"href": "https://example.invalid/next"}},
     }
 
-    snap_ids = _get_current_featured_snap_ids()
+    snap_ids = get_current_featured_snap_ids()
     assert snap_ids == ["snap-a", "snap-b"]
     mock_device.get_featured_snaps.assert_called_once()
 
@@ -603,8 +603,8 @@ def test_run_selection_produces_valid_list_on_repeated_calls(app):
 # Integration tests: select_featured_snaps (with mocked store)
 # ---------------------------------------------------------------------------
 
-@patch("collector.featured_selector.publisher_gateway")
-@patch("collector.featured_selector.device_gateway")
+@patch("snaprecommend.logic.publisher_gateway")
+@patch("snaprecommend.logic.device_gateway")
 def test_select_records_history_and_updates_setting(
     mock_device, mock_publisher, app
 ):
@@ -629,8 +629,8 @@ def test_select_records_history_and_updates_setting(
     assert get_setting("featured_last_updated") is not None
 
 
-@patch("collector.featured_selector.publisher_gateway")
-@patch("collector.featured_selector.device_gateway")
+@patch("snaprecommend.logic.publisher_gateway")
+@patch("snaprecommend.logic.device_gateway")
 def test_select_without_token_skips_store_publish(
     mock_device, mock_publisher, app
 ):
@@ -662,8 +662,8 @@ def test_select_without_token_skips_store_publish(
     assert log.success is False
 
 
-@patch("collector.featured_selector.publisher_gateway")
-@patch("collector.featured_selector.device_gateway")
+@patch("snaprecommend.logic.publisher_gateway")
+@patch("snaprecommend.logic.device_gateway")
 def test_select_logs_pipeline_step(mock_device, mock_publisher, app):
     _seed_full_candidate_pool(app)
 

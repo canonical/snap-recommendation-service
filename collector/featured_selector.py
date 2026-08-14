@@ -6,12 +6,13 @@ from datetime import datetime, timedelta, timezone
 from collector.score import calculate_dev_score, calculate_metadata_score
 from config import MACAROON_ENV_PATH
 from snaprecommend import db
-from snaprecommend.auth.session import device_gateway, publisher_gateway
 from snaprecommend.logic import (
     acquire_featured_selection_lock,
     add_pipeline_step_log,
+    publish_featured_snaps,
     record_featured_history,
     release_featured_selection_lock,
+    rollback_featured_snaps,
 )
 from snaprecommend.models import FeaturedHistory, PipelineSteps, Snap
 from snaprecommend.settings import get_settings_by_keys, set_setting
@@ -97,11 +98,11 @@ def _minmax_normalise(values: dict) -> dict:
     }
 
 
-def _get_recently_auto_featured_ids(window_days: int) -> set:
+def _get_recently_featured_ids(window_days: int) -> set:
+    """Return snap IDs featured (auto or manual) within the lookback window."""
     since = datetime.now(timezone.utc) - timedelta(days=window_days)
     rows = (
         db.session.query(FeaturedHistory.snap_id)
-        .filter(FeaturedHistory.is_manual.is_(False))
         .filter(FeaturedHistory.featured_at >= since)
         .all()
     )
@@ -114,7 +115,7 @@ def _apply_hard_gates(
     min_rating: float,
 ) -> list:
     recency_cutoff = datetime.now(timezone.utc) - timedelta(days=recency_days)
-    recently_featured = _get_recently_auto_featured_ids(history_window_days)
+    recently_featured = _get_recently_featured_ids(history_window_days)
 
     candidates = (
         db.session.query(Snap)
@@ -254,8 +255,11 @@ def _fill_slots(
             cat_counts[slug] = cat_counts.get(slug, 0) + 1
 
     def _would_exceed_cap(snap, cap):
+        # Only reject the snap if *all* of its categories are at the cap;
+        # a multi-category snap can still fill a slot via a category that
+        # still has room, even if one of its other categories is capped.
         slugs = _snap_category_slugs(snap)
-        return slugs and any(cat_counts.get(s, 0) >= cap for s in slugs)
+        return bool(slugs) and all(cat_counts.get(s, 0) >= cap for s in slugs)
 
     for snap in remaining:
         if len(filled) >= open_slots:
@@ -276,53 +280,6 @@ def _fill_slots(
                 filled.append(snap)
 
     return filled
-
-
-def _get_current_featured_snap_ids() -> list:
-    """Fetch current featured snap IDs from the store."""
-    snaps = device_gateway.get_featured_snaps()
-    currently_featured_snaps = snaps.get("_embedded", {}).get("clickindex:package", [])
-    return [snap["snap_id"] for snap in currently_featured_snaps]
-
-
-def _publish_to_store(token: str, new_snap_ids: list) -> list:
-    """Replace the live featured list and return the previous snap IDs."""
-    current_ids = _get_current_featured_snap_ids()
-
-    if current_ids:
-        delete_resp = publisher_gateway.delete_featured_snaps(
-            token, {"packages": current_ids}
-        )
-        if delete_resp.status_code != 201:
-            raise RuntimeError(
-                f"Failed to delete current featured snaps "
-                f"(status {delete_resp.status_code})."
-            )
-
-    update_resp = publisher_gateway.update_featured_snaps(
-        token, {"packages": new_snap_ids}
-    )
-    if update_resp.status_code not in (200, 201):
-        try:
-            publisher_gateway.update_featured_snaps(token, {"packages": current_ids})
-        except Exception:
-            logger.exception("Failed to restore previous featured list after update failure.")
-        raise RuntimeError(
-            f"Failed to update featured snaps in store "
-            f"(status {update_resp.status_code})."
-        )
-
-    return current_ids
-
-
-def _rollback_store(token: str, previous_ids: list) -> None:
-    """Best-effort restore of the store to *previous_ids* after a failure."""
-    try:
-        publisher_gateway.update_featured_snaps(token, {"packages": previous_ids})
-    except Exception:
-        logger.exception(
-            "Failed to roll back featured list in store after history recording failure."
-        )
 
 
 def run_selection() -> tuple:
@@ -424,13 +381,13 @@ def select_featured_snaps() -> None:
             add_pipeline_step_log(PipelineSteps.FEATURED, False, message)
             return
 
-        previous_ids = _publish_to_store(resolved_token, snap_ids)
+        previous_ids = publish_featured_snaps(resolved_token, snap_ids)
         logger.info("Featured list published to store.")
 
         try:
             record_featured_history(events, is_manual=False)
         except Exception:
-            _rollback_store(resolved_token, previous_ids)
+            rollback_featured_snaps(previous_ids, resolved_token)
             raise
 
         set_setting("featured_last_updated", datetime.now(timezone.utc).isoformat())

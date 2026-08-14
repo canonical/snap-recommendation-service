@@ -384,8 +384,8 @@ def test_post_featured_snaps_rejects_when_lock_busy(mock_acquire_lock, app):
 
 @patch("snaprecommend.featuredsnaps.api.release_featured_selection_lock")
 @patch("snaprecommend.featuredsnaps.api.record_featured_history")
-@patch("snaprecommend.featuredsnaps.api.publisher_gateway")
-@patch("snaprecommend.featuredsnaps.api.device_gateway")
+@patch("snaprecommend.logic.publisher_gateway")
+@patch("snaprecommend.logic.device_gateway")
 @patch("snaprecommend.featuredsnaps.api.acquire_featured_selection_lock")
 def test_post_featured_snaps_uses_shared_lock_for_store_and_history(
     mock_acquire_lock,
