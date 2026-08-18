@@ -1,7 +1,8 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Button, Card, Col, Icon } from "@canonical/react-components";
+import { Button, Card, Chip, Col, Icon } from "@canonical/react-components";
 import type { FeaturedSnap } from "../../types/snap";
+import { describeFeaturedCount, describeReason } from "../../utils/selectionReason";
 import "./SortableCard.scss";
 
 type SortableCardProps = {
@@ -28,6 +29,9 @@ export const SortableCard = ({ snap, handleRemove }: SortableCardProps) => {
     const developerValidation = snap.developer_validation === "starred"
         ? "star"
         : snap.developer_validation;
+
+    const reason = describeReason(snap);
+    const featuredCount = describeFeaturedCount(snap);
 
         return (
             <Col size={4} className="card" style={style} ref={setNodeRef}>
@@ -87,6 +91,30 @@ export const SortableCard = ({ snap, handleRemove }: SortableCardProps) => {
                         </div>
                     </div>
                     <div className="u-line-clamp">{snap.summary}</div>
+
+                    <hr className="p-rule--muted" />
+
+                    <div className="card-content__reason">
+                        {reason.chips.length > 0 && (
+                            <div className="card-content__signals">
+                                {reason.chips.map((chip) => (
+                                    <Chip
+                                        key={chip.label}
+                                        value={chip.label}
+                                        appearance={chip.appearance}
+                                        isDense
+                                        isReadOnly
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {featuredCount && (
+                            <p className="p-text--small u-text--muted u-no-margin--bottom">
+                                {featuredCount}
+                            </p>
+                        )}
+                    </div>
                 </Card>
             </Col>
         );
