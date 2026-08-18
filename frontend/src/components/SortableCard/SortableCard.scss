@@ -44,12 +44,6 @@
             margin: $sp-small 0 0;
         }
 
-        .u-line-clamp {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
         &__reason {
             flex: 1;
             height: 100%;
@@ -60,8 +54,7 @@
             justify-content: space-between;
             gap: $sp-small;
 
-            p,
-            [class*="p-chip"] {
+            p {
                 margin: 0;
             }
         }
@@ -70,6 +63,10 @@
             display: flex;
             flex-wrap: wrap;
             gap: $sp-x-small;
+
+            > * {
+                margin: 0;
+            }
         }
     }
 }

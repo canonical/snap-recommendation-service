@@ -26,6 +26,8 @@ import "./FeaturedSnaps.scss";
 
 const FEATURED_LIMIT = 16;
 
+const idsOf = (snaps: FeaturedSnap[]) => snaps.map((snap) => snap.snap_id).join(",");
+
 export function FeaturedSnaps() {
     const { data, loading, error } = useFetchData<FeaturedSnap[]>('/featured');
 
@@ -44,7 +46,7 @@ export function FeaturedSnaps() {
     useEffect(() => {
         if (data) {
             setFeaturedSnaps(data)
-            setSavedIds(data.map((snap) => snap.snap_id).join(","))
+            setSavedIds(idsOf(data))
         }
     }, [data])
 
@@ -100,7 +102,7 @@ export function FeaturedSnaps() {
         });
     };
 
-    const currentIds = featuredSnaps.map((snap) => snap.snap_id).join(",");
+    const currentIds = idsOf(featuredSnaps);
     const hasChanges = currentIds !== savedIds;
 
     const handleSave = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {

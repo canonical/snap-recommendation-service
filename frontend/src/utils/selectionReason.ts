@@ -1,47 +1,17 @@
+import type { ChipProps } from "@canonical/react-components";
 import type { FeaturedHistoryEvent, FeaturedSnap } from "../types/snap";
 
 export type ReasonChip = {
     label: string;
-    appearance?: "information" | "caution";
-};
-
-export type ReasonSummary = {
-    chips: ReasonChip[];
-    headline: string | null;
+    appearance?: ChipProps["appearance"];
 };
 
 const CATEGORY_NAMES: Record<string, string> = {
-    "art-and-design": "Art and design",
-    "books-and-reference": "Books and reference",
-    development: "Development",
     "devices-and-iot": "Devices and IoT",
-    education: "Education",
-    entertainment: "Entertainment",
-    featured: "Featured",
-    finance: "Finance",
-    games: "Games",
-    "health-and-fitness": "Health and fitness",
-    "music-and-audio": "Music and audio",
-    "news-and-weather": "News and weather",
-    personalisation: "Personalisation",
     photo: "Photo and video",
-    productivity: "Productivity",
-    science: "Science",
-    security: "Security",
-    "server-and-cloud": "Server and cloud",
-    social: "Social",
-    utilities: "Utilities",
 };
 
-const ROLE_HEADLINES: Record<string, string> = {
-    "top-3": "Drawn first in the monthly shuffle.",
-    "category-development": "Meets the development minimum.",
-    "category-game": "Meets the game minimum.",
-    "category-development+game": "Meets the development and game minimums.",
-    fill: "Fills a remaining slot.",
-};
-
-export function formatCategory(slug: string): string {
+function formatCategory(slug: string): string {
     if (CATEGORY_NAMES[slug]) {
         return CATEGORY_NAMES[slug];
     }
@@ -59,22 +29,15 @@ function publisherLabel(validation?: string): string | null {
     return null;
 }
 
-export function describeReason(snap: FeaturedSnap): ReasonSummary {
+export function describeReason(snap: FeaturedSnap): ReasonChip[] {
     const reason = snap.selection_reason;
 
     if (!reason) {
-        if (!snap.featured_history) {
-            return { chips: [], headline: "Reason recorded when you save." };
-        }
-        return { chips: [{ label: "No reason recorded" }], headline: null };
+        return snap.featured_history ? [{ label: "No reason recorded" }] : [];
     }
 
     if (snap.is_manual) {
-        const who = reason.nickname || reason.actor || "an admin";
-        return {
-            chips: [{ label: "Manual", appearance: "caution" }],
-            headline: `Chosen by ${who}.`,
-        };
+        return [{ label: "Manual", appearance: "caution" }];
     }
 
     const chips: ReasonChip[] = [];
@@ -87,7 +50,7 @@ export function describeReason(snap: FeaturedSnap): ReasonSummary {
     }
     (reason.categories ?? []).forEach((slug) => chips.push({ label: formatCategory(slug) }));
 
-    return { chips, headline: ROLE_HEADLINES[reason.role ?? ""] ?? "Automated pick." };
+    return chips;
 }
 
 export function describeFeaturedCount(snap: FeaturedSnap): string | null {
@@ -105,21 +68,17 @@ export function describeFeaturedCount(snap: FeaturedSnap): string | null {
 }
 
 export function describeLastUpdate(snaps: FeaturedSnap[] | null): string | null {
-    if (!snaps) {
+    const newestPerSnap = (snaps ?? [])
+        .map((snap) => snap.featured_history?.[0])
+        .filter((event): event is FeaturedHistoryEvent => Boolean(event));
+
+    if (newestPerSnap.length === 0) {
         return null;
     }
 
-    const latest = snaps
-        .flatMap((snap) => snap.featured_history ?? [])
-        .reduce<FeaturedHistoryEvent | null>(
-            (newest, event) =>
-                !newest || event.featured_at > newest.featured_at ? event : newest,
-            null,
-        );
-
-    if (!latest) {
-        return null;
-    }
+    const latest = newestPerSnap.reduce((newest, event) =>
+        event.featured_at > newest.featured_at ? event : newest,
+    );
 
     const when = new Date(latest.featured_at).toLocaleString("en-GB", {
         year: "numeric",

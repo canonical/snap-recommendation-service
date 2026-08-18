@@ -30,7 +30,7 @@ export const SortableCard = ({ snap, handleRemove }: SortableCardProps) => {
         ? "star"
         : snap.developer_validation;
 
-    const reason = describeReason(snap);
+    const chips = describeReason(snap);
     const featuredCount = describeFeaturedCount(snap);
 
         return (
@@ -90,14 +90,14 @@ export const SortableCard = ({ snap, handleRemove }: SortableCardProps) => {
                             </div>
                         </div>
                     </div>
-                    <div className="u-line-clamp">{snap.summary}</div>
+                    <div className="u-truncate">{snap.summary}</div>
 
                     <hr className="p-rule--muted" />
 
                     <div className="card-content__reason">
-                        {reason.chips.length > 0 && (
+                        {chips.length > 0 && (
                             <div className="card-content__signals">
-                                {reason.chips.map((chip) => (
+                                {chips.map((chip) => (
                                     <Chip
                                         key={chip.label}
                                         value={chip.label}
