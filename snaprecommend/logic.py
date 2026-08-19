@@ -302,6 +302,26 @@ def get_latest_featured_events(snap_ids: list[str]) -> dict[str, dict]:
     }
 
 
+def _featured_history_event(row: FeaturedHistory) -> dict:
+    return {
+        "snap_id": row.snap_id,
+        "featured_at": row.featured_at.isoformat(),
+        "is_manual": row.is_manual,
+        "selection_reason": row.selection_reason,
+        "title": row.title,
+        "name": row.name,
+        "publisher": row.publisher,
+        "icon": row.icon,
+    }
+
+
+def _featured_history_query():
+    return db.session.query(FeaturedHistory).order_by(
+        FeaturedHistory.featured_at.desc(),
+        FeaturedHistory.id.desc(),
+    )
+
+
 def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
     """
     Returns featured history for the given snaps, grouped by snap_id with each
@@ -310,31 +330,22 @@ def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
     if not snap_ids:
         return {}
 
-    rows = (
-        db.session.query(FeaturedHistory)
-        .filter(FeaturedHistory.snap_id.in_(snap_ids))
-        .order_by(
-            FeaturedHistory.featured_at.desc(),
-            FeaturedHistory.id.desc(),
-        )
-        .all()
-    )
+    rows = _featured_history_query().filter(
+        FeaturedHistory.snap_id.in_(snap_ids)
+    ).all()
 
     history: dict[str, list[dict]] = {}
     for row in rows:
         history.setdefault(row.snap_id, []).append(
-            {
-                "featured_at": row.featured_at.isoformat(),
-                "is_manual": row.is_manual,
-                "selection_reason": row.selection_reason,
-                "title": row.title,
-                "name": row.name,
-                "publisher": row.publisher,
-                "icon": row.icon,
-            }
+            _featured_history_event(row)
         )
 
     return history
+
+
+def get_all_featured_history(limit: int = 200) -> list[dict]:
+    rows = _featured_history_query().limit(limit).all()
+    return [_featured_history_event(row) for row in rows]
 
 
 def add_pipeline_step_log(step_name: str, status: bool, message: str = ""):

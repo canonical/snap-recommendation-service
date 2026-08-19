@@ -299,3 +299,34 @@ def test_history_written_for_snap_missing_from_snap_table(app):
     event = get_featured_history(["unknown"])["unknown"][0]
     assert event["title"] is None
     assert event["is_manual"] is True
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+def test_history_endpoint_includes_deleted_snaps(_mock_auth, app, admin_client):
+    """The endpoint returns events for snaps no longer featured or present."""
+    db.session.add(_make_snap("snap1"))
+    db.session.commit()
+    record_featured_history(
+        [{"snap_id": "snap1", "selection_reason": {"role": "fill"}}],
+        is_manual=False,
+    )
+    db.session.delete(db.session.query(Snap).filter_by(snap_id="snap1").one())
+    db.session.commit()
+
+    response = admin_client.get("/featured/history")
+
+    assert response.status_code == 200
+    events = response.get_json()
+    assert len(events) == 1
+    assert events[0]["snap_id"] == "snap1"
+    assert events[0]["title"] == "Multipass"
+    assert events[0]["selection_reason"] == {"role": "fill"}
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+def test_history_endpoint_limit_is_capped(_mock_auth, app, admin_client):
+    """A caller cannot ask for more than the maximum."""
+    record_featured_history([{"snap_id": "snap1"}], is_manual=False)
+
+    assert admin_client.get("/featured/history?limit=99999").status_code == 200
+    assert admin_client.get("/featured/history?limit=0").status_code == 200
