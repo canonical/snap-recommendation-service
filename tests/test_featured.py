@@ -1,11 +1,16 @@
 import pytest
+from datetime import datetime
 from unittest.mock import patch, MagicMock
 from flask import Flask
 from sqlalchemy.pool import StaticPool
 
 from snaprecommend import db
-from snaprecommend.models import FeaturedHistory
-from snaprecommend.logic import record_featured_history, get_latest_featured_events
+from snaprecommend.models import FeaturedHistory, Snap
+from snaprecommend.logic import (
+    record_featured_history,
+    get_latest_featured_events,
+    get_featured_history,
+)
 from snaprecommend.featuredsnaps.api import featured_blueprint
 from snaprecommend.featuredsnaps.utils import get_featured_snaps
 
@@ -227,3 +232,70 @@ def test_post_featured_reverts_store_when_history_fails(
     assert revert_call.args[1] == {"packages": ["old1"]}
 
     assert db.session.query(FeaturedHistory).count() == 0
+
+
+def _make_snap(snap_id: str, **overrides) -> Snap:
+    fields = {
+        "snap_id": snap_id,
+        "title": "Multipass",
+        "name": "multipass",
+        "version": "1.0",
+        "summary": "Ubuntu VMs on demand.",
+        "description": "Ubuntu VMs on demand for any workstation.",
+        "icon": "https://example.com/multipass.png",
+        "publisher": "Canonical",
+        "revision": 1,
+        "links": {},
+        "media": [],
+        "developer_validation": "starred",
+        "license": "GPL-3.0",
+        "last_updated": datetime(2026, 8, 1),
+    }
+    fields.update(overrides)
+    return Snap(**fields)
+
+
+def test_history_records_snap_details(app):
+    """Snap details are copied onto the row at write time."""
+    db.session.add(_make_snap("snap1"))
+    db.session.commit()
+
+    record_featured_history([{"snap_id": "snap1"}], is_manual=False)
+
+    row = db.session.query(FeaturedHistory).one()
+    assert row.title == "Multipass"
+    assert row.name == "multipass"
+    assert row.publisher == "Canonical"
+    assert row.icon == "https://example.com/multipass.png"
+
+
+def test_history_survives_snap_deletion(app):
+    """A deleted snap keeps its name, timestamp and reason in the history."""
+    db.session.add(_make_snap("snap1"))
+    db.session.commit()
+
+    record_featured_history(
+        [{"snap_id": "snap1", "selection_reason": {"role": "top-3"}}],
+        is_manual=False,
+    )
+
+    db.session.delete(db.session.query(Snap).filter_by(snap_id="snap1").one())
+    db.session.commit()
+
+    history = get_featured_history(["snap1"])
+    assert len(history["snap1"]) == 1
+
+    event = history["snap1"][0]
+    assert event["title"] == "Multipass"
+    assert event["name"] == "multipass"
+    assert event["selection_reason"] == {"role": "top-3"}
+    assert event["featured_at"]
+
+
+def test_history_written_for_snap_missing_from_snap_table(app):
+    """A snap we never collected still records, with details left empty."""
+    record_featured_history([{"snap_id": "unknown"}], is_manual=True)
+
+    event = get_featured_history(["unknown"])["unknown"][0]
+    assert event["title"] is None
+    assert event["is_manual"] is True

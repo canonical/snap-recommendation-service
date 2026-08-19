@@ -235,9 +235,18 @@ def record_featured_history(
     Records featured-history events.
     """
     featured_at = datetime.now(timezone.utc)
+    snap_ids = [event["snap_id"] for event in events]
+    snaps = {
+        snap.snap_id: snap
+        for snap in db.session.query(Snap).filter(Snap.snap_id.in_(snap_ids))
+    }
     entries = [
         FeaturedHistory(
             snap_id=event["snap_id"],
+            title=getattr(snaps.get(event["snap_id"]), "title", None),
+            name=getattr(snaps.get(event["snap_id"]), "name", None),
+            publisher=getattr(snaps.get(event["snap_id"]), "publisher", None),
+            icon=getattr(snaps.get(event["snap_id"]), "icon", None),
             featured_at=featured_at,
             is_manual=is_manual,
             selection_reason=event.get("selection_reason"),
@@ -291,6 +300,41 @@ def get_latest_featured_events(snap_ids: list[str]) -> dict[str, dict]:
         }
         for row in rows
     }
+
+
+def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
+    """
+    Returns featured history for the given snaps, grouped by snap_id with each
+    snap's events ordered newest-first.
+    """
+    if not snap_ids:
+        return {}
+
+    rows = (
+        db.session.query(FeaturedHistory)
+        .filter(FeaturedHistory.snap_id.in_(snap_ids))
+        .order_by(
+            FeaturedHistory.featured_at.desc(),
+            FeaturedHistory.id.desc(),
+        )
+        .all()
+    )
+
+    history: dict[str, list[dict]] = {}
+    for row in rows:
+        history.setdefault(row.snap_id, []).append(
+            {
+                "featured_at": row.featured_at.isoformat(),
+                "is_manual": row.is_manual,
+                "selection_reason": row.selection_reason,
+                "title": row.title,
+                "name": row.name,
+                "publisher": row.publisher,
+                "icon": row.icon,
+            }
+        )
+
+    return history
 
 
 def add_pipeline_step_log(step_name: str, status: bool, message: str = ""):
