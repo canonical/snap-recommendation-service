@@ -29,8 +29,7 @@ const FEATURED_LIMIT = 16;
 const idsOf = (snaps: FeaturedSnap[]) => snaps.map((snap) => snap.snap_id).join(",");
 
 export function FeaturedSnaps() {
-    const { data, loading, error } = useFetchData<FeaturedSnap[]>('/featured');
-
+    const { data, loading, error } = useFetchData<FeaturedSnap[]>("/featured/");
     const [featuredSnaps, setFeaturedSnaps] = useState<FeaturedSnap[]>([]);
     const [savedIds, setSavedIds] = useState("");
     const [isSaving, setIsSaving] = useState(false);
