@@ -234,7 +234,7 @@ def record_featured_history(
     """
     Records featured-history events.
     """
-    featured_at = datetime.now(timezone.utc)
+    featured_at = datetime.now(timezone.utc).replace(tzinfo=None)
     snap_ids = [event["snap_id"] for event in events]
     snaps = {
         snap.snap_id: snap
