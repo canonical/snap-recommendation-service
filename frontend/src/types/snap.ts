@@ -41,12 +41,6 @@ export type SelectionReason = {
     nickname?: string;
 }
 
-export type FeaturedHistoryEvent = {
-    featured_at: string;
-    is_manual: boolean;
-    selection_reason: SelectionReason | null;
-}
-
 export type FeaturedSnap = {
     sections: SnapCategory[];
     summary: string;
@@ -59,7 +53,7 @@ export type FeaturedSnap = {
     snap_id: string;
     selection_reason?: SelectionReason | null;
     is_manual?: boolean | null;
-    featured_history?: FeaturedHistoryEvent[];
+    featured_at?: string | null;
 }
 
 export type SearchSnap = {

@@ -2,7 +2,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { Button, Card, Chip, Col, Icon } from "@canonical/react-components";
 import type { FeaturedSnap } from "../../types/snap";
-import { describeFeaturedCount, describeReason } from "../../utils/selectionReason";
+import { describeLastFeatured, describeReason } from "../../utils/selectionReason";
 import "./SortableCard.scss";
 
 type SortableCardProps = {
@@ -31,7 +31,7 @@ export const SortableCard = ({ snap, handleRemove }: SortableCardProps) => {
         : snap.developer_validation;
 
     const chips = describeReason(snap);
-    const featuredCount = describeFeaturedCount(snap);
+    const lastFeatured = describeLastFeatured(snap);
 
         return (
             <Col size={4} className="card" style={style} ref={setNodeRef}>
@@ -109,9 +109,9 @@ export const SortableCard = ({ snap, handleRemove }: SortableCardProps) => {
                             </div>
                         )}
 
-                        {featuredCount && (
+                        {lastFeatured && (
                             <p className="p-text--small u-text--muted u-no-margin--bottom">
-                                {featuredCount}
+                                {lastFeatured}
                             </p>
                         )}
                     </div>

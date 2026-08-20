@@ -1,5 +1,6 @@
 import type { ChipProps } from "@canonical/react-components";
-import type { FeaturedHistoryEvent, FeaturedSnap } from "../types/snap";
+import type { FeaturedSnap } from "../types/snap";
+import { formatDateTime } from "./dateTime";
 
 export type ReasonChip = {
     label: string;
@@ -33,7 +34,7 @@ export function describeReason(snap: FeaturedSnap): ReasonChip[] {
     const reason = snap.selection_reason;
 
     if (!reason) {
-        return snap.featured_history ? [{ label: "No reason recorded" }] : [];
+        return [{ label: "No reason recorded" }];
     }
 
     if (snap.is_manual) {
@@ -53,40 +54,31 @@ export function describeReason(snap: FeaturedSnap): ReasonChip[] {
     return chips;
 }
 
-export function describeFeaturedCount(snap: FeaturedSnap): string | null {
-    const events = snap.featured_history;
-    if (!events) {
+export function describeLastFeatured(snap: FeaturedSnap): string | null {
+    if (!snap.featured_at) {
         return null;
     }
-    if (events.length === 0) {
-        return "First time featured";
-    }
-    if (events.length === 1) {
-        return "Featured once";
-    }
-    return `Featured ${events.length} times`;
+    return `Last featured ${formatDateTime(snap.featured_at)}`;
 }
 
 export function describeLastUpdate(snaps: FeaturedSnap[] | null): string | null {
-    const newestPerSnap = (snaps ?? [])
-        .map((snap) => snap.featured_history?.[0])
-        .filter((event): event is FeaturedHistoryEvent => Boolean(event));
+    const latest = (snaps ?? []).reduce<FeaturedSnap | null>((newest, snap) => {
+        if (!snap.featured_at) {
+            return newest;
+        }
+        if (!newest?.featured_at) {
+            return snap;
+        }
+        return Date.parse(snap.featured_at) > Date.parse(newest.featured_at)
+            ? snap
+            : newest;
+    }, null);
 
-    if (newestPerSnap.length === 0) {
+    if (!latest?.featured_at) {
         return null;
     }
 
-    const latest = newestPerSnap.reduce((newest, event) =>
-        event.featured_at > newest.featured_at ? event : newest,
-    );
-
-    const when = new Date(latest.featured_at).toLocaleString("en-GB", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-    });
+    const when = formatDateTime(latest.featured_at);
 
     if (!latest.is_manual) {
         return `Last updated ${when} by the automated run`;
