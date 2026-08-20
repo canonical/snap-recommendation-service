@@ -4,7 +4,7 @@ Copies the snap details onto each row and drops the foreign key to 'snap',
 so history persists.
 
 Revision ID: e5f6a7b8c9d0
-Revises: b2c3d4e5f6a7
+Revises: d4e5f6a7b8c9
 Create Date: 2026-08-19 10:12:54.873583
 
 """
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = 'e5f6a7b8c9d0'
-down_revision = 'b2c3d4e5f6a7'
+down_revision = 'd4e5f6a7b8c9'
 branch_labels = None
 depends_on = None
 
