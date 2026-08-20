@@ -3,20 +3,12 @@ import { useFetchData } from "../hooks/useFetchData";
 import type { CollectorInfo } from "../types/collectorInfo";
 import { AsyncBoundary } from "../components";
 import { useApi } from "../hooks/useApi";
+import { formatDateTime } from "../utils/dateTime";
 
 export function Settings() {
     const { error, loading, data, refetch } = useFetchData<CollectorInfo>('/api/settings');
     const { data: messageData, sendRequest, error: operationError } = useApi<{ message: string }>();
 
-
-    const formatDateTime = (date: string) => new Date(date).toLocaleString("en-GB", {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-    })
 
     const runPipeline = async (stepId: string) => {
         await sendRequest("/api/run_pipeline_step", {
@@ -41,7 +33,7 @@ export function Settings() {
                         <p>Last completed run:</p>
                     </Col>
                     <Col size={8}>
-                        <p>{data ? formatDateTime(data.last_updated) : "-"}</p>
+                        <p>{data ? formatDateTime(data.last_updated, true) : "-"}</p>
                     </Col>
                 </Row>
                 <hr />
@@ -65,10 +57,10 @@ export function Settings() {
                                             <Icon name={step.success ? "success" : "error"} />
                                         </td>
                                         <td>
-                                            {step.last_successful_run ? formatDateTime(step.last_successful_run) : "-"}
+                                            {step.last_successful_run ? formatDateTime(step.last_successful_run, true) : "-"}
                                         </td>
                                         <td>
-                                            {step.last_failed_run ? formatDateTime(step.last_failed_run) : "-"}
+                                            {step.last_failed_run ? formatDateTime(step.last_failed_run, true) : "-"}
                                         </td>
                                         <td>
                                             <Button appearance="positive" onClick={() => runPipeline(step.id)}>Run now</Button>

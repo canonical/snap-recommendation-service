@@ -1,5 +1,5 @@
 from snaprecommend.auth.session import device_gateway
-from snaprecommend.logic import get_featured_history
+from snaprecommend.logic import get_latest_featured_events
 from snaprecommend.utils import get_icon
 
 
@@ -28,16 +28,15 @@ def get_featured_snaps():
     })
     currently_featured_snaps = featured_snaps.get("_embedded", {}).get("clickindex:package", [])
 
-    # Attach the recorded selection reason and featured history for each snap.
+    # Attach the most recent featured event for each snap
     snap_ids = [snap["snap_id"] for snap in currently_featured_snaps]
-    history_by_snap = get_featured_history(snap_ids)
+    latest_by_snap = get_latest_featured_events(snap_ids)
 
     for snap in currently_featured_snaps:
         snap["icon_url"] = get_icon(snap["media"])
-        events = history_by_snap.get(snap["snap_id"], [])
-        snap["featured_history"] = events
-        latest = events[0] if events else None
-        snap["selection_reason"] = latest["selection_reason"] if latest else None
-        snap["is_manual"] = latest["is_manual"] if latest else None
+        latest = latest_by_snap.get(snap["snap_id"], {})
+        snap["featured_at"] = latest.get("featured_at")
+        snap["selection_reason"] = latest.get("selection_reason")
+        snap["is_manual"] = latest.get("is_manual")
 
     return currently_featured_snaps

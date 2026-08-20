@@ -1,6 +1,7 @@
 import logging
 from datetime import datetime, timedelta, timezone
 
+from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 
 from snaprecommend.auth.session import device_gateway, publisher_gateway
@@ -252,35 +253,44 @@ def record_featured_history(
     return entries
 
 
-def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
+def get_latest_featured_events(snap_ids: list[str]) -> dict[str, dict]:
     """
-    Returns featured history for the given snaps, grouped by snap_id with each
-    snap's events ordered newest-first.
+    Returns the most recent featured event for each of the given snaps, keyed
+    by snap_id. Snaps with no recorded history are absent from the result.
     """
     if not snap_ids:
         return {}
 
-    rows = (
-        db.session.query(FeaturedHistory)
-        .filter(FeaturedHistory.snap_id.in_(snap_ids))
-        .order_by(
-            FeaturedHistory.featured_at.desc(),
-            FeaturedHistory.id.desc(),
+    ranked = (
+        select(
+            FeaturedHistory.snap_id,
+            FeaturedHistory.featured_at,
+            FeaturedHistory.is_manual,
+            FeaturedHistory.selection_reason,
+            func.row_number()
+            .over(
+                partition_by=FeaturedHistory.snap_id,
+                order_by=(
+                    FeaturedHistory.featured_at.desc(),
+                    FeaturedHistory.id.desc(),
+                ),
+            )
+            .label("rank"),
         )
-        .all()
+        .where(FeaturedHistory.snap_id.in_(snap_ids))
+        .subquery()
     )
 
-    history: dict[str, list[dict]] = {}
-    for row in rows:
-        history.setdefault(row.snap_id, []).append(
-            {
-                "featured_at": row.featured_at.isoformat(),
-                "is_manual": row.is_manual,
-                "selection_reason": row.selection_reason,
-            }
-        )
+    rows = db.session.execute(select(ranked).where(ranked.c.rank == 1)).all()
 
-    return history
+    return {
+        row.snap_id: {
+            "featured_at": row.featured_at.isoformat(),
+            "is_manual": row.is_manual,
+            "selection_reason": row.selection_reason,
+        }
+        for row in rows
+    }
 
 
 def add_pipeline_step_log(step_name: str, status: bool, message: str = ""):

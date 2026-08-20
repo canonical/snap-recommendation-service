@@ -20,14 +20,18 @@ import type { FeaturedSnap, SearchSnap } from "../types/snap";
 import { useEffect, useState } from "react";
 import { FindSnap } from "../components/FindSnap/FindSnap";
 import { SortableCard } from "../components/SortableCard/SortableCard";
+import { describeLastUpdate } from "../utils/selectionReason";
 import { LoadingCard } from "@canonical/store-components";
+import "./FeaturedSnaps.scss";
 
 const FEATURED_LIMIT = 16;
 
-export function FeaturedSnaps() {
-    const { data, loading, error } = useFetchData<FeaturedSnap[]>('/featured');
+const idsOf = (snaps: FeaturedSnap[]) => snaps.map((snap) => snap.snap_id).join(",");
 
+export function FeaturedSnaps() {
+    const { data, loading, error } = useFetchData<FeaturedSnap[]>("/featured/");
     const [featuredSnaps, setFeaturedSnaps] = useState<FeaturedSnap[]>([]);
+    const [savedIds, setSavedIds] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [operationError, setOperationError] = useState("");
 
@@ -41,6 +45,7 @@ export function FeaturedSnaps() {
     useEffect(() => {
         if (data) {
             setFeaturedSnaps(data)
+            setSavedIds(idsOf(data))
         }
     }, [data])
 
@@ -96,11 +101,14 @@ export function FeaturedSnaps() {
         });
     };
 
+    const currentIds = idsOf(featuredSnaps);
+    const hasChanges = currentIds !== savedIds;
+
     const handleSave = async (event: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
         event.preventDefault();
         setOperationError("");
         const data = new FormData();
-        data.append("snaps", featuredSnaps.map((snap) => snap.snap_id).join(","));
+        data.append("snaps", currentIds);
         setIsSaving(true);
 
         const response = await fetch("/featured", {
@@ -116,13 +124,17 @@ export function FeaturedSnaps() {
             } else {
                 setOperationError("Something went wrong");
             }
+            return;
         }
+
+        setSavedIds(currentIds);
     };
 
-    return <Panel title="Featured Snaps">
+    const lastUpdate = describeLastUpdate(data);
+
+    return <Panel title="Featured Snaps" contentClassName="featured-snaps__content">
         <Row>
             <Col size={4}>
-                <label className="p-form__label">Featured snaps ({featuredSnaps.length}/{FEATURED_LIMIT})</label>
                 <FindSnap
                     addSnap={handleAdd}
                     excludedPackageNames={featuredSnaps.map((snap) => snap.package_name)}
@@ -131,7 +143,7 @@ export function FeaturedSnaps() {
             </Col>
         </Row>
 
-        <Row>
+        <Row className="featured-snaps__grid">
             {
                 (error || operationError) && <Notification severity="negative" title="Error">
                     {error || operationError}
@@ -163,16 +175,29 @@ export function FeaturedSnaps() {
                     </SortableContext>
                 </DndContext>
             )}
-            <p style={{ textAlign: "right", maxWidth: "100%" }}>
-                {featuredSnaps.length < FEATURED_LIMIT && (
-                    <>Please add {FEATURED_LIMIT - featuredSnaps.length} more snaps to save</>
-                )}
+        </Row>
+
+        <div className="featured-snaps__actions">
+            <Row>
+                <Col size={6}>
+                    {lastUpdate && (
+                        <p className="p-text--small u-text--muted u-no-margin--bottom">
+                            {lastUpdate}
+                        </p>
+                    )}
+                </Col>
+
+                <Col size={6} className="featured-snaps__actions-end">
+                <span className="p-text--small u-text--muted">
+                    {featuredSnaps.length} snaps
+                </span>
                 <Button
                     appearance="positive"
                     onClick={handleSave}
-                    disabled={featuredSnaps.length < FEATURED_LIMIT}
+                    disabled={!hasChanges || featuredSnaps.length === 0}
                     hasIcon={isSaving}
                     inline
+                    className="u-no-margin--bottom"
                 >
                     {isSaving ? (
                         <>
@@ -182,8 +207,9 @@ export function FeaturedSnaps() {
                         "Save"
                     )}
                 </Button>
-            </p>
-        </Row>
+                </Col>
+            </Row>
+        </div>
 
     </Panel>
 }

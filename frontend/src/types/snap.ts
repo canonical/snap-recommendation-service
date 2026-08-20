@@ -29,6 +29,18 @@ type SnapCategory = {
     featured: boolean;
 }
 
+export type SelectionReason = {
+    role?: string;
+    canonical?: boolean;
+    developer_validation?: string;
+    categories?: string[];
+    ranking_key?: string;
+    ranking_value?: number | null;
+    random_seed?: number;
+    actor?: string;
+    nickname?: string;
+}
+
 export type FeaturedSnap = {
     sections: SnapCategory[];
     summary: string;
@@ -39,6 +51,9 @@ export type FeaturedSnap = {
     origin: string;
     developer_validation: string;
     snap_id: string;
+    selection_reason?: SelectionReason | null;
+    is_manual?: boolean | null;
+    featured_at?: string | null;
 }
 
 export type SearchSnap = {

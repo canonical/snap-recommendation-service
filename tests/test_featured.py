@@ -5,7 +5,7 @@ from sqlalchemy.pool import StaticPool
 
 from snaprecommend import db
 from snaprecommend.models import FeaturedHistory
-from snaprecommend.logic import record_featured_history, get_featured_history
+from snaprecommend.logic import record_featured_history, get_latest_featured_events
 from snaprecommend.featuredsnaps.api import featured_blueprint
 from snaprecommend.featuredsnaps.utils import get_featured_snaps
 
@@ -105,7 +105,7 @@ def test_manual_and_automated_share_one_shape(app):
         assert row.selection_reason is not None
 
 
-def test_get_featured_history_groups_newest_first(app):
+def test_get_latest_featured_events_returns_newest(app):
     record_featured_history(
         [{"snap_id": "snap1", "selection_reason": {"n": 1}}], is_manual=False
     )
@@ -117,18 +117,16 @@ def test_get_featured_history_groups_newest_first(app):
         is_manual=True,
     )
 
-    history = get_featured_history(["snap1", "snap2"])
+    latest = get_latest_featured_events(["snap1", "snap2"])
 
-    assert set(history.keys()) == {"snap1", "snap2"}
-    assert len(history["snap1"]) == 2
-    assert history["snap1"][0]["selection_reason"]["n"] == 2
-    assert history["snap1"][0]["is_manual"] is True
-    assert history["snap1"][1]["selection_reason"]["n"] == 1
-    assert history["snap2"][0]["selection_reason"]["n"] == 3
+    assert set(latest.keys()) == {"snap1", "snap2"}
+    assert latest["snap1"]["selection_reason"]["n"] == 2
+    assert latest["snap1"]["is_manual"] is True
+    assert latest["snap2"]["selection_reason"]["n"] == 3
 
 
-def test_get_featured_history_empty(app):
-    assert get_featured_history([]) == {}
+def test_get_latest_featured_events_empty(app):
+    assert get_latest_featured_events([]) == {}
 
 
 @patch("snaprecommend.featuredsnaps.utils.device_gateway")
@@ -161,12 +159,12 @@ def test_get_featured_snaps_attaches_reason_and_history(mock_gateway, app):
 
     assert by_id["snap1"]["is_manual"] is True
     assert by_id["snap1"]["selection_reason"]["actor"] == "jane@canonical.com"
-    assert len(by_id["snap1"]["featured_history"]) == 1
+    assert by_id["snap1"]["featured_at"] is not None
     assert by_id["snap1"]["icon_url"] == "http://example.com/i.png"
 
     assert by_id["snap2"]["selection_reason"] is None
     assert by_id["snap2"]["is_manual"] is None
-    assert by_id["snap2"]["featured_history"] == []
+    assert by_id["snap2"]["featured_at"] is None
 
 
 @patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
