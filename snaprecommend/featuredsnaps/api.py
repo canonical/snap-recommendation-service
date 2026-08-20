@@ -31,6 +31,7 @@ MAX_HISTORY_LIMIT = 1000
 
 @featured_blueprint.route("/history")
 @login_required
+@admin_required
 def featured_history():
     limit = flask.request.args.get(
         "limit", default=DEFAULT_HISTORY_LIMIT, type=int
