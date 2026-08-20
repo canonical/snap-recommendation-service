@@ -4,6 +4,7 @@ from snaprecommend.logic import (
     FeaturedDeleteError,
     FeaturedUpdateError,
     acquire_featured_selection_lock,
+    get_all_featured_history,
     publish_featured_snaps,
     record_featured_history,
     release_featured_selection_lock,
@@ -22,6 +23,24 @@ featured_blueprint = flask.Blueprint("featured", __name__)
 def featured_snaps():
     featured = get_featured_snaps()
     return flask.jsonify(featured), 200
+
+
+DEFAULT_HISTORY_LIMIT = 200
+MAX_HISTORY_LIMIT = 1000
+
+
+@featured_blueprint.route("/history")
+@login_required
+@admin_required
+def featured_history():
+    limit = flask.request.args.get(
+        "limit", default=DEFAULT_HISTORY_LIMIT, type=int
+    )
+    if limit is None or limit < 1:
+        limit = DEFAULT_HISTORY_LIMIT
+    limit = min(limit, MAX_HISTORY_LIMIT)
+
+    return flask.jsonify(get_all_featured_history(limit)), 200
 
 
 @featured_blueprint.route("/", methods=["POST"])
