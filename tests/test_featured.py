@@ -330,3 +330,17 @@ def test_history_endpoint_limit_is_capped(_mock_auth, app, admin_client):
 
     assert admin_client.get("/featured/history?limit=99999").status_code == 200
     assert admin_client.get("/featured/history?limit=0").status_code == 200
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+def test_history_endpoint_keeps_position_order_within_a_run(
+    _mock_auth, app, admin_client
+):
+    published = ["snap1", "snap2", "snap3"]
+    record_featured_history(
+        [{"snap_id": snap_id} for snap_id in published], is_manual=False
+    )
+
+    events = admin_client.get("/featured/history").get_json()
+
+    assert [event["snap_id"] for event in events] == published

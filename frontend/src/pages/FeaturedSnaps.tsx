@@ -1,4 +1,5 @@
 import { Button, Col, Notification, Panel, Row, Spinner } from "@canonical/react-components";
+import { FeaturedTabs } from "../components";
 import { useFetchData } from "../hooks/useFetchData";
 import {
     DndContext,
@@ -23,8 +24,6 @@ import { SortableCard } from "../components/SortableCard/SortableCard";
 import { describeLastUpdate } from "../utils/selectionReason";
 import { LoadingCard } from "@canonical/store-components";
 import "./FeaturedSnaps.scss";
-
-const FEATURED_LIMIT = 16;
 
 const idsOf = (snaps: FeaturedSnap[]) => snaps.map((snap) => snap.snap_id).join(",");
 
@@ -132,13 +131,19 @@ export function FeaturedSnaps() {
 
     const lastUpdate = describeLastUpdate(data);
 
-    return <Panel title="Featured Snaps" contentClassName="featured-snaps__content">
+    return <Panel
+        title="Featured snaps"
+        contentClassName="featured-snaps__content"
+    >
+        <div className="u-fixed-width">
+            <FeaturedTabs />
+        </div>
+
         <Row>
             <Col size={4}>
                 <FindSnap
                     addSnap={handleAdd}
                     excludedPackageNames={featuredSnaps.map((snap) => snap.package_name)}
-                    disabled={featuredSnaps.length >= FEATURED_LIMIT}
                 />
             </Col>
         </Row>

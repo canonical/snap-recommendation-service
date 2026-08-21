@@ -344,7 +344,18 @@ def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
 
 
 def get_all_featured_history(limit: int = 200) -> list[dict]:
-    rows = _featured_history_query().limit(limit).all()
+    """
+    Returns every featured event.
+    """
+    rows = (
+        db.session.query(FeaturedHistory)
+        .order_by(
+            FeaturedHistory.featured_at.desc(),
+            FeaturedHistory.id.asc(),
+        )
+        .limit(limit)
+        .all()
+    )
     return [_featured_history_event(row) for row in rows]
 
 

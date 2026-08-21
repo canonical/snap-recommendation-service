@@ -1,5 +1,5 @@
 import type { ChipProps } from "@canonical/react-components";
-import type { FeaturedSnap } from "../types/snap";
+import type { FeaturedSnap, SelectionReason } from "../types/snap";
 import { formatDateTime } from "./dateTime";
 
 export type ReasonChip = {
@@ -28,6 +28,10 @@ function publisherLabel(validation?: string): string | null {
         return "Verified publisher";
     }
     return null;
+}
+
+export function resolveActor(reason?: SelectionReason | null): string | null {
+    return reason?.nickname || reason?.actor || null;
 }
 
 export function describeReason(snap: FeaturedSnap): ReasonChip[] {
@@ -84,6 +88,6 @@ export function describeLastUpdate(snaps: FeaturedSnap[] | null): string | null 
         return `Last updated ${when} by the automated run`;
     }
 
-    const who = latest.selection_reason?.nickname || latest.selection_reason?.actor;
+    const who = resolveActor(latest.selection_reason);
     return who ? `Last updated ${when} by ${who}` : `Last updated ${when} manually`;
 }
