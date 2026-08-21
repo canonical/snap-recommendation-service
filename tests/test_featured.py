@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 from flask import Flask
 from sqlalchemy.pool import StaticPool
@@ -344,3 +344,14 @@ def test_history_endpoint_keeps_position_order_within_a_run(
     events = admin_client.get("/featured/history").get_json()
 
     assert [event["snap_id"] for event in events] == published
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+def test_history_timestamps_are_utc_aware(_mock_auth, app, admin_client):
+    record_featured_history([{"snap_id": "snap1"}], is_manual=False)
+
+    event = admin_client.get("/featured/history").get_json()[0]
+
+    parsed = datetime.fromisoformat(event["featured_at"])
+    assert parsed.tzinfo is not None
+    assert parsed.utcoffset() == timedelta(0)

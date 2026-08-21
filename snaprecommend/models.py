@@ -126,7 +126,6 @@ class FeaturedHistory(db.Model):
 
     __table_args__ = (
         Index("ix_featured_history_snap_id_featured_at", "snap_id", "featured_at"),
-        Index("ix_featured_history_featured_at_id", "featured_at", "id"),
     )
 
 

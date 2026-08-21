@@ -294,7 +294,7 @@ def get_latest_featured_events(snap_ids: list[str]) -> dict[str, dict]:
 
     return {
         row.snap_id: {
-            "featured_at": row.featured_at.isoformat(),
+            "featured_at": _isoformat_utc(row.featured_at),
             "is_manual": row.is_manual,
             "selection_reason": row.selection_reason,
         }
@@ -302,10 +302,14 @@ def get_latest_featured_events(snap_ids: list[str]) -> dict[str, dict]:
     }
 
 
+def _isoformat_utc(value: datetime) -> str:
+    return value.replace(tzinfo=timezone.utc).isoformat()
+
+
 def _featured_history_event(row: FeaturedHistory) -> dict:
     return {
         "snap_id": row.snap_id,
-        "featured_at": row.featured_at.isoformat(),
+        "featured_at": _isoformat_utc(row.featured_at),
         "is_manual": row.is_manual,
         "selection_reason": row.selection_reason,
         "title": row.title,
