@@ -315,10 +315,18 @@ def _featured_history_event(row: FeaturedHistory) -> dict:
     }
 
 
-def _featured_history_query():
+def _featured_history_query(keep_position_order: bool = False):
+    """
+    Base query for featured history, newest run first.
+    """
+    within_run = (
+        FeaturedHistory.id.asc()
+        if keep_position_order
+        else FeaturedHistory.id.desc()
+    )
     return db.session.query(FeaturedHistory).order_by(
         FeaturedHistory.featured_at.desc(),
-        FeaturedHistory.id.desc(),
+        within_run,
     )
 
 
@@ -345,17 +353,9 @@ def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
 
 def get_all_featured_history(limit: int = 200) -> list[dict]:
     """
-    Returns every featured event.
+    Returns the most recent featured events
     """
-    rows = (
-        db.session.query(FeaturedHistory)
-        .order_by(
-            FeaturedHistory.featured_at.desc(),
-            FeaturedHistory.id.asc(),
-        )
-        .limit(limit)
-        .all()
-    )
+    rows = _featured_history_query(keep_position_order=True).limit(limit).all()
     return [_featured_history_event(row) for row in rows]
 
 

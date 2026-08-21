@@ -5,6 +5,7 @@ import { useFetchData } from "../hooks/useFetchData";
 import type { FeaturedHistoryEvent, FeaturedHistoryRun } from "../types/featuredHistory";
 import { describeRunSource, groupIntoRuns, snapDisplayName } from "../utils/featuredHistory";
 import { formatDateTime } from "../utils/dateTime";
+import { snapcraftUrl } from "../utils/snap";
 import "./FeaturedHistory.scss";
 
 const HISTORY_LIMIT = 500;
@@ -32,7 +33,7 @@ function SnapRow({ event, position }: { event: FeaturedHistoryEvent; position: n
 
             <span className="featured-history__snap-details">
                 {event.name ? (
-                    <a href={`https://snapcraft.io/${event.name}`}>{name}</a>
+                    <a href={snapcraftUrl(event.name)}>{name}</a>
                 ) : (
                     <span>{name}</span>
                 )}

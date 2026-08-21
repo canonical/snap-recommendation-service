@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import type { Snap } from "../../types/snap";
+import { snapcraftUrl } from "../../utils/snap";
 
 export function SnapCard({ snap, actionButton }: { snap: Snap, actionButton: ReactNode }) {
 
@@ -14,7 +15,7 @@ export function SnapCard({ snap, actionButton }: { snap: Snap, actionButton: Rea
                             className="category-list__item-img" />
                     )}
                     <h4>
-                        <a href={`https://snapcraft.io/${snap.name}`} target="_blank">{snap.name}</a>
+                        <a href={snapcraftUrl(snap.name)} target="_blank">{snap.name}</a>
                     </h4>
                 </div>
 
