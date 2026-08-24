@@ -66,10 +66,20 @@ def score():
     is_flag=True,
     help="Compute and print the selection without publishing or recording history",
 )
-def featured(force, dry_run):
+@click.option(
+    "--notify-webhook",
+    is_flag=True,
+    help="When combined with --dry-run, also fire the success webhook notification",
+)
+def featured(force, dry_run, notify_webhook):
     """Run automated featured snap selection"""
-    from collector.featured_selector import run_selection, select_featured_snaps
+    from collector.featured_selector import (
+        _notify_webhook,
+        run_selection,
+        select_featured_snaps,
+    )
     from collector.main import _featured_ran_recently
+    from flask import current_app
     from snaprecommend.models import Snap
 
     if dry_run:
@@ -92,6 +102,26 @@ def featured(force, dry_run):
                 f"categories={','.join(reason['categories']) or '-'} "
                 f"score={score_display}"
             )
+
+        if notify_webhook:
+            webhook_url = current_app.config.get("SNAP_SELECTION_WEBHOOK_URL")
+            if not webhook_url:
+                click.echo(
+                    "\nSNAP_SELECTION_WEBHOOK_URL not configured - skipping webhook notification."
+                )
+            else:
+                snap_objects = (
+                    Snap.query.filter(Snap.snap_id.in_(snap_ids)).all()
+                )
+                snaps_payload = [
+                    {"name": snap.name, "snap_id": snap.snap_id}
+                    for snap in snap_objects
+                ]
+                _notify_webhook(
+                    webhook_url,
+                    {"success": True, "snaps": snaps_payload},
+                )
+                click.echo(f"\nWebhook notified at {webhook_url}")
         return
 
     if not force and _featured_ran_recently():
