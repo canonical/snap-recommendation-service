@@ -307,7 +307,6 @@ def _isoformat_utc(value: datetime) -> str:
 
 
 def category_slugs(raw) -> list[str]:
-    """Flatten a Snap.categories JSON blob to a list of slugs."""
     slugs = []
     for item in raw or []:
         if isinstance(item, dict):
@@ -320,10 +319,6 @@ def category_slugs(raw) -> list[str]:
 
 
 def _current_categories(snap_ids: list[str]) -> dict[str, list[str]]:
-    """
-    Current categories for the given snaps, keyed by snap_id. Snaps no longer
-    in the table are absent — history rows outlive the snaps they describe.
-    """
     if not snap_ids:
         return {}
 

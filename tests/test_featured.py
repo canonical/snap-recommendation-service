@@ -400,7 +400,6 @@ def test_snap_history_endpoint_unknown_snap_is_empty(
 
 
 def test_history_attaches_current_categories(app):
-    """Events carry the snap's categories so the drawer can label them."""
     db.session.add(
         _make_snap(
             "snap1",
@@ -419,7 +418,6 @@ def test_history_attaches_current_categories(app):
 
 
 def test_history_categories_none_when_snap_is_gone(app):
-    """A history row outlives its snap; categories are simply absent."""
     record_featured_history([{"snap_id": "vanished"}], is_manual=False)
 
     event = get_featured_history(["vanished"])["vanished"][0]
