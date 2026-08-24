@@ -1,6 +1,6 @@
 import { Button, Col, Notification, Panel, Row, Spinner } from "@canonical/react-components";
 import { FeaturedSnapAside, FeaturedTabs } from "../components";
-// import { useFetchData } from "../hooks/useFetchData"; // TEMP MOCK
+import { useFetchData } from "../hooks/useFetchData";
 import {
     DndContext,
     closestCenter,
@@ -26,20 +26,13 @@ import {
     subjectFromFeaturedSnap,
 } from "../utils/selectionReason";
 import { useAside } from "../hooks/useAside";
-import mockData from "../mocks/featuredData.json"; // TEMP MOCK
 import { LoadingCard } from "@canonical/store-components";
 import "./FeaturedSnaps.scss";
 
 const idsOf = (snaps: FeaturedSnap[]) => snaps.map((snap) => snap.snap_id).join(",");
 
 export function FeaturedSnaps() {
-    // TEMP MOCK: swap these two lines back to re-enable the real endpoint.
-    // const { data, loading, error } = useFetchData<FeaturedSnap[]>("/featured/");
-    const { data, loading, error } = {
-        data: mockData.featured as unknown as FeaturedSnap[],
-        loading: false,
-        error: "",
-    };
+    const { data, loading, error } = useFetchData<FeaturedSnap[]>("/featured/");
     const [featuredSnaps, setFeaturedSnaps] = useState<FeaturedSnap[]>([]);
     const [savedIds, setSavedIds] = useState("");
     const [isSaving, setIsSaving] = useState(false);
@@ -150,6 +143,7 @@ export function FeaturedSnaps() {
 
     return <Panel
         title="Featured snaps"
+        className="featured-snaps"
         contentClassName="featured-snaps__content"
     >
         <div className="u-fixed-width">

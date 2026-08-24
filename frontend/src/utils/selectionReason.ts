@@ -190,7 +190,6 @@ export type DetailRow = {
 
 export type ListRule = {
     label: string;
-    detail: string;
     required: boolean;
 };
 
@@ -345,7 +344,7 @@ export function describeSnapFacts(subject: FeaturedSnapSubject): DetailRow[] {
 }
 
 export function describeListRules(subject: FeaturedSnapSubject): ListRule[] {
-    if (subject.is_manual) {
+    if (subject.is_manual || subject.is_manual === null || subject.is_manual === undefined) {
         return [];
     }
 
@@ -356,19 +355,16 @@ export function describeListRules(subject: FeaturedSnapSubject): ListRule[] {
     const rules: (ListRule & { appliesTo: (role: string) => boolean })[] = [
         {
             label: "1 to 2 Canonical snaps in the top 3",
-            detail: "Selection fails if it cannot be satisfied",
             required: true,
             appliesTo: (r) => r === "top-3",
         },
         {
             label: "At least 2 development snaps and 1 game",
-            detail: "Slots are reserved before the rest of the list is filled",
             required: true,
             appliesTo: (r) => r.startsWith("category-"),
         },
         {
             label: `At most ${gates.category_cap} snaps per category`,
-            detail: "Relaxed if the list cannot otherwise be filled",
             required: false,
             appliesTo: (r) => r === "fill",
         },
@@ -376,11 +372,7 @@ export function describeListRules(subject: FeaturedSnapSubject): ListRule[] {
 
     return rules
         .filter((rule) => !role || rule.appliesTo(role))
-        .map((rule) => ({
-            label: rule.label,
-            detail: rule.detail,
-            required: rule.required,
-        }));
+        .map((rule) => ({ label: rule.label, required: rule.required }));
 }
 
 export function describeSource(subject: {

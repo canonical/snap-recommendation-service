@@ -1,15 +1,20 @@
 @import "vanilla-framework/scss/settings";
 
+.p-panel.featured-snaps {
+    display: flex;
+    flex-direction: column;
+}
+
 .p-panel__content.featured-snaps__content {
     overflow: visible;
     padding-bottom: 0;
-}
-
-.featured-snaps__grid {
-    grid-auto-rows: 1fr;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 .featured-snaps__actions {
+    margin-top: auto;
     position: sticky;
     bottom: 0;
     z-index: 10;

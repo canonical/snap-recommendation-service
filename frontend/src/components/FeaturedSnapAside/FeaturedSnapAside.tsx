@@ -11,7 +11,7 @@ import {
     Spinner,
 } from "@canonical/react-components";
 import { AsideCloseButton } from "../AsideCloseButton/AsideCloseButton";
-// import { useFetchData } from "../../hooks/useFetchData"; // TEMP MOCK
+import { useFetchData } from "../../hooks/useFetchData";
 import { useAside } from "../../hooks/useAside";
 import type { FeaturedHistoryEvent } from "../../types/featuredHistory";
 import type { FeaturedSnapSubject } from "../../types/snap";
@@ -30,7 +30,6 @@ import {
     type SelectionCondition,
 } from "../../utils/selectionReason";
 import { snapcraftUrl } from "../../utils/snap";
-import mockData from "../../mocks/featuredData.json"; // TEMP MOCK
 import "./FeaturedSnapAside.scss";
 
 const STATUS: Record<
@@ -61,8 +60,8 @@ function Section({
 function FactList({ rows }: { rows: DetailRow[] }) {
     return (
         <>
-            {rows.map((row) => (
-                <Row className="p-form__group" key={row.label}>
+            {rows.map((row, index) => (
+                <Row className="p-form__group" key={`${row.label}-${index}`}>
                     <Col size={4}>
                         <p className="u-text--muted">{row.label}</p>
                     </Col>
@@ -97,17 +96,9 @@ function ConditionList({ conditions }: { conditions: SelectionCondition[] }) {
 }
 
 function HistoryTimeline({ snapId }: { snapId: string }) {
-    // TEMP MOCK: swap these two blocks back to re-enable the real endpoint.
-    // const { data, loading, error } = useFetchData<FeaturedHistoryEvent[]>(
-    //     `/featured/history/${snapId}`,
-    // );
-    const { data, loading, error } = {
-        data: (mockData.history as unknown as FeaturedHistoryEvent[]).filter(
-            (event) => event.snap_id === snapId,
-        ),
-        loading: false,
-        error: "",
-    };
+    const { data, loading, error } = useFetchData<FeaturedHistoryEvent[]>(
+        `/featured/history/${snapId}`,
+    );
 
     if (loading) {
         return <Spinner text="Loading history" />;
@@ -142,7 +133,7 @@ function HistoryTimeline({ snapId }: { snapId: string }) {
                             <Col size={5}>{formatDateTime(event.featured_at)}</Col>
                             <Col size={7}>
                                 <span className="p-text--small u-text--muted">
-                                    {[source, role].filter(Boolean).join(" · ")}
+                                    {[source, role].filter(Boolean).join(" - ")}
                                 </span>
                             </Col>
                         </Row>
@@ -277,14 +268,7 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
                                                     label: rule.required
                                                         ? "Required"
                                                         : "Preferred",
-                                                    detail: (
-                                                        <>
-                                                            {rule.label}
-                                                            <span className="p-text--small u-text--muted">
-                                                                {rule.detail}
-                                                            </span>
-                                                        </>
-                                                    ),
+                                                    detail: rule.label,
                                                 }))}
                                             />
                                         ),

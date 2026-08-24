@@ -1,6 +1,6 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Button, Card, Chip, Col, Icon, Row } from "@canonical/react-components";
+import { Button, Card, Chip, Col, Icon } from "@canonical/react-components";
 import type { FeaturedSnap } from "../../types/snap";
 import {
     describeLastFeatured,
@@ -52,12 +52,11 @@ export const SortableCard = ({ snap, handleRemove, onSelect }: SortableCardProps
                         }
                     }}
                 >
-                    <Row className="u-no-padding--left u-no-padding--right">
-                        <Col size={9} className="card-content__drag" {...listeners} {...attributes}>
+                    <div className="card-content__buttons">
+                        <div className="card-content__drag" {...listeners} {...attributes}>
                             <Icon name="drag" />
-                        </Col>
+                        </div>
 
-                        <Col size={3} className="u-align--right">
                         <Button
                             appearance="base"
                             className="card-content__delete"
@@ -69,8 +68,7 @@ export const SortableCard = ({ snap, handleRemove, onSelect }: SortableCardProps
                         >
                             <Icon name="delete" />
                         </Button>
-                        </Col>
-                    </Row>
+                    </div>
 
                     <div className="p-media-object">
                         <img
@@ -88,7 +86,7 @@ export const SortableCard = ({ snap, handleRemove, onSelect }: SortableCardProps
                             >
                                 {snap.title}
                             </a>
-                            <div className="p-inline-list u-no-margin--bottom card-content__dev_info">
+                            <div className="card-content__dev_info">
                                 <span>{snap.developer_name}</span>
 
                                 {badge && (
