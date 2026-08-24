@@ -1,57 +1,97 @@
 import { useMemo } from "react";
-import { Chip, Notification, Panel, Spinner } from "@canonical/react-components";
-import { FeaturedTabs } from "../components";
-import { useFetchData } from "../hooks/useFetchData";
+import {
+    Chip,
+    Col,
+    Notification,
+    Panel,
+    Row,
+    Spinner,
+} from "@canonical/react-components";
+import { FeaturedSnapAside, FeaturedTabs } from "../components";
+// import { useFetchData } from "../hooks/useFetchData"; // TEMP MOCK
 import type { FeaturedHistoryEvent, FeaturedHistoryRun } from "../types/featuredHistory";
-import { describeRunSource, groupIntoRuns, snapDisplayName } from "../utils/featuredHistory";
+import {
+    describeRunSource,
+    groupIntoRuns,
+    snapDisplayName,
+    subjectFromHistoryEvent,
+} from "../utils/featuredHistory";
+import { useAside } from "../hooks/useAside";
+import mockData from "../mocks/featuredData.json"; // TEMP MOCK
 import { formatDateTime } from "../utils/dateTime";
 import { snapcraftUrl } from "../utils/snap";
 import "./FeaturedHistory.scss";
 
-const HISTORY_LIMIT = 500;
+// const HISTORY_LIMIT = 500; // TEMP MOCK
 
-function SnapRow({ event, position }: { event: FeaturedHistoryEvent; position: number }) {
+type SnapRowProps = {
+    event: FeaturedHistoryEvent;
+    position: number;
+    onSelect: (event: FeaturedHistoryEvent) => void;
+};
+
+function SnapRow({ event, position, onSelect }: SnapRowProps) {
     const name = snapDisplayName(event);
 
     return (
-        <li className="featured-history__snap">
-            <span className="featured-history__snap-position">{position}.</span>
+        <Col
+            size={4}
+            className="p-media-object featured-history__snap"
+            role="button"
+            tabIndex={0}
+            aria-label={`Selection details for ${name}`}
+            onClick={() => onSelect(event)}
+            onKeyDown={(keyEvent: React.KeyboardEvent) => {
+                if (keyEvent.key === "Enter" || keyEvent.key === " ") {
+                    keyEvent.preventDefault();
+                    onSelect(event);
+                }
+            }}
+        >
+            <span className="u-text--muted">{position}.</span>
 
-            {event.icon ? (
-                <img
-                    src={event.icon}
-                    width={32}
-                    height={32}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    className="featured-history__snap-icon"
-                />
-            ) : (
-                <span className="featured-history__snap-icon featured-history__snap-icon--empty" />
-            )}
+            <img
+                src={event.icon ?? undefined}
+                width={32}
+                height={32}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="p-media-object__image"
+            />
 
-            <span className="featured-history__snap-details">
+            <div className="p-media-object__content">
                 {event.name ? (
-                    <a href={snapcraftUrl(event.name)}>{name}</a>
+                    <a
+                        href={snapcraftUrl(event.name)}
+                        onClick={(linkEvent) => linkEvent.stopPropagation()}
+                    >
+                        {name}
+                    </a>
                 ) : (
                     <span>{name}</span>
                 )}
                 {event.publisher && (
-                    <span className="p-text--small u-text--muted">{event.publisher}</span>
+                    <span className="p-text--small u-text--muted">
+                        {event.publisher}
+                    </span>
                 )}
-            </span>
-        </li>
+            </div>
+        </Col>
     );
 }
 
-function Run({ run }: { run: FeaturedHistoryRun }) {
+type RunProps = {
+    run: FeaturedHistoryRun;
+    onSelect: (event: FeaturedHistoryEvent) => void;
+};
+
+function Run({ run, onSelect }: RunProps) {
     return (
-        <section className="featured-history__run">
+        <section>
+            <hr className="p-rule--muted" />
             <h5 className="featured-history__run-title">
-                <span className="featured-history__run-date">
-                    {formatDateTime(run.featured_at)}
-                </span>
+                <span>{formatDateTime(run.featured_at)}</span>
                 <Chip
                     value={describeRunSource(run)}
                     appearance={run.is_manual ? "caution" : "information"}
@@ -63,25 +103,43 @@ function Run({ run }: { run: FeaturedHistoryRun }) {
                 </span>
             </h5>
 
-            <ol className="featured-history__snaps p-list u-no-margin--bottom">
+            <Row>
                 {run.events.map((event, index) => (
                     <SnapRow
                         key={`${event.snap_id}-${event.featured_at}`}
                         event={event}
                         position={index + 1}
+                        onSelect={onSelect}
                     />
                 ))}
-            </ol>
+            </Row>
         </section>
     );
 }
 
 export function FeaturedHistory() {
-    const { data, loading, error } = useFetchData<FeaturedHistoryEvent[]>(
-        `/featured/history?limit=${HISTORY_LIMIT}`,
-    );
+    // TEMP MOCK: swap these two blocks back to re-enable the real endpoint.
+    // const { data, loading, error } = useFetchData<FeaturedHistoryEvent[]>(
+    //     `/featured/history?limit=${HISTORY_LIMIT}`,
+    // );
+    const { data, loading, error } = {
+        data: mockData.history as unknown as FeaturedHistoryEvent[],
+        loading: false,
+        error: "",
+    };
 
     const runs = useMemo(() => groupIntoRuns(data), [data]);
+    const { openAside } = useAside();
+
+    const handleSelect = (event: FeaturedHistoryEvent) => {
+        const subject = subjectFromHistoryEvent(event);
+        openAside(
+            <FeaturedSnapAside
+                key={`${subject.snap_id}-${event.featured_at}`}
+                snap={subject}
+            />,
+        );
+    };
 
     return (
         <Panel title="Featured snaps">
@@ -95,9 +153,7 @@ export function FeaturedHistory() {
                 )}
 
                 {loading && (
-                    <div className="featured-history__loading">
-                        <Spinner text="Loading history" />
-                    </div>
+                    <Spinner text="Loading history" />
                 )}
 
                 {!loading && !error && runs.length === 0 && (
@@ -105,7 +161,11 @@ export function FeaturedHistory() {
                 )}
 
                 {runs.map((run) => (
-                    <Run key={`${run.featured_at}|${run.is_manual}`} run={run} />
+                    <Run
+                        key={`${run.featured_at}|${run.is_manual}`}
+                        run={run}
+                        onSelect={handleSelect}
+                    />
                 ))}
             </div>
         </Panel>

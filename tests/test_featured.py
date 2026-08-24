@@ -355,3 +355,73 @@ def test_history_timestamps_are_utc_aware(_mock_auth, app, admin_client):
     parsed = datetime.fromisoformat(event["featured_at"])
     assert parsed.tzinfo is not None
     assert parsed.utcoffset() == timedelta(0)
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+def test_snap_history_endpoint_returns_only_that_snap(
+    _mock_auth, app, admin_client
+):
+    """The drawer endpoint scopes history to the snap it was asked about."""
+    record_featured_history(
+        [{"snap_id": "snap1"}, {"snap_id": "snap2"}], is_manual=False
+    )
+
+    response = admin_client.get("/featured/history/snap1")
+
+    assert response.status_code == 200
+    events = response.get_json()
+    assert [event["snap_id"] for event in events] == ["snap1"]
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+def test_snap_history_endpoint_is_newest_first(_mock_auth, app, admin_client):
+    record_featured_history(
+        [{"snap_id": "snap1", "selection_reason": {"role": "fill"}}],
+        is_manual=False,
+    )
+    record_featured_history(
+        [{"snap_id": "snap1", "selection_reason": {"role": "top-3"}}],
+        is_manual=True,
+    )
+
+    events = admin_client.get("/featured/history/snap1").get_json()
+
+    assert len(events) == 2
+    assert events[0]["selection_reason"]["role"] == "top-3"
+    assert events[0]["is_manual"] is True
+    assert events[1]["selection_reason"]["role"] == "fill"
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+def test_snap_history_endpoint_unknown_snap_is_empty(
+    _mock_auth, app, admin_client
+):
+    assert admin_client.get("/featured/history/nope").get_json() == []
+
+
+def test_history_attaches_current_categories(app):
+    """Events carry the snap's categories so the drawer can label them."""
+    db.session.add(
+        _make_snap(
+            "snap1",
+            categories=[
+                {"name": "development", "featured": False},
+                {"name": "utilities", "featured": False},
+            ],
+        )
+    )
+    db.session.commit()
+    record_featured_history([{"snap_id": "snap1"}], is_manual=True)
+
+    event = get_featured_history(["snap1"])["snap1"][0]
+
+    assert event["categories"] == ["development", "utilities"]
+
+
+def test_history_categories_none_when_snap_is_gone(app):
+    """A history row outlives its snap; categories are simply absent."""
+    record_featured_history([{"snap_id": "vanished"}], is_manual=False)
+
+    event = get_featured_history(["vanished"])["vanished"][0]
+
+    assert event["categories"] is None

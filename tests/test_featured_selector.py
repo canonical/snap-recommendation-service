@@ -29,6 +29,7 @@ from collector.featured_selector import (
     select_featured_snaps,
 )
 from snaprecommend.logic import get_current_featured_snap_ids
+from snaprecommend.settings import set_setting
 
 
 # ---------------------------------------------------------------------------
@@ -698,3 +699,39 @@ def test_select_logs_failed_pipeline_step_on_error(app):
     )
     assert log is not None
     assert log.success is False
+
+
+def test_run_selection_records_gates_and_facts(app):
+    _seed_full_candidate_pool(app)
+    events, _ = run_selection()
+
+    for event in events:
+        reason = event["selection_reason"]
+
+        gates = reason["gates"]
+        assert gates["recency_days"] == 180
+        assert gates["history_window_days"] == 365
+        assert gates["min_rating"] == 0.0
+        assert gates["excluded_category"] == "server-and-cloud"
+        assert gates["allowed_developer_validation"] == ["verified", "starred"]
+        assert gates["candidate_pool_size"] == 50
+        assert gates["category_cap"] == 4
+        assert gates["target_count"] == 15
+
+        assert reason["pool_rank"] >= 1
+        assert reason["candidate_count"] > 0
+        facts = reason["snap_facts"]
+        assert facts["active_devices"] is not None
+        assert facts["last_updated"] is not None
+
+
+def test_run_selection_gates_follow_settings(app):
+    set_setting("featured_recency_days", 90)
+    set_setting("featured_category_cap", 2)
+
+    _seed_full_candidate_pool(app)
+    events, _ = run_selection()
+
+    gates = events[0]["selection_reason"]["gates"]
+    assert gates["recency_days"] == 90
+    assert gates["category_cap"] == 2

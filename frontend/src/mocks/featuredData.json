@@ -1,0 +1,370 @@
+{
+  "featured": [
+    {
+      "snap_id": "mock-multipass",
+      "package_name": "multipass",
+      "title": "Multipass",
+      "summary": "Ubuntu VMs on demand for any workstation.",
+      "icon_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%23E95420'/></svg>",
+      "developer_name": "Canonical",
+      "origin": "canonical",
+      "developer_validation": "verified",
+      "sections": [],
+      "featured_at": "2026-08-18T09:00:00+00:00",
+      "is_manual": false,
+      "selection_reason": {
+        "role": "top-3",
+        "canonical": true,
+        "developer_validation": "verified",
+        "categories": ["development", "utilities"],
+        "ranking_key": "composite(active_devices*0.4 + metadata*0.3 + dev_validation*0.2 + recency*0.1)",
+        "ranking_value": 0.8734,
+        "random_seed": 1755772800,
+        "pool_rank": 2,
+        "candidate_count": 412,
+        "gates": {
+          "min_rating": 0.0,
+          "recency_days": 180,
+          "history_window_days": 365,
+          "excluded_category": "server-and-cloud",
+          "allowed_developer_validation": ["verified", "starred"],
+          "candidate_pool_size": 50,
+          "category_cap": 4,
+          "target_count": 15
+        },
+        "snap_facts": {
+          "rating": 4.62,
+          "total_votes": 1843,
+          "active_devices": 284512,
+          "last_updated": "2026-07-29T11:20:00"
+        }
+      }
+    },
+    {
+      "snap_id": "mock-godot",
+      "package_name": "godot",
+      "title": "Godot Engine",
+      "summary": "The free and open source 2D and 3D game engine.",
+      "icon_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%23478CBF'/></svg>",
+      "developer_name": "Godot Foundation",
+      "origin": "godotengine",
+      "developer_validation": "starred",
+      "sections": [],
+      "featured_at": "2026-08-18T09:00:00+00:00",
+      "is_manual": false,
+      "selection_reason": {
+        "role": "category-development+game",
+        "canonical": false,
+        "developer_validation": "starred",
+        "categories": ["development", "games"],
+        "ranking_key": "composite(active_devices*0.4 + metadata*0.3 + dev_validation*0.2 + recency*0.1)",
+        "ranking_value": 0.6421,
+        "random_seed": 1755772800,
+        "pool_rank": 14,
+        "candidate_count": 412,
+        "gates": {
+          "min_rating": 0.0,
+          "recency_days": 180,
+          "history_window_days": 365,
+          "excluded_category": "server-and-cloud",
+          "allowed_developer_validation": ["verified", "starred"],
+          "candidate_pool_size": 50,
+          "category_cap": 4,
+          "target_count": 15
+        },
+        "snap_facts": {
+          "rating": 4.81,
+          "total_votes": 962,
+          "active_devices": 61204,
+          "last_updated": "2026-06-14T08:05:00"
+        }
+      }
+    },
+    {
+      "snap_id": "mock-inkscape",
+      "package_name": "inkscape",
+      "title": "Inkscape",
+      "summary": "Professional vector graphics editor.",
+      "icon_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%233B3B3B'/></svg>",
+      "developer_name": "Inkscape Project",
+      "origin": "inkscape",
+      "developer_validation": "verified",
+      "sections": [],
+      "featured_at": "2026-08-18T09:00:00+00:00",
+      "is_manual": false,
+      "selection_reason": {
+        "role": "fill",
+        "canonical": false,
+        "developer_validation": "verified",
+        "categories": ["art-and-design", "photo"],
+        "ranking_key": "composite(active_devices*0.4 + metadata*0.3 + dev_validation*0.2 + recency*0.1)",
+        "ranking_value": 0.5138,
+        "random_seed": 1755772800,
+        "pool_rank": 27,
+        "candidate_count": 412,
+        "gates": {
+          "min_rating": 0.0,
+          "recency_days": 180,
+          "history_window_days": 365,
+          "excluded_category": "server-and-cloud",
+          "allowed_developer_validation": ["verified", "starred"],
+          "candidate_pool_size": 50,
+          "category_cap": 4,
+          "target_count": 15
+        },
+        "snap_facts": {
+          "rating": 4.44,
+          "total_votes": 2310,
+          "active_devices": 148903,
+          "last_updated": "2026-04-02T16:45:00"
+        }
+      }
+    },
+    {
+      "snap_id": "mock-thunderbird",
+      "package_name": "thunderbird",
+      "title": "Thunderbird",
+      "summary": "Free email application that is easy to set up and customise.",
+      "icon_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%230A84FF'/></svg>",
+      "developer_name": "Mozilla",
+      "origin": "mozilla",
+      "developer_validation": "verified",
+      "sections": [],
+      "featured_at": "2026-08-20T14:30:00+00:00",
+      "is_manual": true,
+      "selection_reason": {
+        "actor": "jane@canonical.com",
+        "nickname": "jane"
+      }
+    },
+    {
+      "snap_id": "mock-krita",
+      "package_name": "krita",
+      "title": "Krita",
+      "summary": "Digital painting, for artists and illustrators.",
+      "icon_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%238E44AD'/></svg>",
+      "developer_name": "KDE",
+      "origin": "kde",
+      "developer_validation": "verified",
+      "sections": [],
+      "featured_at": "2025-11-03T09:00:00+00:00",
+      "is_manual": false,
+      "selection_reason": {
+        "role": "fill",
+        "ranking_key": "active_devices"
+      }
+    },
+    {
+      "snap_id": "mock-vlc",
+      "package_name": "vlc",
+      "title": "VLC",
+      "summary": "The best media player, plays everything.",
+      "icon_url": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%23F58220'/></svg>",
+      "developer_name": "VideoLAN",
+      "origin": "videolan",
+      "developer_validation": "verified",
+      "sections": [],
+      "featured_at": null,
+      "is_manual": null,
+      "selection_reason": null
+    }
+  ],
+
+  "history": [
+    {
+      "snap_id": "mock-thunderbird",
+      "featured_at": "2026-08-20T14:30:00+00:00",
+      "is_manual": true,
+      "title": "Thunderbird",
+      "name": "thunderbird",
+      "publisher": "Mozilla",
+      "icon": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%230A84FF'/></svg>",
+      "selection_reason": {
+        "actor": "jane@canonical.com",
+        "nickname": "jane"
+      }
+    },
+    {
+      "snap_id": "mock-multipass",
+      "featured_at": "2026-08-18T09:00:00+00:00",
+      "is_manual": false,
+      "title": "Multipass",
+      "name": "multipass",
+      "publisher": "Canonical",
+      "icon": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%23E95420'/></svg>",
+      "selection_reason": {
+        "role": "top-3",
+        "canonical": true,
+        "developer_validation": "verified",
+        "categories": ["development", "utilities"],
+        "ranking_key": "composite(active_devices*0.4 + metadata*0.3 + dev_validation*0.2 + recency*0.1)",
+        "ranking_value": 0.8734,
+        "random_seed": 1755772800,
+        "pool_rank": 2,
+        "candidate_count": 412,
+        "gates": {
+          "min_rating": 0.0,
+          "recency_days": 180,
+          "history_window_days": 365,
+          "excluded_category": "server-and-cloud",
+          "allowed_developer_validation": ["verified", "starred"],
+          "candidate_pool_size": 50,
+          "category_cap": 4,
+          "target_count": 15
+        },
+        "snap_facts": {
+          "rating": 4.62,
+          "total_votes": 1843,
+          "active_devices": 284512,
+          "last_updated": "2026-07-29T11:20:00"
+        }
+      }
+    },
+    {
+      "snap_id": "mock-godot",
+      "featured_at": "2026-08-18T09:00:00+00:00",
+      "is_manual": false,
+      "title": "Godot Engine",
+      "name": "godot",
+      "publisher": "Godot Foundation",
+      "icon": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%23478CBF'/></svg>",
+      "selection_reason": {
+        "role": "category-development+game",
+        "canonical": false,
+        "developer_validation": "starred",
+        "categories": ["development", "games"],
+        "ranking_key": "composite(active_devices*0.4 + metadata*0.3 + dev_validation*0.2 + recency*0.1)",
+        "ranking_value": 0.6421,
+        "random_seed": 1755772800,
+        "pool_rank": 14,
+        "candidate_count": 412,
+        "gates": {
+          "min_rating": 0.0,
+          "recency_days": 180,
+          "history_window_days": 365,
+          "excluded_category": "server-and-cloud",
+          "allowed_developer_validation": ["verified", "starred"],
+          "candidate_pool_size": 50,
+          "category_cap": 4,
+          "target_count": 15
+        },
+        "snap_facts": {
+          "rating": 4.81,
+          "total_votes": 962,
+          "active_devices": 61204,
+          "last_updated": "2026-06-14T08:05:00"
+        }
+      }
+    },
+    {
+      "snap_id": "mock-inkscape",
+      "featured_at": "2026-08-18T09:00:00+00:00",
+      "is_manual": false,
+      "title": "Inkscape",
+      "name": "inkscape",
+      "publisher": "Inkscape Project",
+      "icon": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%233B3B3B'/></svg>",
+      "selection_reason": {
+        "role": "fill",
+        "canonical": false,
+        "developer_validation": "verified",
+        "categories": ["art-and-design", "photo"],
+        "ranking_key": "composite(active_devices*0.4 + metadata*0.3 + dev_validation*0.2 + recency*0.1)",
+        "ranking_value": 0.5138,
+        "random_seed": 1755772800,
+        "pool_rank": 27,
+        "candidate_count": 412,
+        "gates": {
+          "min_rating": 0.0,
+          "recency_days": 180,
+          "history_window_days": 365,
+          "excluded_category": "server-and-cloud",
+          "allowed_developer_validation": ["verified", "starred"],
+          "candidate_pool_size": 50,
+          "category_cap": 4,
+          "target_count": 15
+        },
+        "snap_facts": {
+          "rating": 4.44,
+          "total_votes": 2310,
+          "active_devices": 148903,
+          "last_updated": "2026-04-02T16:45:00"
+        }
+      }
+    },
+    {
+      "snap_id": "mock-multipass",
+      "featured_at": "2026-05-12T09:00:00+00:00",
+      "is_manual": false,
+      "title": "Multipass",
+      "name": "multipass",
+      "publisher": "Canonical",
+      "icon": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%23E95420'/></svg>",
+      "selection_reason": {
+        "role": "fill",
+        "canonical": true,
+        "developer_validation": "verified",
+        "categories": ["development", "utilities"],
+        "ranking_key": "composite(active_devices*0.4 + metadata*0.3 + dev_validation*0.2 + recency*0.1)",
+        "ranking_value": 0.7912,
+        "random_seed": 1747040400,
+        "pool_rank": 6,
+        "candidate_count": 388,
+        "gates": {
+          "min_rating": 0.0,
+          "recency_days": 180,
+          "history_window_days": 365,
+          "excluded_category": "server-and-cloud",
+          "allowed_developer_validation": ["verified", "starred"],
+          "candidate_pool_size": 50,
+          "category_cap": 4,
+          "target_count": 15
+        },
+        "snap_facts": {
+          "rating": 4.58,
+          "total_votes": 1601,
+          "active_devices": 241770,
+          "last_updated": "2026-04-30T10:00:00"
+        }
+      }
+    },
+    {
+      "snap_id": "mock-krita",
+      "featured_at": "2026-05-12T09:00:00+00:00",
+      "is_manual": false,
+      "title": "Krita",
+      "name": "krita",
+      "publisher": "KDE",
+      "icon": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%238E44AD'/></svg>",
+      "selection_reason": {
+        "role": "top-3",
+        "ranking_key": "active_devices"
+      }
+    },
+    {
+      "snap_id": "mock-krita",
+      "featured_at": "2025-11-03T09:00:00+00:00",
+      "is_manual": false,
+      "title": "Krita",
+      "name": "krita",
+      "publisher": "KDE",
+      "icon": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%238E44AD'/></svg>",
+      "selection_reason": {
+        "role": "fill",
+        "ranking_key": "active_devices"
+      }
+    },
+    {
+      "snap_id": "mock-multipass",
+      "featured_at": "2025-11-03T09:00:00+00:00",
+      "is_manual": false,
+      "title": "Multipass",
+      "name": "multipass",
+      "publisher": "Canonical",
+      "icon": "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='64' height='64'><rect width='64' height='64' rx='12' fill='%23E95420'/></svg>",
+      "selection_reason": {
+        "role": "top-3"
+      }
+    }
+  ]
+}

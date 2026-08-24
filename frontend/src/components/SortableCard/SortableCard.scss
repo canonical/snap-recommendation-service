@@ -19,11 +19,17 @@
             flex-direction: column;
         }
 
-        &__buttons {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
+        &--selectable {
+            cursor: pointer;
+
+            &:hover {
+                box-shadow: 0 1px 5px 1px rgba(0, 0, 0, 0.1);
+            }
+
+            &:focus-visible {
+                outline: 2px solid var(--vf-color-focus);
+                outline-offset: 2px;
+            }
         }
 
         &__drag {
@@ -36,7 +42,6 @@
         }
 
         &__dev_info {
-            display: flex;
             gap: 0.5rem;
         }
 

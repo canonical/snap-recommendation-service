@@ -29,6 +29,24 @@ type SnapCategory = {
     featured: boolean;
 }
 
+export type SelectionGates = {
+    min_rating?: number;
+    recency_days?: number;
+    history_window_days?: number;
+    excluded_category?: string;
+    allowed_developer_validation?: string[];
+    candidate_pool_size?: number;
+    category_cap?: number;
+    target_count?: number;
+}
+
+export type SelectionSnapFacts = {
+    rating?: number | null;
+    total_votes?: number | null;
+    active_devices?: number | null;
+    last_updated?: string | null;
+}
+
 export type SelectionReason = {
     role?: string;
     canonical?: boolean;
@@ -39,6 +57,24 @@ export type SelectionReason = {
     random_seed?: number;
     actor?: string | null;
     nickname?: string | null;
+    gates?: SelectionGates | null;
+    snap_facts?: SelectionSnapFacts | null;
+    pool_rank?: number | null;
+    candidate_count?: number | null;
+}
+
+export type FeaturedSnapSubject = {
+    snap_id: string;
+    title: string;
+    name?: string | null;
+    publisher?: string | null;
+    summary?: string | null;
+    icon?: string | null;
+    developer_validation?: string | null;
+    categories?: string[] | null;
+    featured_at?: string | null;
+    is_manual?: boolean | null;
+    selection_reason?: SelectionReason | null;
 }
 
 export type FeaturedSnap = {

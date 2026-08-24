@@ -1,0 +1,19 @@
+@import "vanilla-framework/scss/settings";
+
+.featured-aside {
+    &__section hr {
+        margin-bottom: $sp-medium;
+    }
+
+    &__header .p-media-object__image {
+        border-radius: $sp-xx-small;
+    }
+
+    &__publisher {
+        display: flex;
+        align-items: center;
+        gap: $sp-xx-small;
+        margin-bottom: 0;
+        padding-top: 0;
+    }
+}

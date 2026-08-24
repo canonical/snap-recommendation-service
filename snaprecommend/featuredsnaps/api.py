@@ -5,6 +5,7 @@ from snaprecommend.logic import (
     FeaturedUpdateError,
     acquire_featured_selection_lock,
     get_all_featured_history,
+    get_featured_history,
     publish_featured_snaps,
     record_featured_history,
     release_featured_selection_lock,
@@ -41,6 +42,14 @@ def featured_history():
     limit = min(limit, MAX_HISTORY_LIMIT)
 
     return flask.jsonify(get_all_featured_history(limit)), 200
+
+
+@featured_blueprint.route("/history/<snap_id>")
+@login_required
+@admin_required
+def featured_snap_history(snap_id: str):
+    history = get_featured_history([snap_id])
+    return flask.jsonify(history.get(snap_id, [])), 200
 
 
 @featured_blueprint.route("/", methods=["POST"])

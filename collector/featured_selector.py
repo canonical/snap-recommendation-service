@@ -11,6 +11,7 @@ from snaprecommend import db
 from snaprecommend.logic import (
     acquire_featured_selection_lock,
     add_pipeline_step_log,
+    category_slugs,
     publish_featured_snaps,
     record_featured_history,
     release_featured_selection_lock,
@@ -76,15 +77,7 @@ def _cfg(keys: list[str]) -> dict:
 
 def _snap_category_slugs(snap: Snap) -> set:
     """Return a set of category slugs for a snap."""
-    slugs = set()
-    for item in snap.categories or []:
-        if isinstance(item, dict):
-            slug = item.get("slug") or item.get("name") or ""
-        else:
-            slug = str(item)
-        if slug:
-            slugs.add(slug)
-    return slugs
+    return set(category_slugs(snap.categories))
 
 
 def _has_category(snap: Snap, target_slug: str) -> bool:
@@ -345,6 +338,19 @@ def run_selection() -> tuple:
         "composite(active_devices*0.4 + metadata*0.3 + dev_validation*0.2 "
         "+ recency*0.1)"
     )
+
+    gates = {
+        "min_rating": min_rating,
+        "recency_days": recency_days,
+        "history_window_days": history_window,
+        "excluded_category": SERVER_CLOUD_CATEGORY_SLUG,
+        "allowed_developer_validation": ["verified", "starred"],
+        "candidate_pool_size": pool_size,
+        "category_cap": category_cap,
+        "target_count": target_count,
+    }
+    pool_ranks = {snap.snap_id: index + 1 for index, snap in enumerate(ranked)}
+
     events = [
         {
             "snap_id": snap.snap_id,
@@ -356,6 +362,19 @@ def run_selection() -> tuple:
                 "ranking_key": ranking_key,
                 "ranking_value": composite.get(snap.snap_id),
                 "random_seed": seed,
+                "gates": gates,
+                "pool_rank": pool_ranks.get(snap.snap_id),
+                "candidate_count": len(candidates),
+                "snap_facts": {
+                    "rating": snap.raw_rating,
+                    "total_votes": snap.total_votes,
+                    "active_devices": snap.active_devices,
+                    "last_updated": (
+                        snap.last_updated.isoformat()
+                        if snap.last_updated
+                        else None
+                    ),
+                },
             },
         }
         for snap, role in final

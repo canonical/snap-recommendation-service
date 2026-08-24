@@ -306,7 +306,36 @@ def _isoformat_utc(value: datetime) -> str:
     return value.replace(tzinfo=timezone.utc).isoformat()
 
 
-def _featured_history_event(row: FeaturedHistory) -> dict:
+def category_slugs(raw) -> list[str]:
+    """Flatten a Snap.categories JSON blob to a list of slugs."""
+    slugs = []
+    for item in raw or []:
+        if isinstance(item, dict):
+            slug = item.get("slug") or item.get("name") or ""
+        else:
+            slug = str(item)
+        if slug and slug not in slugs:
+            slugs.append(slug)
+    return slugs
+
+
+def _current_categories(snap_ids: list[str]) -> dict[str, list[str]]:
+    """
+    Current categories for the given snaps, keyed by snap_id. Snaps no longer
+    in the table are absent — history rows outlive the snaps they describe.
+    """
+    if not snap_ids:
+        return {}
+
+    rows = db.session.query(Snap.snap_id, Snap.categories).filter(
+        Snap.snap_id.in_(snap_ids)
+    )
+    return {row.snap_id: category_slugs(row.categories) for row in rows}
+
+
+def _featured_history_event(
+    row: FeaturedHistory, categories: dict[str, list[str]]
+) -> dict:
     return {
         "snap_id": row.snap_id,
         "featured_at": _isoformat_utc(row.featured_at),
@@ -316,6 +345,7 @@ def _featured_history_event(row: FeaturedHistory) -> dict:
         "name": row.name,
         "publisher": row.publisher,
         "icon": row.icon,
+        "categories": categories.get(row.snap_id),
     }
 
 
@@ -346,10 +376,12 @@ def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
         FeaturedHistory.snap_id.in_(snap_ids)
     ).all()
 
+    categories = _current_categories([row.snap_id for row in rows])
+
     history: dict[str, list[dict]] = {}
     for row in rows:
         history.setdefault(row.snap_id, []).append(
-            _featured_history_event(row)
+            _featured_history_event(row, categories)
         )
 
     return history
@@ -360,7 +392,8 @@ def get_all_featured_history(limit: int = 200) -> list[dict]:
     Returns the most recent featured events
     """
     rows = _featured_history_query(keep_position_order=True).limit(limit).all()
-    return [_featured_history_event(row) for row in rows]
+    categories = _current_categories([row.snap_id for row in rows])
+    return [_featured_history_event(row, categories) for row in rows]
 
 
 def add_pipeline_step_log(step_name: str, status: bool, message: str = ""):

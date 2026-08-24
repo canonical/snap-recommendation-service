@@ -1,6 +1,6 @@
 import { Button, Col, Notification, Panel, Row, Spinner } from "@canonical/react-components";
-import { FeaturedTabs } from "../components";
-import { useFetchData } from "../hooks/useFetchData";
+import { FeaturedSnapAside, FeaturedTabs } from "../components";
+// import { useFetchData } from "../hooks/useFetchData"; // TEMP MOCK
 import {
     DndContext,
     closestCenter,
@@ -21,18 +21,30 @@ import type { FeaturedSnap, SearchSnap } from "../types/snap";
 import { useEffect, useState } from "react";
 import { FindSnap } from "../components/FindSnap/FindSnap";
 import { SortableCard } from "../components/SortableCard/SortableCard";
-import { describeLastUpdate } from "../utils/selectionReason";
+import {
+    describeLastUpdate,
+    subjectFromFeaturedSnap,
+} from "../utils/selectionReason";
+import { useAside } from "../hooks/useAside";
+import mockData from "../mocks/featuredData.json"; // TEMP MOCK
 import { LoadingCard } from "@canonical/store-components";
 import "./FeaturedSnaps.scss";
 
 const idsOf = (snaps: FeaturedSnap[]) => snaps.map((snap) => snap.snap_id).join(",");
 
 export function FeaturedSnaps() {
-    const { data, loading, error } = useFetchData<FeaturedSnap[]>("/featured/");
+    // TEMP MOCK: swap these two lines back to re-enable the real endpoint.
+    // const { data, loading, error } = useFetchData<FeaturedSnap[]>("/featured/");
+    const { data, loading, error } = {
+        data: mockData.featured as unknown as FeaturedSnap[],
+        loading: false,
+        error: "",
+    };
     const [featuredSnaps, setFeaturedSnaps] = useState<FeaturedSnap[]>([]);
     const [savedIds, setSavedIds] = useState("");
     const [isSaving, setIsSaving] = useState(false);
     const [operationError, setOperationError] = useState("");
+    const { openAside } = useAside();
 
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -73,6 +85,11 @@ export function FeaturedSnaps() {
             const index = items.findIndex((item) => item.package_name === id);
             return [...items.slice(0, index), ...items.slice(index + 1)];
         });
+    };
+
+    const handleSelect = (snap: FeaturedSnap) => {
+        const subject = subjectFromFeaturedSnap(snap);
+        openAside(<FeaturedSnapAside key={subject.snap_id} snap={subject} />);
     };
 
     const handleAdd = (snap: SearchSnap) => {
@@ -175,6 +192,7 @@ export function FeaturedSnaps() {
                                 key={snap.package_name}
                                 snap={snap}
                                 handleRemove={handleRemove}
+                                onSelect={handleSelect}
                             />
                         ))}
                     </SortableContext>
@@ -192,7 +210,7 @@ export function FeaturedSnaps() {
                     )}
                 </Col>
 
-                <Col size={6} className="featured-snaps__actions-end">
+                <Col size={6} className="u-align--right featured-snaps__actions-end">
                 <span className="p-text--small u-text--muted">
                     {featuredSnaps.length} snaps
                 </span>
