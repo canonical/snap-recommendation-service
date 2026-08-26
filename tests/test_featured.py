@@ -1,5 +1,5 @@
 import pytest
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import patch, MagicMock
 from flask import Flask
 from sqlalchemy.pool import StaticPool
@@ -330,3 +330,28 @@ def test_history_endpoint_limit_is_capped(_mock_auth, app, admin_client):
 
     assert admin_client.get("/featured/history?limit=99999").status_code == 200
     assert admin_client.get("/featured/history?limit=0").status_code == 200
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+def test_history_endpoint_keeps_position_order_within_a_run(
+    _mock_auth, app, admin_client
+):
+    published = ["snap1", "snap2", "snap3"]
+    record_featured_history(
+        [{"snap_id": snap_id} for snap_id in published], is_manual=False
+    )
+
+    events = admin_client.get("/featured/history").get_json()
+
+    assert [event["snap_id"] for event in events] == published
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+def test_history_timestamps_are_utc_aware(_mock_auth, app, admin_client):
+    record_featured_history([{"snap_id": "snap1"}], is_manual=False)
+
+    event = admin_client.get("/featured/history").get_json()[0]
+
+    parsed = datetime.fromisoformat(event["featured_at"])
+    assert parsed.tzinfo is not None
+    assert parsed.utcoffset() == timedelta(0)

@@ -37,8 +37,8 @@ export type SelectionReason = {
     ranking_key?: string;
     ranking_value?: number | null;
     random_seed?: number;
-    actor?: string;
-    nickname?: string;
+    actor?: string | null;
+    nickname?: string | null;
 }
 
 export type FeaturedSnap = {

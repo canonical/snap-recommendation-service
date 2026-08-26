@@ -8,6 +8,7 @@ import { SliceDetails } from "./pages/SliceDetails";
 import { AsideProvider } from "./contexts/AsideContext/AsideProvider";
 import { Settings } from "./pages/Settings";
 import { FeaturedSnaps } from "./pages/FeaturedSnaps";
+import { FeaturedHistory } from "./pages/FeaturedHistory";
 
 
 
@@ -22,6 +23,7 @@ export default function App() {
           <Route path="/dashboard/editorial_slice/:id" element={<SliceDetails />} />
           <Route path="/dashboard/settings" element={<Settings />} />
           <Route path="/dashboard/featured" element={<FeaturedSnaps />} />
+          <Route path="/dashboard/featured_history" element={<FeaturedHistory />} />
           <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>

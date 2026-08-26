@@ -294,7 +294,7 @@ def get_latest_featured_events(snap_ids: list[str]) -> dict[str, dict]:
 
     return {
         row.snap_id: {
-            "featured_at": row.featured_at.isoformat(),
+            "featured_at": _isoformat_utc(row.featured_at),
             "is_manual": row.is_manual,
             "selection_reason": row.selection_reason,
         }
@@ -302,10 +302,14 @@ def get_latest_featured_events(snap_ids: list[str]) -> dict[str, dict]:
     }
 
 
+def _isoformat_utc(value: datetime) -> str:
+    return value.replace(tzinfo=timezone.utc).isoformat()
+
+
 def _featured_history_event(row: FeaturedHistory) -> dict:
     return {
         "snap_id": row.snap_id,
-        "featured_at": row.featured_at.isoformat(),
+        "featured_at": _isoformat_utc(row.featured_at),
         "is_manual": row.is_manual,
         "selection_reason": row.selection_reason,
         "title": row.title,
@@ -315,10 +319,18 @@ def _featured_history_event(row: FeaturedHistory) -> dict:
     }
 
 
-def _featured_history_query():
+def _featured_history_query(keep_position_order: bool = False):
+    """
+    Base query for featured history, newest run first.
+    """
+    within_run = (
+        FeaturedHistory.id.asc()
+        if keep_position_order
+        else FeaturedHistory.id.desc()
+    )
     return db.session.query(FeaturedHistory).order_by(
         FeaturedHistory.featured_at.desc(),
-        FeaturedHistory.id.desc(),
+        within_run,
     )
 
 
@@ -344,7 +356,10 @@ def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
 
 
 def get_all_featured_history(limit: int = 200) -> list[dict]:
-    rows = _featured_history_query().limit(limit).all()
+    """
+    Returns the most recent featured events
+    """
+    rows = _featured_history_query(keep_position_order=True).limit(limit).all()
     return [_featured_history_event(row) for row in rows]
 
 

@@ -3,6 +3,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { Button, Card, Chip, Col, Icon } from "@canonical/react-components";
 import type { FeaturedSnap } from "../../types/snap";
 import { describeLastFeatured, describeReason } from "../../utils/selectionReason";
+import { snapcraftUrl } from "../../utils/snap";
 import "./SortableCard.scss";
 
 type SortableCardProps = {
@@ -61,7 +62,7 @@ export const SortableCard = ({ snap, handleRemove }: SortableCardProps) => {
                             data-testid="package-icon"
                         />
                         <div className="sc-package-card p-media-object__details">
-                            <a href={`https://snapcraft.io/${snap.package_name}`}>{snap.title}</a>
+                            <a href={snapcraftUrl(snap.package_name)}>{snap.title}</a>
                             <div className="card-content__dev_info">
                                 <span>{snap.developer_name}</span>
 
