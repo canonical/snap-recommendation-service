@@ -1,20 +1,44 @@
 import { useMemo } from "react";
 import { Chip, Notification, Panel, Spinner } from "@canonical/react-components";
-import { FeaturedTabs } from "../components";
+import { FeaturedSnapAside, FeaturedTabs } from "../components";
 import { useFetchData } from "../hooks/useFetchData";
 import type { FeaturedHistoryEvent, FeaturedHistoryRun } from "../types/featuredHistory";
-import { describeRunSource, groupIntoRuns, snapDisplayName } from "../utils/featuredHistory";
+import {
+    describeRunSource,
+    groupIntoRuns,
+    snapDisplayName,
+    subjectFromHistoryEvent,
+} from "../utils/featuredHistory";
+import { useAside } from "../hooks/useAside";
 import { formatDateTime } from "../utils/dateTime";
 import { snapcraftUrl } from "../utils/snap";
 import "./FeaturedHistory.scss";
 
 const HISTORY_LIMIT = 500;
 
-function SnapRow({ event, position }: { event: FeaturedHistoryEvent; position: number }) {
+type SnapRowProps = {
+    event: FeaturedHistoryEvent;
+    position: number;
+    onSelect: (event: FeaturedHistoryEvent) => void;
+};
+
+function SnapRow({ event, position, onSelect }: SnapRowProps) {
     const name = snapDisplayName(event);
 
     return (
-        <li className="featured-history__snap">
+        <li
+            className="featured-history__snap featured-history__snap--selectable"
+            role="button"
+            tabIndex={0}
+            aria-label={`Selection details for ${name}`}
+            onClick={() => onSelect(event)}
+            onKeyDown={(keyEvent) => {
+                if (keyEvent.key === "Enter" || keyEvent.key === " ") {
+                    keyEvent.preventDefault();
+                    onSelect(event);
+                }
+            }}
+        >
             <span className="featured-history__snap-position">{position}.</span>
 
             {event.icon ? (
@@ -33,7 +57,12 @@ function SnapRow({ event, position }: { event: FeaturedHistoryEvent; position: n
 
             <span className="featured-history__snap-details">
                 {event.name ? (
-                    <a href={snapcraftUrl(event.name)}>{name}</a>
+                    <a
+                        href={snapcraftUrl(event.name)}
+                        onClick={(linkEvent) => linkEvent.stopPropagation()}
+                    >
+                        {name}
+                    </a>
                 ) : (
                     <span>{name}</span>
                 )}
@@ -45,7 +74,12 @@ function SnapRow({ event, position }: { event: FeaturedHistoryEvent; position: n
     );
 }
 
-function Run({ run }: { run: FeaturedHistoryRun }) {
+type RunProps = {
+    run: FeaturedHistoryRun;
+    onSelect: (event: FeaturedHistoryEvent) => void;
+};
+
+function Run({ run, onSelect }: RunProps) {
     return (
         <section className="featured-history__run">
             <h5 className="featured-history__run-title">
@@ -69,6 +103,7 @@ function Run({ run }: { run: FeaturedHistoryRun }) {
                         key={`${event.snap_id}-${event.featured_at}`}
                         event={event}
                         position={index + 1}
+                        onSelect={onSelect}
                     />
                 ))}
             </ol>
@@ -82,6 +117,17 @@ export function FeaturedHistory() {
     );
 
     const runs = useMemo(() => groupIntoRuns(data), [data]);
+    const { openAside } = useAside();
+
+    const handleSelect = (event: FeaturedHistoryEvent) => {
+        const subject = subjectFromHistoryEvent(event);
+        openAside(
+            <FeaturedSnapAside
+                key={`${subject.snap_id}-${event.featured_at}`}
+                snap={subject}
+            />,
+        );
+    };
 
     return (
         <Panel title="Featured snaps">
@@ -105,7 +151,11 @@ export function FeaturedHistory() {
                 )}
 
                 {runs.map((run) => (
-                    <Run key={`${run.featured_at}|${run.is_manual}`} run={run} />
+                    <Run
+                        key={`${run.featured_at}|${run.is_manual}`}
+                        run={run}
+                        onSelect={handleSelect}
+                    />
                 ))}
             </div>
         </Panel>

@@ -9,6 +9,7 @@ export type FeaturedHistoryEvent = {
     name?: string | null;
     publisher?: string | null;
     icon?: string | null;
+    categories?: string[] | null;
 };
 
 export type FeaturedHistoryRun = {

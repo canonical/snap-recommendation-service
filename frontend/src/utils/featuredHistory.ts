@@ -2,6 +2,7 @@ import type {
     FeaturedHistoryEvent,
     FeaturedHistoryRun,
 } from "../types/featuredHistory";
+import type { FeaturedSnapSubject } from "../types/snap";
 import { resolveActor } from "./selectionReason";
 
 export function groupIntoRuns(
@@ -40,4 +41,20 @@ export function describeRunSource(run: FeaturedHistoryRun): string {
 
 export function snapDisplayName(event: FeaturedHistoryEvent): string {
     return event.title || event.name || event.snap_id;
+}
+
+export function subjectFromHistoryEvent(
+    event: FeaturedHistoryEvent,
+): FeaturedSnapSubject {
+    return {
+        snap_id: event.snap_id,
+        title: snapDisplayName(event),
+        name: event.name,
+        publisher: event.publisher,
+        icon: event.icon,
+        categories: event.categories ?? null,
+        featured_at: event.featured_at,
+        is_manual: event.is_manual,
+        selection_reason: event.selection_reason,
+    };
 }
