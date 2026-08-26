@@ -1,7 +1,8 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { Button, Card, Col, Icon } from "@canonical/react-components";
+import { Button, Card, Chip, Col, Icon } from "@canonical/react-components";
 import type { FeaturedSnap } from "../../types/snap";
+import { describeLastFeatured, describeReason } from "../../utils/selectionReason";
 import "./SortableCard.scss";
 
 type SortableCardProps = {
@@ -28,6 +29,9 @@ export const SortableCard = ({ snap, handleRemove }: SortableCardProps) => {
     const developerValidation = snap.developer_validation === "starred"
         ? "star"
         : snap.developer_validation;
+
+    const chips = describeReason(snap);
+    const lastFeatured = describeLastFeatured(snap);
 
         return (
             <Col size={4} className="card" style={style} ref={setNodeRef}>
@@ -86,7 +90,31 @@ export const SortableCard = ({ snap, handleRemove }: SortableCardProps) => {
                             </div>
                         </div>
                     </div>
-                    <div className="u-line-clamp">{snap.summary}</div>
+                    <div className="u-truncate">{snap.summary}</div>
+
+                    <hr className="p-rule--muted" />
+
+                    <div className="card-content__reason">
+                        {chips.length > 0 && (
+                            <div className="card-content__signals">
+                                {chips.map((chip) => (
+                                    <Chip
+                                        key={chip.label}
+                                        value={chip.label}
+                                        appearance={chip.appearance}
+                                        isDense
+                                        isReadOnly
+                                    />
+                                ))}
+                            </div>
+                        )}
+
+                        {lastFeatured && (
+                            <p className="p-text--small u-text--muted u-no-margin--bottom">
+                                {lastFeatured}
+                            </p>
+                        )}
+                    </div>
                 </Card>
             </Col>
         );

@@ -111,11 +111,11 @@ class FeaturedHistory(db.Model):
     id: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True
     )
-    snap_id: Mapped[str] = mapped_column(
-        String,
-        ForeignKey("snap.snap_id", ondelete="CASCADE"),
-        nullable=False,
-    )
+    snap_id: Mapped[str] = mapped_column(String, nullable=False)
+    title: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    name: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    publisher: Mapped[Optional[str]] = mapped_column(String, nullable=True)
+    icon: Mapped[Optional[str]] = mapped_column(String, nullable=True)
     featured_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     is_manual: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False
@@ -174,6 +174,7 @@ class PipelineSteps(enum.Enum):
     FILTER = "filter"
     EXTRA_FIELDS = "extra_fields"
     SCORE = "score"
+    FEATURED = "featured"
 
 
 class PipelineStepLog(db.Model):

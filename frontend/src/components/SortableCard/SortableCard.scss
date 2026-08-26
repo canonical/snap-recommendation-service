@@ -1,10 +1,23 @@
+@import "vanilla-framework/scss/settings";
+
 .card {
     margin-bottom: 1.5rem;
     position: relative;
+    display: flex;
 
     &-content {
-        height: 100%;
+        width: 100%;
         padding-top: 0.5rem;
+        display: flex;
+        flex-direction: column;
+
+        .p-card__content {
+            cursor: pointer;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
 
         &__buttons {
             display: flex;
@@ -25,6 +38,35 @@
         &__dev_info {
             display: flex;
             gap: 0.5rem;
+        }
+
+        hr {
+            margin: $sp-small 0 0;
+        }
+
+        &__reason {
+            flex: 1;
+            height: 100%;
+            padding-top: $sp-small;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: $sp-small;
+
+            p {
+                margin: 0;
+            }
+        }
+
+        &__signals {
+            display: flex;
+            flex-wrap: wrap;
+            gap: $sp-x-small;
+
+            > * {
+                margin: 0;
+            }
         }
     }
 }

@@ -1,4 +1,10 @@
-from datetime import datetime
+import logging
+from datetime import datetime, timedelta, timezone
+
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
+
+from snaprecommend.auth.session import device_gateway, publisher_gateway
 from snaprecommend.models import (
     Snap,
     SnapRecommendationScore,
@@ -8,8 +14,45 @@ from snaprecommend.models import (
     FeaturedHistory,
     PipelineStepLog,
     PipelineSteps,
+    Settings,
 )
 from snaprecommend import db
+
+logger = logging.getLogger(__name__)
+
+FEATURED_SELECTION_LOCK_KEY = "featured_selection_lock"
+FEATURED_SELECTION_LOCK_TTL = timedelta(hours=6)
+
+
+class FeaturedPublishError(Exception):
+    """Base error raised when publishing the featured list to the store fails."""
+
+    def __init__(self, message: str, status_code: int = 500):
+        super().__init__(message)
+        self.status_code = status_code
+
+
+class FeaturedDeleteError(FeaturedPublishError):
+    """Raised when deleting the currently featured snaps fails."""
+
+    def __init__(self, status_code: int):
+        super().__init__(
+            f"Failed to delete current featured snaps (status {status_code}).",
+            status_code=400,
+        )
+        self.upstream_status_code = status_code
+
+
+class FeaturedUpdateError(FeaturedPublishError):
+    """Raised when updating the store with the new featured list fails."""
+
+    def __init__(self, status_code: int):
+        resolved_status = status_code if status_code in (401, 403) else 500
+        super().__init__(
+            f"Failed to update featured snaps in store (status {status_code}).",
+            status_code=resolved_status,
+        )
+        self.upstream_status_code = status_code
 
 
 def get_snap_by_name(name: str) -> Snap | None:
@@ -97,16 +140,113 @@ def get_slice_snaps(slice: str) -> list[Snap]:
     return snaps
 
 
+def acquire_featured_selection_lock() -> bool:
+    """Acquire a durable lock coordinating featured store/history updates."""
+    now = datetime.now(timezone.utc)
+    lock_row = db.session.query(Settings).filter(
+        Settings.key == FEATURED_SELECTION_LOCK_KEY
+    ).first()
+
+    if lock_row:
+        acquired_at = None
+        try:
+            acquired_at = datetime.fromisoformat(str(lock_row.value))
+        except (TypeError, ValueError):
+            acquired_at = None
+
+        if acquired_at and acquired_at.tzinfo is None:
+            acquired_at = acquired_at.replace(tzinfo=timezone.utc)
+
+        if acquired_at and (now - acquired_at) <= FEATURED_SELECTION_LOCK_TTL:
+            return False
+
+        db.session.delete(lock_row)
+        db.session.commit()
+
+    db.session.add(Settings(key=FEATURED_SELECTION_LOCK_KEY, value=now.isoformat()))
+    try:
+        db.session.commit()
+        return True
+    except IntegrityError:
+        db.session.rollback()
+        return False
+
+
+def release_featured_selection_lock() -> None:
+    """Release the durable featured selection lock if it exists."""
+    lock_row = db.session.query(Settings).filter(
+        Settings.key == FEATURED_SELECTION_LOCK_KEY
+    ).first()
+    if lock_row:
+        db.session.delete(lock_row)
+        db.session.commit()
+
+
+def get_current_featured_snap_ids() -> list:
+    """Fetch the currently featured snap IDs from the store."""
+    snaps = device_gateway.get_featured_snaps()
+    currently_featured_snaps = snaps.get("_embedded", {}).get("clickindex:package", [])
+    return [snap["snap_id"] for snap in currently_featured_snaps]
+
+
+def publish_featured_snaps(token: str, new_snap_ids: list) -> list:
+    """
+    Replace the live featured list in the store with *new_snap_ids*.
+
+    The store's update (PUT) endpoint does not replace the featured list, it
+    only adds/updates entries, so the currently featured snaps must be
+    deleted first. If the subsequent update fails, a best-effort restore of
+    the previous list is attempted before raising.
+
+    Returns the snap IDs that were featured before this call.
+    Raises FeaturedDeleteError or FeaturedUpdateError on failure.
+    """
+    current_ids = get_current_featured_snap_ids()
+
+    if current_ids:
+        delete_resp = publisher_gateway.delete_featured_snaps(
+            token, {"packages": current_ids}
+        )
+        if delete_resp.status_code != 201:
+            raise FeaturedDeleteError(delete_resp.status_code)
+
+    update_resp = publisher_gateway.update_featured_snaps(
+        token, {"packages": new_snap_ids}
+    )
+    if update_resp.status_code not in (200, 201):
+        rollback_featured_snaps(current_ids, token)
+        raise FeaturedUpdateError(update_resp.status_code)
+
+    return current_ids
+
+
+def rollback_featured_snaps(previous_ids: list, token: str) -> None:
+    """Best-effort restore of the store's featured list to *previous_ids*."""
+    try:
+        publisher_gateway.update_featured_snaps(token, {"packages": previous_ids})
+    except Exception:
+        logger.exception("Failed to roll back featured list in store.")
+
+
 def record_featured_history(
     events: list[dict], is_manual: bool
 ) -> list[FeaturedHistory]:
     """
     Records featured-history events.
     """
-    featured_at = datetime.utcnow()
+    featured_at = datetime.now(timezone.utc).replace(tzinfo=None)
+    snap_ids = [event["snap_id"] for event in events]
+    snaps = {
+        snap.snap_id: snap
+        for snap in db.session.query(Snap).filter(Snap.snap_id.in_(snap_ids))
+    }
     entries = [
         FeaturedHistory(
             snap_id=event["snap_id"],
+            title=getattr(snaps.get(event["snap_id"]), "title", None),
+            name=getattr(snaps.get(event["snap_id"]), "name", None),
+            publisher=getattr(snaps.get(event["snap_id"]), "publisher", None),
+            icon=getattr(snaps.get(event["snap_id"]), "icon", None),
             featured_at=featured_at,
             is_manual=is_manual,
             selection_reason=event.get("selection_reason"),
@@ -122,6 +262,66 @@ def record_featured_history(
     return entries
 
 
+def get_latest_featured_events(snap_ids: list[str]) -> dict[str, dict]:
+    """
+    Returns the most recent featured event for each of the given snaps, keyed
+    by snap_id. Snaps with no recorded history are absent from the result.
+    """
+    if not snap_ids:
+        return {}
+
+    ranked = (
+        select(
+            FeaturedHistory.snap_id,
+            FeaturedHistory.featured_at,
+            FeaturedHistory.is_manual,
+            FeaturedHistory.selection_reason,
+            func.row_number()
+            .over(
+                partition_by=FeaturedHistory.snap_id,
+                order_by=(
+                    FeaturedHistory.featured_at.desc(),
+                    FeaturedHistory.id.desc(),
+                ),
+            )
+            .label("rank"),
+        )
+        .where(FeaturedHistory.snap_id.in_(snap_ids))
+        .subquery()
+    )
+
+    rows = db.session.execute(select(ranked).where(ranked.c.rank == 1)).all()
+
+    return {
+        row.snap_id: {
+            "featured_at": row.featured_at.isoformat(),
+            "is_manual": row.is_manual,
+            "selection_reason": row.selection_reason,
+        }
+        for row in rows
+    }
+
+
+def _featured_history_event(row: FeaturedHistory) -> dict:
+    return {
+        "snap_id": row.snap_id,
+        "featured_at": row.featured_at.isoformat(),
+        "is_manual": row.is_manual,
+        "selection_reason": row.selection_reason,
+        "title": row.title,
+        "name": row.name,
+        "publisher": row.publisher,
+        "icon": row.icon,
+    }
+
+
+def _featured_history_query():
+    return db.session.query(FeaturedHistory).order_by(
+        FeaturedHistory.featured_at.desc(),
+        FeaturedHistory.id.desc(),
+    )
+
+
 def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
     """
     Returns featured history for the given snaps, grouped by snap_id with each
@@ -130,27 +330,22 @@ def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
     if not snap_ids:
         return {}
 
-    rows = (
-        db.session.query(FeaturedHistory)
-        .filter(FeaturedHistory.snap_id.in_(snap_ids))
-        .order_by(
-            FeaturedHistory.featured_at.desc(),
-            FeaturedHistory.id.desc(),
-        )
-        .all()
-    )
+    rows = _featured_history_query().filter(
+        FeaturedHistory.snap_id.in_(snap_ids)
+    ).all()
 
     history: dict[str, list[dict]] = {}
     for row in rows:
         history.setdefault(row.snap_id, []).append(
-            {
-                "featured_at": row.featured_at.isoformat(),
-                "is_manual": row.is_manual,
-                "selection_reason": row.selection_reason,
-            }
+            _featured_history_event(row)
         )
 
     return history
+
+
+def get_all_featured_history(limit: int = 200) -> list[dict]:
+    rows = _featured_history_query().limit(limit).all()
+    return [_featured_history_event(row) for row in rows]
 
 
 def add_pipeline_step_log(step_name: str, status: bool, message: str = ""):
@@ -204,6 +399,7 @@ def get_most_recent_pipeline_step_logs():
             PipelineSteps.FILTER: "Filter",
             PipelineSteps.COLLECT: "Collect",
             PipelineSteps.EXTRA_FIELDS: "Extra fields",
+            PipelineSteps.FEATURED: "Featured",
         }
 
         step_info = {

@@ -1,7 +1,7 @@
 import logging
 import sys
 import os
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, timezone
 from time import sleep
 from collector.collect import collect_initial_snap_data
 from collector.filter import filter_snaps_meeting_minimum_criteria
@@ -22,6 +22,8 @@ logger = logging.getLogger("collector")
 # TODO: This should be a setting
 PIPELINE_UPDATE_THRESHOLD = timedelta(hours=12)
 
+FEATURED_UPDATE_INTERVAL_DEFAULT = 30  # days
+
 INITIAL_STEP_INTERVAL = 1 * 3600   # 1 hour in seconds
 
 
@@ -33,6 +35,35 @@ def _pipeline_ran_recently() -> bool:
     last_update_time = datetime.fromisoformat(str(last_update.value))
     logger.info(f"Last update was at {last_update_time}")
     return datetime.now() - last_update_time < PIPELINE_UPDATE_THRESHOLD
+
+
+def _featured_ran_recently() -> bool:
+    """
+    Return True if the automated featured selection ran within the configured
+    interval (default 30 days, overridable via the featured_update_interval_days
+    setting in the Settings table).
+    """
+    last = get_setting("featured_last_updated")
+    if not last or not last.value:
+        return False
+    interval_setting = get_setting("featured_update_interval_days")
+    interval_days = (
+        int(interval_setting.value)
+        if interval_setting and interval_setting.value is not None
+        else FEATURED_UPDATE_INTERVAL_DEFAULT
+    )
+    last_time = datetime.fromisoformat(str(last.value))
+    if last_time.tzinfo is None:
+        last_time = last_time.replace(tzinfo=timezone.utc)
+    delta = timedelta(days=interval_days)
+    logger.info(
+        "Featured snaps last updated at %s (interval: %d days).",
+        last_time,
+        interval_days,
+    )
+    # featured_last_updated is stored as a timezone-aware ISO string
+    # (see featured_selector.py), so the comparison must be aware too.
+    return datetime.now(timezone.utc) - last_time < delta
 
 
 def collect_data(force_update: bool = False):
@@ -80,6 +111,8 @@ def collector_service():
 
     The initial data collection step runs every hour. The remaining pipeline
     steps (filter, extra_fields, score) run at most once every 12 hours.
+    The featured selection step runs at most once per configured interval
+    (default 30 days).
     """
     try:
         logger.info("Starting collector service...")
@@ -107,6 +140,22 @@ def collector_service():
                 set_setting("last_updated", datetime.now().isoformat())
                 db.session.commit()
                 logger.info("Full data collection pipeline complete.")
+
+                # Featured selection runs after a complete pipeline, subject to
+                # its own monthly cadence.
+                if not _featured_ran_recently():
+                    logger.info("Running automated featured snap selection.")
+                    try:
+                        from collector.featured_selector import select_featured_snaps
+                        select_featured_snaps()
+                    except Exception as exc:
+                        logger.error(
+                            "Featured selection failed (service continues): %s", exc
+                        )
+                else:
+                    logger.info(
+                        "Featured snaps updated recently. Skipping selection."
+                    )
 
             logger.info(f"Sleeping for {INITIAL_STEP_INTERVAL} seconds...")
             sleep(INITIAL_STEP_INTERVAL)

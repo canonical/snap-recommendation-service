@@ -1,44 +1,63 @@
+import threading
 from datetime import datetime, timedelta, timezone
-from flask import Blueprint
+
 import flask
-from snaprecommend.models import (
-    Snap,
-    RecommendationCategory,
-    EditorialSlice,
+from flask import Blueprint
+
+from collector.main import (
+    calculate_scores,
+    collect_initial_snap_data,
+    fetch_extra_fields,
+    filter_snaps_meeting_minimum_criteria,
 )
-from snaprecommend.logic import (
-    get_category_top_snaps,
-    get_slice_snaps,
-    get_all_categories,
-    get_all_slices,
-    get_excluded_snaps,
-    include_snap as include_snap_globally,
-    get_snap_by_name,
-    get_most_recent_pipeline_step_logs,
-    exclude_snap as exclude_snap_globally,
-)
-from snaprecommend.auth.decorators import login_required
+from snaprecommend import db
+from snaprecommend.auth.decorators import admin_required, login_required
 from snaprecommend.editorials import (
-    get_all_editorial_slices,
-    get_editorial_slice_with_snaps,
+    add_snap_to_editorial_slice,
     create_editorial_slice,
     delete_editorial_slice,
-    add_snap_to_editorial_slice,
+    get_all_editorial_slices,
+    get_editorial_slice_with_snaps,
     remove_snap_from_editorial_slice,
     update_editorial_slice,
 )
-from snaprecommend.settings import get_setting
-from snaprecommend.utils import api_response
-from snaprecommend.models import PipelineSteps
-import threading
-from collector.main import (
-    collect_initial_snap_data,
-    filter_snaps_meeting_minimum_criteria,
-    fetch_extra_fields,
-    calculate_scores,
+from snaprecommend.logic import (
+    exclude_snap as exclude_snap_globally,
 )
+from snaprecommend.logic import (
+    get_all_categories,
+    get_all_slices,
+    get_category_top_snaps,
+    get_excluded_snaps,
+    get_most_recent_pipeline_step_logs,
+    get_slice_snaps,
+    get_snap_by_name,
+)
+from snaprecommend.logic import (
+    include_snap as include_snap_globally,
+)
+from snaprecommend.models import (
+    EditorialSlice,
+    PipelineSteps,
+    RecommendationCategory,
+    Settings,
+    Snap,
+)
+from snaprecommend.settings import get_setting, get_settings_by_keys
+from snaprecommend.utils import api_response
 
 api_blueprint = Blueprint("api", __name__)
+
+_FEATURED_SETTINGS_INT_BOUNDS = {
+    "featured_update_interval_days": (1, 3650),
+    "featured_candidate_pool_size": (3, 1000),
+    "featured_category_cap": (1, 100),
+    "featured_recency_days": (1, 3650),
+    "featured_history_window_days": (1, 3650),
+}
+_FEATURED_SETTINGS_FLOAT_BOUNDS = {
+    "featured_min_rating": (0.0, 5.0),
+}
 
 
 @api_blueprint.route("/stats")
@@ -306,7 +325,10 @@ def run_pipeline_step():
 
     def run_step(app_context):
         app_context.push()
-        step_function()
+        try:
+            step_function()
+        finally:
+            app_context.pop()
 
     threading.Thread(
         target=run_step,
@@ -318,6 +340,174 @@ def run_pipeline_step():
         "status": "success",
         "message": f"Pipeline step '{step_name}' started, please don't trigger again until last run time is updated",
     }, 200
+
+
+@api_blueprint.route("/featured/select", methods=["POST"])
+@login_required
+@admin_required
+def trigger_featured_selection():
+    """
+    Trigger an automated featured snap selection immediately. The publisher
+    token used to update the store list is always resolved from the
+    environment (see collector.featured_selector.select_featured_snaps).
+    Runs in a background thread to avoid blocking the request.
+    """
+    from collector.featured_selector import select_featured_snaps
+    from collector.main import _featured_ran_recently
+
+    payload = flask.request.get_json(silent=True)
+    if payload is None:
+        payload = {}
+    if not isinstance(payload, dict):
+        return flask.jsonify({
+            "status": "error",
+            "message": "Request body must be a JSON object.",
+        }), 400
+
+    unknown = set(payload.keys()) - {"force"}
+    if unknown:
+        return flask.jsonify({
+            "status": "error",
+            "message": f"Unknown field(s): {', '.join(sorted(unknown))}",
+        }), 400
+
+    force = payload.get("force", False)
+    if "force" in payload and not isinstance(force, bool):
+        return flask.jsonify({
+            "status": "error",
+            "message": "'force' must be a JSON boolean.",
+        }), 400
+
+    if not force and _featured_ran_recently():
+        return flask.jsonify({
+            "status": "skipped",
+            "message": (
+                "Featured snaps were updated recently. "
+                "Pass {\"force\": true} to override."
+            ),
+        }), 200
+
+    app_ctx = flask.current_app.app_context()
+
+    def _run(ctx):
+        ctx.push()
+        try:
+            select_featured_snaps()
+        finally:
+            ctx.pop()
+
+    threading.Thread(target=_run, args=(app_ctx,), daemon=True).start()
+
+    return flask.jsonify({
+        "status": "success",
+        "message": "Automated featured snap selection started.",
+    }), 200
+
+
+@api_blueprint.route("/featured/settings", methods=["GET"])
+@login_required
+def get_featured_settings():
+    """Return the current featured-selection configuration."""
+    keys = [
+        "featured_update_interval_days",
+        "featured_candidate_pool_size",
+        "featured_category_cap",
+        "featured_min_rating",
+        "featured_recency_days",
+        "featured_history_window_days",
+        "featured_last_updated",
+    ]
+    settings = get_settings_by_keys(keys)
+    result = {key: s.value if s else None for key, s in settings.items()}
+    return flask.jsonify(result), 200
+
+
+@api_blueprint.route("/featured/settings", methods=["PATCH"])
+@login_required
+@admin_required
+def update_featured_settings():
+    """
+    Update one or more featured-selection settings.
+    Only the known configuration keys are accepted.
+    """
+    allowed_keys = {
+        "featured_update_interval_days",
+        "featured_candidate_pool_size",
+        "featured_category_cap",
+        "featured_min_rating",
+        "featured_recency_days",
+        "featured_history_window_days",
+    }
+    data = flask.request.get_json(silent=True)
+    if data is None:
+        data = {}
+    if not isinstance(data, dict):
+        return flask.jsonify({
+            "status": "error",
+            "message": "Request body must be a JSON object.",
+        }), 400
+
+    unknown = set(data.keys()) - allowed_keys
+    if unknown:
+        return flask.jsonify({
+            "status": "error",
+            "message": f"Unknown setting(s): {', '.join(sorted(unknown))}",
+        }), 400
+
+    validated: dict = {}
+    for key, value in data.items():
+        if key in _FEATURED_SETTINGS_INT_BOUNDS:
+            if isinstance(value, bool) or not isinstance(value, int):
+                return flask.jsonify({
+                    "status": "error",
+                    "message": f"'{key}' must be an integer.",
+                }), 400
+
+            min_value, max_value = _FEATURED_SETTINGS_INT_BOUNDS[key]
+            if value < min_value or value > max_value:
+                return flask.jsonify({
+                    "status": "error",
+                    "message": (
+                        f"'{key}' must be between {min_value} and {max_value}."
+                    ),
+                }), 400
+
+            validated[key] = value
+            continue
+
+        if key in _FEATURED_SETTINGS_FLOAT_BOUNDS:
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                return flask.jsonify({
+                    "status": "error",
+                    "message": f"'{key}' must be a number.",
+                }), 400
+
+            min_value, max_value = _FEATURED_SETTINGS_FLOAT_BOUNDS[key]
+            value = float(value)
+            if value < min_value or value > max_value:
+                return flask.jsonify({
+                    "status": "error",
+                    "message": (
+                        f"'{key}' must be between {min_value} and {max_value}."
+                    ),
+                }), 400
+
+            validated[key] = value
+
+    if validated:
+        existing_rows = Settings.query.filter(Settings.key.in_(validated.keys())).all()
+        by_key = {row.key: row for row in existing_rows}
+
+        for key, value in validated.items():
+            row = by_key.get(key)
+            if row:
+                row.value = value
+            else:
+                db.session.add(Settings(key=key, value=value))
+
+        db.session.commit()
+
+    return flask.jsonify({"status": "success"}), 200
 
 
 @api_blueprint.route("/exclude_snap", methods=["POST"])

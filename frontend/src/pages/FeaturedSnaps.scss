@@ -1,0 +1,35 @@
+@import "vanilla-framework/scss/settings";
+
+.p-panel__content.featured-snaps__content {
+    overflow: visible;
+    padding-bottom: 0;
+}
+
+.featured-snaps__grid {
+    grid-auto-rows: 1fr;
+}
+
+.featured-snaps__actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 10;
+    padding: $sp-small 0;
+    background: var(--vf-color-background-default);
+    border-top: 1px solid var(--vf-color-border-low-contrast);
+
+    .row {
+        align-items: center;
+    }
+
+    .p-text--small {
+        margin-bottom: 0;
+        padding-top: 0;
+    }
+
+    &-end {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: $sp-medium;
+    }
+}

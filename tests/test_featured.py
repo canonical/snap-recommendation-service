@@ -1,11 +1,16 @@
 import pytest
+from datetime import datetime
 from unittest.mock import patch, MagicMock
 from flask import Flask
 from sqlalchemy.pool import StaticPool
 
 from snaprecommend import db
-from snaprecommend.models import FeaturedHistory
-from snaprecommend.logic import record_featured_history, get_featured_history
+from snaprecommend.models import FeaturedHistory, Snap
+from snaprecommend.logic import (
+    record_featured_history,
+    get_latest_featured_events,
+    get_featured_history,
+)
 from snaprecommend.featuredsnaps.api import featured_blueprint
 from snaprecommend.featuredsnaps.utils import get_featured_snaps
 
@@ -105,7 +110,7 @@ def test_manual_and_automated_share_one_shape(app):
         assert row.selection_reason is not None
 
 
-def test_get_featured_history_groups_newest_first(app):
+def test_get_latest_featured_events_returns_newest(app):
     record_featured_history(
         [{"snap_id": "snap1", "selection_reason": {"n": 1}}], is_manual=False
     )
@@ -117,18 +122,16 @@ def test_get_featured_history_groups_newest_first(app):
         is_manual=True,
     )
 
-    history = get_featured_history(["snap1", "snap2"])
+    latest = get_latest_featured_events(["snap1", "snap2"])
 
-    assert set(history.keys()) == {"snap1", "snap2"}
-    assert len(history["snap1"]) == 2
-    assert history["snap1"][0]["selection_reason"]["n"] == 2
-    assert history["snap1"][0]["is_manual"] is True
-    assert history["snap1"][1]["selection_reason"]["n"] == 1
-    assert history["snap2"][0]["selection_reason"]["n"] == 3
+    assert set(latest.keys()) == {"snap1", "snap2"}
+    assert latest["snap1"]["selection_reason"]["n"] == 2
+    assert latest["snap1"]["is_manual"] is True
+    assert latest["snap2"]["selection_reason"]["n"] == 3
 
 
-def test_get_featured_history_empty(app):
-    assert get_featured_history([]) == {}
+def test_get_latest_featured_events_empty(app):
+    assert get_latest_featured_events([]) == {}
 
 
 @patch("snaprecommend.featuredsnaps.utils.device_gateway")
@@ -161,17 +164,17 @@ def test_get_featured_snaps_attaches_reason_and_history(mock_gateway, app):
 
     assert by_id["snap1"]["is_manual"] is True
     assert by_id["snap1"]["selection_reason"]["actor"] == "jane@canonical.com"
-    assert len(by_id["snap1"]["featured_history"]) == 1
+    assert by_id["snap1"]["featured_at"] is not None
     assert by_id["snap1"]["icon_url"] == "http://example.com/i.png"
 
     assert by_id["snap2"]["selection_reason"] is None
     assert by_id["snap2"]["is_manual"] is None
-    assert by_id["snap2"]["featured_history"] == []
+    assert by_id["snap2"]["featured_at"] is None
 
 
 @patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
-@patch("snaprecommend.featuredsnaps.api.publisher_gateway")
-@patch("snaprecommend.featuredsnaps.api.device_gateway")
+@patch("snaprecommend.logic.publisher_gateway")
+@patch("snaprecommend.logic.device_gateway")
 def test_post_featured_records_manual_history(
     mock_device, mock_publisher, _mock_auth, admin_client
 ):
@@ -201,8 +204,8 @@ def test_post_featured_records_manual_history(
 
 @patch("snaprecommend.featuredsnaps.api.record_featured_history")
 @patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
-@patch("snaprecommend.featuredsnaps.api.publisher_gateway")
-@patch("snaprecommend.featuredsnaps.api.device_gateway")
+@patch("snaprecommend.logic.publisher_gateway")
+@patch("snaprecommend.logic.device_gateway")
 def test_post_featured_reverts_store_when_history_fails(
     mock_device, mock_publisher, _mock_auth, mock_record, admin_client
 ):
@@ -229,3 +232,101 @@ def test_post_featured_reverts_store_when_history_fails(
     assert revert_call.args[1] == {"packages": ["old1"]}
 
     assert db.session.query(FeaturedHistory).count() == 0
+
+
+def _make_snap(snap_id: str, **overrides) -> Snap:
+    fields = {
+        "snap_id": snap_id,
+        "title": "Multipass",
+        "name": "multipass",
+        "version": "1.0",
+        "summary": "Ubuntu VMs on demand.",
+        "description": "Ubuntu VMs on demand for any workstation.",
+        "icon": "https://example.com/multipass.png",
+        "publisher": "Canonical",
+        "revision": 1,
+        "links": {},
+        "media": [],
+        "developer_validation": "starred",
+        "license": "GPL-3.0",
+        "last_updated": datetime(2026, 8, 1),
+    }
+    fields.update(overrides)
+    return Snap(**fields)
+
+
+def test_history_records_snap_details(app):
+    """Snap details are copied onto the row at write time."""
+    db.session.add(_make_snap("snap1"))
+    db.session.commit()
+
+    record_featured_history([{"snap_id": "snap1"}], is_manual=False)
+
+    row = db.session.query(FeaturedHistory).one()
+    assert row.title == "Multipass"
+    assert row.name == "multipass"
+    assert row.publisher == "Canonical"
+    assert row.icon == "https://example.com/multipass.png"
+
+
+def test_history_survives_snap_deletion(app):
+    """A deleted snap keeps its name, timestamp and reason in the history."""
+    db.session.add(_make_snap("snap1"))
+    db.session.commit()
+
+    record_featured_history(
+        [{"snap_id": "snap1", "selection_reason": {"role": "top-3"}}],
+        is_manual=False,
+    )
+
+    db.session.delete(db.session.query(Snap).filter_by(snap_id="snap1").one())
+    db.session.commit()
+
+    history = get_featured_history(["snap1"])
+    assert len(history["snap1"]) == 1
+
+    event = history["snap1"][0]
+    assert event["title"] == "Multipass"
+    assert event["name"] == "multipass"
+    assert event["selection_reason"] == {"role": "top-3"}
+    assert event["featured_at"]
+
+
+def test_history_written_for_snap_missing_from_snap_table(app):
+    """A snap we never collected still records, with details left empty."""
+    record_featured_history([{"snap_id": "unknown"}], is_manual=True)
+
+    event = get_featured_history(["unknown"])["unknown"][0]
+    assert event["title"] is None
+    assert event["is_manual"] is True
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+def test_history_endpoint_includes_deleted_snaps(_mock_auth, app, admin_client):
+    """The endpoint returns events for snaps no longer featured or present."""
+    db.session.add(_make_snap("snap1"))
+    db.session.commit()
+    record_featured_history(
+        [{"snap_id": "snap1", "selection_reason": {"role": "fill"}}],
+        is_manual=False,
+    )
+    db.session.delete(db.session.query(Snap).filter_by(snap_id="snap1").one())
+    db.session.commit()
+
+    response = admin_client.get("/featured/history")
+
+    assert response.status_code == 200
+    events = response.get_json()
+    assert len(events) == 1
+    assert events[0]["snap_id"] == "snap1"
+    assert events[0]["title"] == "Multipass"
+    assert events[0]["selection_reason"] == {"role": "fill"}
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+def test_history_endpoint_limit_is_capped(_mock_auth, app, admin_client):
+    """A caller cannot ask for more than the maximum."""
+    record_featured_history([{"snap_id": "snap1"}], is_manual=False)
+
+    assert admin_client.get("/featured/history?limit=99999").status_code == 200
+    assert admin_client.get("/featured/history?limit=0").status_code == 200

@@ -1,12 +1,17 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from flask import Flask
+
 from snaprecommend.api import (
     api_blueprint,
-    get_category_top_snaps,
     format_response,
+    get_category_top_snaps,
+    trigger_featured_selection,
+    update_featured_settings,
 )
-from snaprecommend.models import Snap, RecommendationCategory, EditorialSlice
+from snaprecommend.featuredsnaps.api import post_featured_snaps
+from snaprecommend.models import EditorialSlice, RecommendationCategory, Snap
 from tests.mock_data import mock_snap
 
 
@@ -16,6 +21,7 @@ def app():
     Create a Flask application for testing.
     """
     app = Flask(__name__)
+    app.secret_key = "test"
     app.register_blueprint(api_blueprint)
     app.app_context().push()
     return app
@@ -306,3 +312,117 @@ def test_stats_endpoint_empty(mock_query, client):
         "new_today": 0,
         "updated_today": 0,
     }
+
+
+def test_trigger_featured_selection_rejects_non_object_payload(app):
+    raw_view = trigger_featured_selection.__wrapped__.__wrapped__
+    with app.test_request_context(
+        "/featured/select",
+        method="POST",
+        json=["not", "an", "object"],
+    ):
+        response, status = raw_view()
+
+    assert status == 400
+    assert response.get_json()["message"] == "Request body must be a JSON object."
+
+
+def test_trigger_featured_selection_rejects_non_boolean_force(app):
+    raw_view = trigger_featured_selection.__wrapped__.__wrapped__
+    with app.test_request_context(
+        "/featured/select",
+        method="POST",
+        json={"force": "false"},
+    ):
+        response, status = raw_view()
+
+    assert status == 400
+    assert response.get_json()["message"] == "'force' must be a JSON boolean."
+
+
+def test_update_featured_settings_rejects_non_object_payload(app):
+    raw_view = update_featured_settings.__wrapped__.__wrapped__
+    with app.test_request_context(
+        "/featured/settings",
+        method="PATCH",
+        json=[{"featured_update_interval_days": 30}],
+    ):
+        response, status = raw_view()
+
+    assert status == 400
+    assert response.get_json()["message"] == "Request body must be a JSON object."
+
+
+def test_update_featured_settings_rejects_invalid_range(app):
+    raw_view = update_featured_settings.__wrapped__.__wrapped__
+    with app.test_request_context(
+        "/featured/settings",
+        method="PATCH",
+        json={"featured_update_interval_days": 0},
+    ):
+        response, status = raw_view()
+
+    assert status == 400
+    assert "between 1 and 3650" in response.get_json()["message"]
+
+
+@patch("snaprecommend.featuredsnaps.api.acquire_featured_selection_lock")
+def test_post_featured_snaps_rejects_when_lock_busy(mock_acquire_lock, app):
+    mock_acquire_lock.return_value = False
+    raw_view = post_featured_snaps.__wrapped__.__wrapped__.__wrapped__
+
+    with app.test_request_context(
+        "/",
+        method="POST",
+        data={"snaps": "snap-a,snap-b"},
+    ):
+        response = raw_view()
+
+    assert response.status_code == 409
+    assert response.get_json()["message"] == "Featured update already in progress. Please retry."
+
+
+@patch("snaprecommend.featuredsnaps.api.release_featured_selection_lock")
+@patch("snaprecommend.featuredsnaps.api.record_featured_history")
+@patch("snaprecommend.logic.publisher_gateway")
+@patch("snaprecommend.logic.device_gateway")
+@patch("snaprecommend.featuredsnaps.api.acquire_featured_selection_lock")
+def test_post_featured_snaps_uses_shared_lock_for_store_and_history(
+    mock_acquire_lock,
+    mock_device_gateway,
+    mock_publisher_gateway,
+    mock_record_featured_history,
+    mock_release_lock,
+    app,
+):
+    mock_acquire_lock.return_value = True
+    mock_device_gateway.get_featured_snaps.return_value = {
+        "_embedded": {"clickindex:package": [{"snap_id": "existing"}]},
+        "_links": {},
+    }
+
+    delete_response = MagicMock()
+    delete_response.status_code = 201
+    update_response = MagicMock()
+    update_response.status_code = 201
+    mock_publisher_gateway.delete_featured_snaps.return_value = delete_response
+    mock_publisher_gateway.update_featured_snaps.return_value = update_response
+
+    raw_view = post_featured_snaps.__wrapped__.__wrapped__.__wrapped__
+    with app.test_request_context(
+        "/",
+        method="POST",
+        data={"snaps": "snap-a,snap-b"},
+    ):
+        from flask import session
+        session["developer_token"] = "token"
+        session["publisher"] = {
+            "email": "admin@example.com",
+            "nickname": "admin",
+        }
+        response = raw_view()
+
+    assert response.status_code == 200
+    mock_acquire_lock.assert_called_once_with()
+    mock_release_lock.assert_called_once_with()
+    mock_record_featured_history.assert_called_once()
