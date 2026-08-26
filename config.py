@@ -11,3 +11,4 @@ class Config:
     SQLALCHEMY_DATABASE_URI = os.environ.get("POSTGRESQL_DB_CONNECT_STRING")
     SQLALCHEMY_ECHO = os.environ.get("FLASK_DEBUG_DB") or False
     SECRET_KEY = os.environ.get("FLASK_SECRET_KEY")
+    SNAP_SELECTION_WEBHOOK_URL = os.environ.get("FLASK_SNAP_SELECTION_WEBHOOK_URL")

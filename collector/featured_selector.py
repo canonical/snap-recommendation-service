@@ -3,6 +3,8 @@ import os
 import random
 from datetime import datetime, timedelta, timezone
 
+import requests
+
 from collector.score import calculate_dev_score, calculate_metadata_score
 from config import MACAROON_ENV_PATH
 from snaprecommend import db
@@ -40,6 +42,15 @@ def _is_canonical(snap: Snap) -> bool:
 
 
 FEATURED_PUBLISHER_TOKEN_ENV = "FLASK_FEATURED_PUBLISHER_TOKEN"
+
+
+def _notify_webhook(webhook_url: str, payload: dict) -> None:
+    """POST *payload* to *webhook_url*; log but never raise on failure."""
+    try:
+        response = requests.post(webhook_url, json=payload, timeout=10)
+        response.raise_for_status()
+    except Exception as exc:
+        logger.warning("Failed to notify webhook at %s: %s", webhook_url, exc)
 
 
 def _cfg(keys: list[str]) -> dict:
@@ -361,6 +372,10 @@ def select_featured_snaps() -> None:
         )
         return
 
+    from flask import current_app
+
+    webhook_url = current_app.config.get("SNAP_SELECTION_WEBHOOK_URL")
+
     try:
         resolved_token = (
             os.environ.get(FEATURED_PUBLISHER_TOKEN_ENV)
@@ -379,6 +394,8 @@ def select_featured_snaps() -> None:
             )
             logger.warning(message)
             add_pipeline_step_log(PipelineSteps.FEATURED, False, message)
+            if webhook_url:
+                _notify_webhook(webhook_url, {"success": False, "error": message})
             return
 
         previous_ids = publish_featured_snaps(resolved_token, snap_ids)
@@ -397,9 +414,30 @@ def select_featured_snaps() -> None:
             f"Selected and published {len(snap_ids)} featured snaps",
         )
 
+        if webhook_url:
+            snaps_by_id = {
+                e["snap_id"]: e for e in events
+            }
+            snap_objects = (
+                db.session.query(Snap)
+                .filter(Snap.snap_id.in_(snap_ids))
+                .all()
+            )
+            snaps_payload = [
+                {"name": snap.name, "snap_id": snap.snap_id}
+                for snap in snap_objects
+                if snap.snap_id in snaps_by_id
+            ]
+            _notify_webhook(
+                webhook_url,
+                {"success": True, "snaps": snaps_payload},
+            )
+
     except Exception as exc:
         logger.error("Featured snap selection failed: %s", exc)
         add_pipeline_step_log(PipelineSteps.FEATURED, False, str(exc))
+        if webhook_url:
+            _notify_webhook(webhook_url, {"success": False, "error": str(exc)})
         raise
     finally:
         release_featured_selection_lock()
