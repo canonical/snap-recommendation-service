@@ -59,7 +59,7 @@ def score():
 @click.option(
     "--force",
     is_flag=True,
-    help="Run selection even if featured snaps were updated recently",
+    help="Run selection even if it is not due according to the schedule",
 )
 @click.option(
     "--dry-run",
@@ -78,7 +78,10 @@ def featured(force, dry_run, notify_webhook):
         run_selection,
         select_featured_snaps,
     )
-    from collector.main import _featured_ran_recently
+    from collector.main import (
+        featured_schedule_description,
+        featured_selection_due,
+    )
     from flask import current_app
     from snaprecommend.models import Snap
 
@@ -124,9 +127,11 @@ def featured(force, dry_run, notify_webhook):
                 click.echo(f"\nWebhook notified at {webhook_url}")
         return
 
-    if not force and _featured_ran_recently():
+    if not force and not featured_selection_due():
         click.echo(
-            "Featured snaps were updated recently. Use --force to override."
+            "Featured selection is not due yet "
+            f"(schedule: {featured_schedule_description()}). "
+            "Use --force to override."
         )
         return
 
