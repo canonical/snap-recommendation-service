@@ -49,7 +49,6 @@ from snaprecommend.utils import api_response
 api_blueprint = Blueprint("api", __name__)
 
 _FEATURED_SETTINGS_INT_BOUNDS = {
-    "featured_update_interval_days": (1, 3650),
     "featured_candidate_pool_size": (3, 1000),
     "featured_category_cap": (1, 100),
     "featured_recency_days": (1, 3650),
@@ -353,7 +352,7 @@ def trigger_featured_selection():
     Runs in a background thread to avoid blocking the request.
     """
     from collector.featured_selector import select_featured_snaps
-    from collector.main import _featured_ran_recently
+    from collector.main import featured_selection_due
 
     payload = flask.request.get_json(silent=True)
     if payload is None:
@@ -378,11 +377,11 @@ def trigger_featured_selection():
             "message": "'force' must be a JSON boolean.",
         }), 400
 
-    if not force and _featured_ran_recently():
+    if not force and not featured_selection_due():
         return flask.jsonify({
             "status": "skipped",
             "message": (
-                "Featured snaps were updated recently. "
+                "Featured selection is not due yet according to its schedule. "
                 "Pass {\"force\": true} to override."
             ),
         }), 200
@@ -409,7 +408,6 @@ def trigger_featured_selection():
 def get_featured_settings():
     """Return the current featured-selection configuration."""
     keys = [
-        "featured_update_interval_days",
         "featured_candidate_pool_size",
         "featured_category_cap",
         "featured_min_rating",
@@ -419,6 +417,12 @@ def get_featured_settings():
     ]
     settings = get_settings_by_keys(keys)
     result = {key: s.value if s else None for key, s in settings.items()}
+
+    from collector.main import featured_next_run, featured_schedule_description
+
+    result["featured_schedule"] = featured_schedule_description()
+    result["featured_next_run"] = featured_next_run().isoformat()
+
     return flask.jsonify(result), 200
 
 
@@ -431,7 +435,6 @@ def update_featured_settings():
     Only the known configuration keys are accepted.
     """
     allowed_keys = {
-        "featured_update_interval_days",
         "featured_candidate_pool_size",
         "featured_category_cap",
         "featured_min_rating",

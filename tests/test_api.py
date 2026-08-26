@@ -345,7 +345,7 @@ def test_update_featured_settings_rejects_non_object_payload(app):
     with app.test_request_context(
         "/featured/settings",
         method="PATCH",
-        json=[{"featured_update_interval_days": 30}],
+        json=[{"featured_recency_days": 180}],
     ):
         response, status = raw_view()
 
@@ -358,7 +358,7 @@ def test_update_featured_settings_rejects_invalid_range(app):
     with app.test_request_context(
         "/featured/settings",
         method="PATCH",
-        json={"featured_update_interval_days": 0},
+        json={"featured_recency_days": 0},
     ):
         response, status = raw_view()
 
