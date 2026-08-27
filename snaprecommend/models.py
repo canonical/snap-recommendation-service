@@ -185,7 +185,9 @@ class PipelineStepLog(db.Model):
     id: Mapped[int] = mapped_column(
         Integer, primary_key=True, autoincrement=True
     )
-    step: Mapped[PipelineSteps] = mapped_column(Enum(PipelineSteps))
+    step: Mapped[PipelineSteps] = mapped_column(
+        Enum(PipelineSteps, native_enum=False)
+    )
     success: Mapped[bool] = mapped_column(Boolean)
     message: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(

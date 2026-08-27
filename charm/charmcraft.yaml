@@ -42,4 +42,8 @@ config:
       description: The URL of the ratings backend service.
       type: string
       required: true
+    snap-selection-webhook-url:
+      description: The URL of the Mattermost webhook for snap selection notifications.
+      type: string
+      default: webbot.canonical.com
 
