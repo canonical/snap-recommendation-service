@@ -46,9 +46,23 @@ FEATURED_PUBLISHER_TOKEN_ENV = "FLASK_FEATURED_PUBLISHER_TOKEN"
 
 
 def _notify_webhook(webhook_url: str, payload: dict) -> None:
-    """POST *payload* to *webhook_url*; log but never raise on failure."""
+    """POST a Mattermost-style message to *webhook_url*; log but never raise on failure."""
+    webhook_url = webhook_url.strip()
+    if not webhook_url:
+        return
+    if not webhook_url.startswith(("http://", "https://")):
+        webhook_url = f"https://{webhook_url}"
+
+    if payload.get("success"):
+        snap_lines = "\n".join(
+            f"- **{s['name']}** (`{s['snap_id']}`)" for s in payload.get("snaps", [])
+        )
+        text = f"### Featured Snaps Selection Succeeded\n{snap_lines}"
+    else:
+        text = f"### Featured Snaps Selection Failed\n**Error:** {payload.get('error')}"
+
     try:
-        response = requests.post(webhook_url, json=payload, timeout=10)
+        response = requests.post(webhook_url, json={"text": text}, timeout=10)
         response.raise_for_status()
     except Exception as exc:
         logger.warning("Failed to notify webhook at %s: %s", webhook_url, exc)

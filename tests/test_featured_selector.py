@@ -735,3 +735,47 @@ def test_run_selection_gates_follow_settings(app):
     gates = events[0]["selection_reason"]["gates"]
     assert gates["recency_days"] == 90
     assert gates["category_cap"] == 2
+
+
+def test_notify_webhook_normalizes_url_and_formats_success_text(mock_post=None):
+    from unittest.mock import MagicMock, patch
+
+    from collector.featured_selector import _notify_webhook
+
+    with patch("collector.featured_selector.requests.post") as mock_post:
+        mock_post.return_value = MagicMock(raise_for_status=lambda: None)
+
+        _notify_webhook(
+            "webbot.canonical.com",
+            {"success": True, "snaps": [{"name": "test-snap", "snap_id": "123"}]},
+        )
+
+        args, kwargs = mock_post.call_args
+        assert args[0] == "https://webbot.canonical.com"
+        assert "test-snap" in kwargs["json"]["text"]
+
+
+def test_notify_webhook_formats_failure_text():
+    from unittest.mock import MagicMock, patch
+
+    from collector.featured_selector import _notify_webhook
+
+    with patch("collector.featured_selector.requests.post") as mock_post:
+        mock_post.return_value = MagicMock(raise_for_status=lambda: None)
+
+        _notify_webhook("https://webbot.canonical.com", {"success": False, "error": "boom"})
+
+        _, kwargs = mock_post.call_args
+        assert "boom" in kwargs["json"]["text"]
+
+
+def test_notify_webhook_handles_request_exception():
+    from unittest.mock import patch
+
+    from collector.featured_selector import _notify_webhook
+
+    with patch("collector.featured_selector.requests.post", side_effect=Exception("down")):
+        # Should not raise
+        _notify_webhook("webbot.canonical.com", {"success": False, "error": "fail"})
+
+
