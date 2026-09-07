@@ -42,9 +42,9 @@ def create_app(config_class=Config):
         return "OK"
 
     @app.route("/dashboard/featuredsnaps")
-    @exchange_required
-    @admin_required
     @dashboard_login
+    @admin_required
+    @exchange_required
     def serve_featured_snaps():
         return render_template("index.html")
 

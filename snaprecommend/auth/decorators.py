@@ -49,19 +49,24 @@ def admin_required(func):
 def exchange_required(func):
     @functools.wraps(func)
     def is_exchanged(*args, **kwargs):
-        try:
-            if "exchanged_developer_token" not in flask.session:
-                result = publisher_gateway.exchange_dashboard_macaroons(flask.session)
-                flask.session["developer_token"] = result
-                flask.session["exchanged_developer_token"] = True
-            return flask.make_response(func(*args, **kwargs))
-        except Exception:
-            flask.make_response(
-                {
-                    "success": False,
-                    "error": "Unauthorized",
-                },
-                401,
-            )
+        if "exchanged_developer_token" not in flask.session:
+            try:
+                result = publisher_gateway.exchange_dashboard_macaroons(
+                    flask.session
+                )
+            except Exception:
+                flask.current_app.logger.exception(
+                    "Failed to exchange dashboard macaroons"
+                )
+                return flask.make_response(
+                    {
+                        "success": False,
+                        "error": "Unauthorized",
+                    },
+                    401,
+                )
+            flask.session["developer_token"] = result
+            flask.session["exchanged_developer_token"] = True
+        return flask.make_response(func(*args, **kwargs))
 
     return is_exchanged
