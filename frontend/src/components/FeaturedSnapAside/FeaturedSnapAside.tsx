@@ -154,6 +154,9 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
     const ranking = describeRanking(reason);
     const roleExplanation = explainRole(reason);
     const source = describeSource(snap);
+    const pickedManually = snap.is_snapshot
+        ? snap.picked_manually
+        : snap.is_manual;
     const badge = validationBadge(snapValidation(snap));
     const unrecorded = source === null;
 
@@ -216,7 +219,9 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
                             <Chip
                                 value={source ?? "Not recorded"}
                                 appearance={
-                                    snap.is_manual ? "caution" : "information"
+                                    snap.is_manual && !snap.is_snapshot
+                                        ? "caution"
+                                        : "information"
                                 }
                                 isDense
                                 isReadOnly
@@ -235,7 +240,18 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
                             </p>
                         )}
 
-                        {snap.is_manual && (
+                        {snap.is_snapshot && snap.picked_at && (
+                            <p className="u-text--muted">
+                                Already on the list at this point. It was
+                                originally{" "}
+                                {snap.picked_manually
+                                    ? "added manually"
+                                    : "chosen by the automated run"}{" "}
+                                on {formatDateTime(snap.picked_at)}.
+                            </p>
+                        )}
+
+                        {pickedManually && (
                             <p>
                                 Picked manually, so the automated conditions
                                 were not applied.
@@ -247,7 +263,7 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
                         <FactList rows={featuringFacts} />
                     </Section>
 
-                    {!snap.is_manual && (
+                    {pickedManually === false && (
                         <Section title="Conditions">
                             {!reason?.gates && (
                                 <p className="p-text--small u-text--muted">

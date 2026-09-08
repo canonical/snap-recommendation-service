@@ -107,9 +107,12 @@ def post_featured_snaps():
         }
         previous = set(previous_ids)
         events = [
-            {"snap_id": snap_id, "selection_reason": reason}
+            {
+                "snap_id": snap_id,
+                "selection_reason": reason,
+                "is_snapshot": snap_id in previous,
+            }
             for snap_id in snap_ids
-            if snap_id not in previous
         ]
         if events:
             try:

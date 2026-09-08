@@ -250,6 +250,7 @@ def record_featured_history(
             featured_at=featured_at,
             is_manual=is_manual,
             selection_reason=event.get("selection_reason"),
+            is_snapshot=event.get("is_snapshot", False),
         )
         for event in events
     ]
@@ -287,6 +288,7 @@ def get_latest_featured_events(snap_ids: list[str]) -> dict[str, dict]:
             .label("rank"),
         )
         .where(FeaturedHistory.snap_id.in_(snap_ids))
+        .where(FeaturedHistory.is_snapshot.is_(False))
         .subquery()
     )
 
@@ -337,14 +339,55 @@ def _current_categories(snap_ids: list[str]) -> dict[str, list[str]]:
     return {row.snap_id: category_slugs(row.categories) for row in rows}
 
 
+def _pick_origins(rows: list[FeaturedHistory]) -> dict[int, FeaturedHistory]:
+    snapshot_ids = {row.snap_id for row in rows if row.is_snapshot}
+    if not snapshot_ids:
+        return {}
+
+    picks = (
+        db.session.query(FeaturedHistory)
+        .filter(FeaturedHistory.snap_id.in_(snapshot_ids))
+        .filter(FeaturedHistory.is_snapshot.is_(False))
+        .order_by(FeaturedHistory.featured_at.asc(), FeaturedHistory.id.asc())
+        .all()
+    )
+
+    by_snap: dict[str, list[FeaturedHistory]] = {}
+    for pick in picks:
+        by_snap.setdefault(pick.snap_id, []).append(pick)
+
+    origins = {}
+    for row in rows:
+        if not row.is_snapshot:
+            continue
+        earlier = [
+            pick
+            for pick in by_snap.get(row.snap_id, [])
+            if pick.featured_at <= row.featured_at
+        ]
+        if earlier:
+            origins[row.id] = earlier[-1]
+
+    return origins
+
+
 def _featured_history_event(
-    row: FeaturedHistory, categories: dict[str, list[str]]
+    row: FeaturedHistory,
+    categories: dict[str, list[str]],
+    origins: dict[int, FeaturedHistory] | None = None,
 ) -> dict:
+    origin = (origins or {}).get(row.id)
+
     return {
         "snap_id": row.snap_id,
         "featured_at": _isoformat_utc(row.featured_at),
         "is_manual": row.is_manual,
-        "selection_reason": row.selection_reason,
+        "is_snapshot": row.is_snapshot,
+        "selection_reason": (
+            origin.selection_reason if origin else row.selection_reason
+        ),
+        "picked_at": _isoformat_utc(origin.featured_at) if origin else None,
+        "picked_manually": origin.is_manual if origin else None,
         "title": row.title,
         "name": row.name,
         "publisher": row.publisher,
@@ -381,11 +424,12 @@ def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
     ).all()
 
     categories = _current_categories([row.snap_id for row in rows])
+    origins = _pick_origins(rows)
 
     history: dict[str, list[dict]] = {}
     for row in rows:
         history.setdefault(row.snap_id, []).append(
-            _featured_history_event(row, categories)
+            _featured_history_event(row, categories, origins)
         )
 
     return history
@@ -397,7 +441,10 @@ def get_all_featured_history(limit: int = 200) -> list[dict]:
     """
     rows = _featured_history_query(keep_position_order=True).limit(limit).all()
     categories = _current_categories([row.snap_id for row in rows])
-    return [_featured_history_event(row, categories) for row in rows]
+    origins = _pick_origins(rows)
+    return [
+        _featured_history_event(row, categories, origins) for row in rows
+    ]
 
 
 def add_pipeline_step_log(step_name: str, status: bool, message: str = ""):

@@ -377,6 +377,7 @@ export function describeListRules(subject: FeaturedSnapSubject): ListRule[] {
 
 export function describeSource(subject: {
     is_manual?: boolean | null;
+    is_snapshot?: boolean | null;
     selection_reason?: SelectionReason | null;
 }): string | null {
     if (subject.is_manual === null || subject.is_manual === undefined) {

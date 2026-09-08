@@ -254,8 +254,13 @@ def test_post_featured_records_only_newly_added_snaps(
 
     assert response.status_code == 200
 
-    manual = db.session.query(FeaturedHistory).filter_by(is_manual=True).all()
-    assert [r.snap_id for r in manual] == ["snap2"]
+    written = {
+        r.snap_id: r
+        for r in db.session.query(FeaturedHistory).filter_by(is_manual=True)
+    }
+    assert set(written) == {"snap1", "snap2"}
+    assert written["snap1"].is_snapshot is True
+    assert written["snap2"].is_snapshot is False
 
     latest = get_latest_featured_events(["snap1", "snap2"])
     assert latest["snap1"]["is_manual"] is False
@@ -266,7 +271,7 @@ def test_post_featured_records_only_newly_added_snaps(
 @patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
 @patch("snaprecommend.logic.publisher_gateway")
 @patch("snaprecommend.logic.device_gateway")
-def test_post_featured_records_nothing_when_no_snap_added(
+def test_post_featured_records_reorder_as_snapshot_only(
     mock_device, mock_publisher, _mock_auth, admin_client
 ):
     mock_device.get_featured_snaps.return_value = {
@@ -286,7 +291,11 @@ def test_post_featured_records_nothing_when_no_snap_added(
 
     assert response.status_code == 200
     mock_publisher.update_featured_snaps.assert_called_once()
-    assert db.session.query(FeaturedHistory).count() == 0
+
+    rows = db.session.query(FeaturedHistory).all()
+    assert [r.snap_id for r in rows] == ["snap2", "snap1"]
+    assert all(r.is_snapshot is True for r in rows)
+    assert get_latest_featured_events(["snap1", "snap2"]) == {}
 
 
 @patch("snaprecommend.featuredsnaps.api.record_featured_history")
@@ -431,6 +440,41 @@ def test_history_endpoint_keeps_position_order_within_a_run(
     events = admin_client.get("/featured/history").get_json()
 
     assert [event["snap_id"] for event in events] == published
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+def test_history_snapshot_rows_inherit_the_reason_they_were_picked_for(
+    _mock_auth, app, admin_client
+):
+    db.session.add(
+        FeaturedHistory(
+            snap_id="snap1",
+            featured_at=datetime(2026, 3, 1),
+            is_manual=False,
+            selection_reason={"role": "top-3"},
+        )
+    )
+    db.session.add(
+        FeaturedHistory(
+            snap_id="snap1",
+            featured_at=datetime(2026, 4, 1),
+            is_manual=True,
+            is_snapshot=True,
+            selection_reason={"actor": "jane@canonical.com"},
+        )
+    )
+    db.session.commit()
+
+    events = admin_client.get("/featured/history").get_json()
+    carried, picked = events[0], events[1]
+
+    assert carried["is_snapshot"] is True
+    assert carried["selection_reason"] == {"role": "top-3"}
+    assert carried["picked_manually"] is False
+    assert carried["picked_at"].startswith("2026-03-01")
+
+    assert picked["is_snapshot"] is False
+    assert picked["picked_at"] is None
 
 
 @patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)

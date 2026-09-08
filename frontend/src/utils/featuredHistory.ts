@@ -55,6 +55,9 @@ export function subjectFromHistoryEvent(
         categories: event.categories ?? null,
         featured_at: event.featured_at,
         is_manual: event.is_manual,
+        is_snapshot: event.is_snapshot,
+        picked_at: event.picked_at,
+        picked_manually: event.picked_manually,
         selection_reason: event.selection_reason,
     };
 }

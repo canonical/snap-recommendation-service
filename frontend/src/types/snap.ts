@@ -74,6 +74,9 @@ export type FeaturedSnapSubject = {
     categories?: string[] | null;
     featured_at?: string | null;
     is_manual?: boolean | null;
+    is_snapshot?: boolean | null;
+    picked_at?: string | null;
+    picked_manually?: boolean | null;
     selection_reason?: SelectionReason | null;
 }
 
