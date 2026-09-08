@@ -419,17 +419,19 @@ def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
     if not snap_ids:
         return {}
 
-    rows = _featured_history_query().filter(
-        FeaturedHistory.snap_id.in_(snap_ids)
-    ).all()
+    rows = (
+        _featured_history_query()
+        .filter(FeaturedHistory.snap_id.in_(snap_ids))
+        .filter(FeaturedHistory.is_snapshot.is_(False))
+        .all()
+    )
 
     categories = _current_categories([row.snap_id for row in rows])
-    origins = _pick_origins(rows)
 
     history: dict[str, list[dict]] = {}
     for row in rows:
         history.setdefault(row.snap_id, []).append(
-            _featured_history_event(row, categories, origins)
+            _featured_history_event(row, categories)
         )
 
     return history

@@ -478,6 +478,35 @@ def test_history_snapshot_rows_inherit_the_reason_they_were_picked_for(
 
 
 @patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+def test_snap_history_lists_picks_not_every_republish(
+    _mock_auth, app, admin_client
+):
+    db.session.add(
+        FeaturedHistory(
+            snap_id="snap1",
+            featured_at=datetime(2026, 3, 1),
+            is_manual=False,
+            selection_reason={"role": "top-3"},
+        )
+    )
+    for day in (2, 3, 4):
+        db.session.add(
+            FeaturedHistory(
+                snap_id="snap1",
+                featured_at=datetime(2026, 4, day),
+                is_manual=True,
+                is_snapshot=True,
+            )
+        )
+    db.session.commit()
+
+    events = admin_client.get("/featured/history/snap1").get_json()
+
+    assert len(events) == 1
+    assert events[0]["featured_at"].startswith("2026-03-01")
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
 def test_history_timestamps_are_utc_aware(_mock_auth, app, admin_client):
     record_featured_history([{"snap_id": "snap1"}], is_manual=False)
 
