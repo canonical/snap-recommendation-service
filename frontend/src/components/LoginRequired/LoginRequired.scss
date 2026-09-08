@@ -1,0 +1,20 @@
+@import "vanilla-framework/scss/settings";
+
+.p-panel__content.login-required__content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    min-height: 60vh;
+    padding: $sp-large;
+    text-align: center;
+}
+
+.login-required__body {
+    max-width: 30rem;
+
+    h4,
+    p {
+        max-width: 100%;
+    }
+}

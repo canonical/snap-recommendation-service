@@ -363,6 +363,35 @@ def test_post_featured_reverts_store_when_history_fails(
     assert db.session.query(FeaturedHistory).count() == 0
 
 
+@patch("snaprecommend.auth.decorators.publisher_gateway")
+def test_post_featured_unauthenticated_returns_401(mock_publisher, client):
+    response = client.post("/featured/", data={"snaps": "snap1,snap2"})
+
+    assert response.status_code == 401
+    assert response.get_json()["success"] is False
+    mock_publisher.exchange_dashboard_macaroons.assert_not_called()
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+@patch("snaprecommend.auth.decorators.publisher_gateway")
+def test_post_featured_returns_401_when_exchange_fails(
+    mock_publisher, _mock_auth, client
+):
+    with client.session_transaction() as sess:
+        sess["publisher"] = {
+            "is_admin": True,
+            "email": "jane@canonical.com",
+            "nickname": "jane",
+        }
+    mock_publisher.exchange_dashboard_macaroons.side_effect = Exception("nope")
+
+    response = client.post("/featured/", data={"snaps": "snap1,snap2"})
+
+    assert response.status_code == 401
+    assert response.get_json()["success"] is False
+    mock_publisher.exchange_dashboard_macaroons.assert_called_once()
+
+
 def _make_snap(snap_id: str, **overrides) -> Snap:
     fields = {
         "snap_id": snap_id,

@@ -37,9 +37,7 @@ def empty_session(session):
     """
     Empty the session, used to logout.
     """
-    session.pop("macaroon_root", None)
-    session.pop("macaroon_discharge", None)
-    session.pop("publisher", None)
+    session.clear()
 
 
 def get_caveat_id(root):

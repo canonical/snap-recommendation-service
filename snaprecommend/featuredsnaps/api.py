@@ -21,6 +21,7 @@ featured_blueprint = flask.Blueprint("featured", __name__)
 
 
 @featured_blueprint.route("/")
+@login_required
 def featured_snaps():
     featured = get_featured_snaps()
     return flask.jsonify(featured), 200
@@ -53,9 +54,9 @@ def featured_snap_history(snap_id: str):
 
 
 @featured_blueprint.route("/", methods=["POST"])
-@exchange_required
 @login_required
 @admin_required
+@exchange_required
 def post_featured_snaps():
     featured_snaps = flask.request.form.get("snaps")
     if not featured_snaps:
