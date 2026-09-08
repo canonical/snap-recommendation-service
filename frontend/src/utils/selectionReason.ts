@@ -252,7 +252,7 @@ function statusFor(
     subject: FeaturedSnapSubject,
     liveCheck?: boolean | null,
 ): ConditionStatus {
-    if (subject.is_manual === false) {
+    if (pickedManually(subject) === false) {
         return "met";
     }
     if (typeof liveCheck === "boolean") {
@@ -344,7 +344,7 @@ export function describeSnapFacts(subject: FeaturedSnapSubject): DetailRow[] {
 }
 
 export function describeListRules(subject: FeaturedSnapSubject): ListRule[] {
-    if (subject.is_manual || subject.is_manual === null || subject.is_manual === undefined) {
+    if (pickedManually(subject) !== false) {
         return [];
     }
 
