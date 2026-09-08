@@ -29,10 +29,15 @@ def app():
 
 @pytest.fixture
 def client(app):
-    """
-    Provide a test client for the Flask app.
-    """
-    return app.test_client()
+    client = app.test_client()
+    with client.session_transaction() as session:
+        session["macaroon_root"] = "root"
+        session["macaroon_discharge"] = "discharge"
+        session["publisher"] = {
+            "email": "editor@example.com",
+            "nickname": "editor",
+        }
+    return client
 
 
 @patch("snaprecommend.db.session.query")

@@ -6,7 +6,7 @@ from flask_migrate import Migrate
 from werkzeug.middleware.proxy_fix import ProxyFix
 from config import Config
 from snaprecommend.cli import cli_blueprint
-from snaprecommend.auth.decorators import dashboard_login, exchange_required, admin_required
+from snaprecommend.auth.decorators import no_store
 from snaprecommend.auth.sso import init_sso
 
 logging.basicConfig(
@@ -41,18 +41,10 @@ def create_app(config_class=Config):
     def status_check():
         return "OK"
 
-    @app.route("/dashboard/featuredsnaps")
-    @dashboard_login
-    @admin_required
-    @exchange_required
-    def serve_featured_snaps():
-        return render_template("index.html")
-
     @app.route("/dashboard")
     @app.route("/dashboard/<path:path>")
-    @dashboard_login
     def serve_react_app(path=None):
-        return render_template("index.html")
+        return no_store(render_template("index.html"))
 
     app.url_map.strict_slashes = False
 

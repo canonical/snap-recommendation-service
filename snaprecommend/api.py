@@ -11,7 +11,12 @@ from collector.main import (
     filter_snaps_meeting_minimum_criteria,
 )
 from snaprecommend import db
-from snaprecommend.auth.decorators import admin_required, login_required
+from snaprecommend.auth.authentication import is_authenticated
+from snaprecommend.auth.decorators import (
+    admin_required,
+    login_required,
+    no_store,
+)
 from snaprecommend.editorials import (
     add_snap_to_editorial_slice,
     create_editorial_slice,
@@ -59,7 +64,29 @@ _FEATURED_SETTINGS_FLOAT_BOUNDS = {
 }
 
 
+@api_blueprint.route("/account")
+def account():
+    if not is_authenticated(flask.session):
+        return no_store(flask.jsonify({"authenticated": False}))
+
+    publisher = flask.session.get("publisher", {})
+    return no_store(
+        flask.jsonify(
+            {
+                "authenticated": True,
+                "publisher": {
+                    "nickname": publisher.get("nickname"),
+                    "fullname": publisher.get("fullname"),
+                    "email": publisher.get("email"),
+                    "is_admin": publisher.get("is_admin", False),
+                },
+            }
+        )
+    )
+
+
 @api_blueprint.route("/stats")
+@login_required
 def stats():
     last_24_hours = datetime.now(timezone.utc) - timedelta(hours=24)
 
@@ -80,6 +107,7 @@ def stats():
 
 
 @api_blueprint.route("/categories")
+@login_required
 def categories():
     categories = get_all_categories()
     return [
@@ -93,6 +121,7 @@ def categories():
 
 
 @api_blueprint.route("/category/<string:id>")
+@login_required
 def category(id: str):
     category = RecommendationCategory.query.filter_by(id=id).first()
 
@@ -105,6 +134,7 @@ def category(id: str):
 
 
 @api_blueprint.route("/slices")
+@login_required
 def slices():
     slices = get_all_slices()
 
@@ -119,6 +149,7 @@ def slices():
 
 
 @api_blueprint.route("/slice/<string:id>")
+@login_required
 def slice(id: str):
     slice = EditorialSlice.query.filter_by(id=id).first()
 
@@ -140,6 +171,7 @@ def slice(id: str):
 
 
 @api_blueprint.route("/snaps")
+@login_required
 def popular_snaps():
     limit = flask.request.args.get("limit", 10)
     category = flask.request.args.get("category")
@@ -524,6 +556,7 @@ def exclude_snap():
 
 
 @api_blueprint.route("/recently-updated", methods=["GET"])
+@login_required
 def recenty_updated():
     page = int(flask.request.args.get("page", 1))
     size = int(flask.request.args.get("size", 10))

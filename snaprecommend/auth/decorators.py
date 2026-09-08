@@ -5,15 +5,25 @@ from snaprecommend.auth import authentication
 from snaprecommend.auth.session import publisher_gateway
 
 
+def no_store(response):
+    response = flask.make_response(response)
+    response.cache_control.no_store = True
+    response.cache_control.no_cache = True
+    response.cache_control.must_revalidate = True
+    response.cache_control.private = True
+    return response
+
+
 def dashboard_login(func):
     @functools.wraps(func)
     def is_user_logged_in(*args, **kwargs):
         if not authentication.is_authenticated(flask.session):
             authentication.empty_session(flask.session)
-            return flask.redirect(f"/login?next={flask.request.path}")
-        response = flask.make_response(func(*args, **kwargs))
-        response.cache_control.private = True
-        return response
+            return no_store(
+                flask.redirect(f"/login?next={flask.request.path}")
+            )
+        return no_store(flask.make_response(func(*args, **kwargs)))
+
     return is_user_logged_in
 
 
@@ -25,9 +35,7 @@ def login_required(func):
             return flask.make_response(
                 flask.jsonify({"success": False, "error": "Unauthorized"}), 401
             )
-        response = flask.make_response(func(*args, **kwargs))
-        response.cache_control.private = True
-        return response
+        return no_store(flask.make_response(func(*args, **kwargs)))
 
     return is_user_logged_in
 
