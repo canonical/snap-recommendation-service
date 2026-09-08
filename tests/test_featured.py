@@ -156,6 +156,34 @@ def test_get_latest_featured_events_returns_previous_featuring(app):
     assert latest["snap2"]["previous_featured_at"] is None
 
 
+def test_get_latest_featured_events_reports_last_publish_not_last_pick(app):
+    db.session.add(
+        FeaturedHistory(
+            snap_id="snap1",
+            featured_at=datetime(2026, 3, 1),
+            is_manual=False,
+            selection_reason={"role": "top-3"},
+        )
+    )
+    db.session.add(
+        FeaturedHistory(
+            snap_id="snap1",
+            featured_at=datetime(2026, 4, 1),
+            is_manual=True,
+            is_snapshot=True,
+            selection_reason={"actor": "jane@canonical.com"},
+        )
+    )
+    db.session.commit()
+
+    event = get_latest_featured_events(["snap1"])["snap1"]
+
+    assert event["featured_at"].startswith("2026-03-01")
+    assert event["selection_reason"] == {"role": "top-3"}
+    assert event["updated_at"].startswith("2026-04-01")
+    assert event["updated_manually"] is True
+
+
 def test_get_latest_featured_events_empty(app):
     assert get_latest_featured_events([]) == {}
 
@@ -295,7 +323,12 @@ def test_post_featured_records_reorder_as_snapshot_only(
     rows = db.session.query(FeaturedHistory).all()
     assert [r.snap_id for r in rows] == ["snap2", "snap1"]
     assert all(r.is_snapshot is True for r in rows)
-    assert get_latest_featured_events(["snap1", "snap2"]) == {}
+
+    latest = get_latest_featured_events(["snap1", "snap2"])
+    assert latest["snap1"]["featured_at"] is None
+    assert latest["snap1"]["selection_reason"] is None
+    assert latest["snap1"]["updated_at"] is not None
+    assert latest["snap1"]["updated_manually"] is True
 
 
 @patch("snaprecommend.featuredsnaps.api.record_featured_history")

@@ -72,28 +72,28 @@ export function describeLastFeatured(snap: FeaturedSnap): string | null {
 
 export function describeLastUpdate(snaps: FeaturedSnap[] | null): string | null {
     const latest = (snaps ?? []).reduce<FeaturedSnap | null>((newest, snap) => {
-        if (!snap.featured_at) {
+        if (!snap.updated_at) {
             return newest;
         }
-        if (!newest?.featured_at) {
+        if (!newest?.updated_at) {
             return snap;
         }
-        return Date.parse(snap.featured_at) > Date.parse(newest.featured_at)
+        return Date.parse(snap.updated_at) > Date.parse(newest.updated_at)
             ? snap
             : newest;
     }, null);
 
-    if (!latest?.featured_at) {
+    if (!latest?.updated_at) {
         return null;
     }
 
-    const when = formatDateTime(latest.featured_at);
+    const when = formatDateTime(latest.updated_at);
 
-    if (!latest.is_manual) {
+    if (!latest.updated_manually) {
         return `Last updated ${when} by the automated run`;
     }
 
-    const who = resolveActor(latest.selection_reason);
+    const who = resolveActor(latest.updated_reason);
     return who ? `Last updated ${when} by ${who}` : `Last updated ${when} manually`;
 }
 
@@ -375,16 +375,27 @@ export function describeListRules(subject: FeaturedSnapSubject): ListRule[] {
         .map((rule) => ({ label: rule.label, required: rule.required }));
 }
 
+export function pickedManually(subject: {
+    is_manual?: boolean | null;
+    is_snapshot?: boolean | null;
+    picked_manually?: boolean | null;
+}): boolean | null | undefined {
+    return subject.is_snapshot ? subject.picked_manually : subject.is_manual;
+}
+
 export function describeSource(subject: {
     is_manual?: boolean | null;
     is_snapshot?: boolean | null;
+    picked_manually?: boolean | null;
     selection_reason?: SelectionReason | null;
 }): string | null {
-    if (subject.is_manual === null || subject.is_manual === undefined) {
+    const manual = pickedManually(subject);
+
+    if (manual === null || manual === undefined) {
         return null;
     }
 
-    if (!subject.is_manual) {
+    if (!manual) {
         return "Automated run";
     }
 

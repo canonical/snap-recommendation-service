@@ -24,6 +24,7 @@ import {
     describeSnapFacts,
     describeSource,
     explainRole,
+    pickedManually,
     snapValidation,
     validationBadge,
     type DetailRow,
@@ -154,16 +155,16 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
     const ranking = describeRanking(reason);
     const roleExplanation = explainRole(reason);
     const source = describeSource(snap);
-    const pickedManually = snap.is_snapshot
-        ? snap.picked_manually
-        : snap.is_manual;
+    const manualPick = pickedManually(snap);
+
+    const addedAt = snap.is_snapshot ? snap.picked_at : snap.featured_at;
     const badge = validationBadge(snapValidation(snap));
     const unrecorded = source === null;
 
     const featuringFacts: DetailRow[] = [
         { label: "Source", detail: source ?? "Not recorded" },
-        ...(snap.featured_at
-            ? [{ label: "Added", detail: formatDateTime(snap.featured_at) }]
+        ...(addedAt
+            ? [{ label: "Added", detail: formatDateTime(addedAt) }]
             : []),
         ...ranking,
     ];
@@ -219,9 +220,7 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
                             <Chip
                                 value={source ?? "Not recorded"}
                                 appearance={
-                                    snap.is_manual && !snap.is_snapshot
-                                        ? "caution"
-                                        : "information"
+                                    manualPick ? "caution" : "information"
                                 }
                                 isDense
                                 isReadOnly
@@ -240,18 +239,18 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
                             </p>
                         )}
 
-                        {snap.is_snapshot && snap.picked_at && (
+                        {snap.is_snapshot && (
                             <p className="u-text--muted">
-                                Already on the list at this point. It was
-                                originally{" "}
-                                {snap.picked_manually
-                                    ? "added manually"
-                                    : "chosen by the automated run"}{" "}
-                                on {formatDateTime(snap.picked_at)}.
+                                Already on the list at this point. This edit
+                                did not choose it.
+                                {snap.picked_manually === true &&
+                                    " It was originally added manually."}
+                                {snap.picked_manually === false &&
+                                    " It was originally chosen by the automated run."}
                             </p>
                         )}
 
-                        {pickedManually && (
+                        {manualPick && (
                             <p>
                                 Picked manually, so the automated conditions
                                 were not applied.
@@ -263,7 +262,7 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
                         <FactList rows={featuringFacts} />
                     </Section>
 
-                    {pickedManually === false && (
+                    {manualPick === false && (
                         <Section title="Conditions">
                             {!reason?.gates && (
                                 <p className="p-text--small u-text--muted">

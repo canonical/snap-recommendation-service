@@ -294,21 +294,62 @@ def get_latest_featured_events(snap_ids: list[str]) -> dict[str, dict]:
 
     rows = db.session.execute(select(ranked).where(ranked.c.rank <= 2)).all()
 
-    events: dict[str, dict] = {}
+    picks: dict[str, dict] = {}
     previous: dict[str, str] = {}
 
     for row in rows:
         if row.rank == 1:
-            events[row.snap_id] = {
+            picks[row.snap_id] = {
                 "featured_at": _isoformat_utc(row.featured_at),
                 "is_manual": row.is_manual,
                 "selection_reason": row.selection_reason,
+                "previous_featured_at": None,
             }
         else:
             previous[row.snap_id] = _isoformat_utc(row.featured_at)
 
-    for snap_id, event in events.items():
-        event["previous_featured_at"] = previous.get(snap_id)
+    for snap_id, pick in picks.items():
+        pick["previous_featured_at"] = previous.get(snap_id)
+
+    return _with_last_update(snap_ids, picks)
+
+
+def _with_last_update(snap_ids: list[str], picks: dict[str, dict]) -> dict:
+    latest = (
+        select(
+            FeaturedHistory.snap_id,
+            FeaturedHistory.featured_at,
+            FeaturedHistory.is_manual,
+            FeaturedHistory.selection_reason,
+            func.row_number()
+            .over(
+                partition_by=FeaturedHistory.snap_id,
+                order_by=(
+                    FeaturedHistory.featured_at.desc(),
+                    FeaturedHistory.id.desc(),
+                ),
+            )
+            .label("rank"),
+        )
+        .where(FeaturedHistory.snap_id.in_(snap_ids))
+        .subquery()
+    )
+
+    events = dict(picks)
+
+    for row in db.session.execute(select(latest).where(latest.c.rank == 1)):
+        event = events.setdefault(
+            row.snap_id,
+            {
+                "featured_at": None,
+                "is_manual": None,
+                "selection_reason": None,
+                "previous_featured_at": None,
+            },
+        )
+        event["updated_at"] = _isoformat_utc(row.featured_at)
+        event["updated_manually"] = row.is_manual
+        event["updated_reason"] = row.selection_reason
 
     return events
 

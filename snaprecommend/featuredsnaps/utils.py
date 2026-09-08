@@ -39,5 +39,8 @@ def get_featured_snaps():
         snap["previous_featured_at"] = latest.get("previous_featured_at")
         snap["selection_reason"] = latest.get("selection_reason")
         snap["is_manual"] = latest.get("is_manual")
+        snap["updated_at"] = latest.get("updated_at")
+        snap["updated_manually"] = latest.get("updated_manually")
+        snap["updated_reason"] = latest.get("updated_reason")
 
     return currently_featured_snaps
