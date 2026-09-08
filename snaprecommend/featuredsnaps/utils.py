@@ -36,6 +36,7 @@ def get_featured_snaps():
         snap["icon_url"] = get_icon(snap["media"])
         latest = latest_by_snap.get(snap["snap_id"], {})
         snap["featured_at"] = latest.get("featured_at")
+        snap["previous_featured_at"] = latest.get("previous_featured_at")
         snap["selection_reason"] = latest.get("selection_reason")
         snap["is_manual"] = latest.get("is_manual")
 

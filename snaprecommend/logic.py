@@ -290,16 +290,25 @@ def get_latest_featured_events(snap_ids: list[str]) -> dict[str, dict]:
         .subquery()
     )
 
-    rows = db.session.execute(select(ranked).where(ranked.c.rank == 1)).all()
+    rows = db.session.execute(select(ranked).where(ranked.c.rank <= 2)).all()
 
-    return {
-        row.snap_id: {
-            "featured_at": _isoformat_utc(row.featured_at),
-            "is_manual": row.is_manual,
-            "selection_reason": row.selection_reason,
-        }
-        for row in rows
-    }
+    events: dict[str, dict] = {}
+    previous: dict[str, str] = {}
+
+    for row in rows:
+        if row.rank == 1:
+            events[row.snap_id] = {
+                "featured_at": _isoformat_utc(row.featured_at),
+                "is_manual": row.is_manual,
+                "selection_reason": row.selection_reason,
+            }
+        else:
+            previous[row.snap_id] = _isoformat_utc(row.featured_at)
+
+    for snap_id, event in events.items():
+        event["previous_featured_at"] = previous.get(snap_id)
+
+    return events
 
 
 def _isoformat_utc(value: datetime) -> str:

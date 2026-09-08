@@ -90,6 +90,7 @@ export type FeaturedSnap = {
     selection_reason?: SelectionReason | null;
     is_manual?: boolean | null;
     featured_at?: string | null;
+    previous_featured_at?: string | null;
 }
 
 export type SearchSnap = {

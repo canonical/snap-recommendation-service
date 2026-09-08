@@ -237,7 +237,7 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
 
                         {snap.is_manual && (
                             <p>
-                                Picked manually so the automated conditions below
+                                Picked manually, so the automated conditions
                                 were not applied.
                             </p>
                         )}
@@ -247,36 +247,38 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
                         <FactList rows={featuringFacts} />
                     </Section>
 
-                    <Section title="Conditions">
-                        {!reason?.gates && (
-                            <p className="p-text--small u-text--muted">
-                                Thresholds are the current defaults. This run did
-                                not record its own.
-                            </p>
-                        )}
-                        <ConditionList conditions={conditions} />
+                    {!snap.is_manual && (
+                        <Section title="Conditions">
+                            {!reason?.gates && (
+                                <p className="p-text--small u-text--muted">
+                                    Thresholds are the current defaults. This run did
+                                    not record its own.
+                                </p>
+                            )}
+                            <ConditionList conditions={conditions} />
 
-                        {listRules.length > 0 && (
-                            <Accordion
-                                sections={[
-                                    {
-                                        key: "list-rules",
-                                        title: "Rules that decided this slot",
-                                        content: (
-                                            <FactList
-                                                rows={listRules.map((rule) => ({
-                                                    label: rule.required
-                                                        ? "Required"
-                                                        : "Preferred",
-                                                    detail: rule.label,
-                                                }))}
-                                            />
-                                        ),
-                                    },
-                                ]}
-                            />
-                        )}
-                    </Section>
+                            {listRules.length > 0 && (
+                                <Accordion
+                                    sections={[
+                                        {
+                                            key: "list-rules",
+                                            title: "Rules that decided this slot",
+                                            content: (
+                                                <FactList
+                                                    rows={listRules.map((rule) => ({
+                                                        label: rule.required
+                                                            ? "Required"
+                                                            : "Preferred",
+                                                        detail: rule.label,
+                                                    }))}
+                                                />
+                                            ),
+                                        },
+                                    ]}
+                                />
+                            )}
+                        </Section>
+                    )}
 
                     <Section title="Featured history">
                         <HistoryTimeline snapId={snap.snap_id} />

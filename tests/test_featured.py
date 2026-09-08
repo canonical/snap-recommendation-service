@@ -130,6 +130,32 @@ def test_get_latest_featured_events_returns_newest(app):
     assert latest["snap2"]["selection_reason"]["n"] == 3
 
 
+def test_get_latest_featured_events_returns_previous_featuring(app):
+    for day in (1, 10, 20):
+        db.session.add(
+            FeaturedHistory(
+                snap_id="snap1",
+                featured_at=datetime(2026, 3, day),
+                is_manual=False,
+            )
+        )
+    db.session.add(
+        FeaturedHistory(
+            snap_id="snap2",
+            featured_at=datetime(2026, 3, 5),
+            is_manual=False,
+        )
+    )
+    db.session.commit()
+
+    latest = get_latest_featured_events(["snap1", "snap2"])
+
+    assert latest["snap1"]["featured_at"].startswith("2026-03-20")
+    assert latest["snap1"]["previous_featured_at"].startswith("2026-03-10")
+
+    assert latest["snap2"]["previous_featured_at"] is None
+
+
 def test_get_latest_featured_events_empty(app):
     assert get_latest_featured_events([]) == {}
 
@@ -200,6 +226,67 @@ def test_post_featured_records_manual_history(
         r.selection_reason["actor"] == "jane@canonical.com" for r in rows
     )
     assert all(r.selection_reason["nickname"] == "jane" for r in rows)
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+@patch("snaprecommend.logic.publisher_gateway")
+@patch("snaprecommend.logic.device_gateway")
+def test_post_featured_records_only_newly_added_snaps(
+    mock_device, mock_publisher, _mock_auth, admin_client
+):
+    record_featured_history(
+        [{"snap_id": "snap1", "selection_reason": {"role": "top-3"}}],
+        is_manual=False,
+    )
+
+    mock_device.get_featured_snaps.return_value = {
+        "_embedded": {"clickindex:package": [{"snap_id": "snap1"}]},
+        "_links": {},
+    }
+    delete_response = MagicMock()
+    delete_response.status_code = 201
+    mock_publisher.delete_featured_snaps.return_value = delete_response
+    update_response = MagicMock()
+    update_response.status_code = 201
+    mock_publisher.update_featured_snaps.return_value = update_response
+
+    response = admin_client.post("/featured/", data={"snaps": "snap1,snap2"})
+
+    assert response.status_code == 200
+
+    manual = db.session.query(FeaturedHistory).filter_by(is_manual=True).all()
+    assert [r.snap_id for r in manual] == ["snap2"]
+
+    latest = get_latest_featured_events(["snap1", "snap2"])
+    assert latest["snap1"]["is_manual"] is False
+    assert latest["snap1"]["selection_reason"] == {"role": "top-3"}
+    assert latest["snap2"]["is_manual"] is True
+
+
+@patch("snaprecommend.auth.authentication.is_authenticated", return_value=True)
+@patch("snaprecommend.logic.publisher_gateway")
+@patch("snaprecommend.logic.device_gateway")
+def test_post_featured_records_nothing_when_no_snap_added(
+    mock_device, mock_publisher, _mock_auth, admin_client
+):
+    mock_device.get_featured_snaps.return_value = {
+        "_embedded": {
+            "clickindex:package": [{"snap_id": "snap1"}, {"snap_id": "snap2"}]
+        },
+        "_links": {},
+    }
+    delete_response = MagicMock()
+    delete_response.status_code = 201
+    mock_publisher.delete_featured_snaps.return_value = delete_response
+    update_response = MagicMock()
+    update_response.status_code = 201
+    mock_publisher.update_featured_snaps.return_value = update_response
+
+    response = admin_client.post("/featured/", data={"snaps": "snap2,snap1"})
+
+    assert response.status_code == 200
+    mock_publisher.update_featured_snaps.assert_called_once()
+    assert db.session.query(FeaturedHistory).count() == 0
 
 
 @patch("snaprecommend.featuredsnaps.api.record_featured_history")

@@ -1,10 +1,9 @@
 import { useMemo } from "react";
-import { Chip, Notification, Panel, Spinner } from "@canonical/react-components";
+import { Notification, Panel, Spinner } from "@canonical/react-components";
 import { FeaturedSnapAside, FeaturedTabs } from "../components";
 import { useFetchData } from "../hooks/useFetchData";
 import type { FeaturedHistoryEvent, FeaturedHistoryRun } from "../types/featuredHistory";
 import {
-    describeRunSource,
     groupIntoRuns,
     snapDisplayName,
     subjectFromHistoryEvent,
@@ -86,12 +85,6 @@ function Run({ run, onSelect }: RunProps) {
                 <span className="featured-history__run-date">
                     {formatDateTime(run.featured_at)}
                 </span>
-                <Chip
-                    value={describeRunSource(run)}
-                    appearance={run.is_manual ? "caution" : "information"}
-                    isDense
-                    isReadOnly
-                />
                 <span className="p-text--small u-text--muted">
                     {run.events.length} {run.events.length === 1 ? "snap" : "snaps"}
                 </span>

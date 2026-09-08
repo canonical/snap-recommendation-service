@@ -64,10 +64,10 @@ export function describeReason(snap: FeaturedSnap): ReasonChip[] {
 }
 
 export function describeLastFeatured(snap: FeaturedSnap): string | null {
-    if (!snap.featured_at) {
+    if (!snap.previous_featured_at) {
         return null;
     }
-    return `Last featured ${formatDateTime(snap.featured_at)}`;
+    return `Last featured ${formatDateTime(snap.previous_featured_at)}`;
 }
 
 export function describeLastUpdate(snaps: FeaturedSnap[] | null): string | null {
