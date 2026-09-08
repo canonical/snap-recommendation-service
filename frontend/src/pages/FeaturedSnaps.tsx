@@ -128,7 +128,9 @@ export function FeaturedSnaps() {
         setIsSaving(false);
 
         if (!response.ok) {
-            if (response.status === 403 || response.status === 404) {
+            if (response.status === 401) {
+                setOperationError("Your session has expired. Please log in again.");
+            } else if (response.status === 403 || response.status === 404) {
                 setOperationError("Changes cannot be saved due to insufficient permissions.");
             } else {
                 setOperationError("Something went wrong");

@@ -5,6 +5,7 @@ from flask_openid import OpenID
 from snaprecommend.auth.macaroon import MacaroonRequest, MacaroonResponse
 from snaprecommend.auth import authentication
 from snaprecommend.auth.session import publisher_gateway
+from snaprecommend.auth.decorators import no_store
 from snaprecommend.auth.constants import (
     DEFAULT_SSO_TEAM,
     LP_CANONICAL_TEAM,
@@ -27,7 +28,7 @@ def init_sso(app: flask.Flask):
     @app.route("/logout")
     def logout():
         authentication.empty_session(flask.session)
-        return flask.redirect("/dashboard")
+        return no_store(flask.redirect("/dashboard"))
 
     @app.route("/login", methods=["GET", "POST"])
     @open_id.loginhandler

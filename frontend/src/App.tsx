@@ -6,6 +6,7 @@ import { ExcludeSnaps } from "./pages/ExcludeSnaps";
 import { EditorialSlices } from "./pages/EditorialSlices";
 import { SliceDetails } from "./pages/SliceDetails";
 import { AsideProvider } from "./contexts/AsideContext/AsideProvider";
+import { AuthProvider } from "./contexts/AuthContext/AuthProvider";
 import { Settings } from "./pages/Settings";
 import { FeaturedSnaps } from "./pages/FeaturedSnaps";
 import { FeaturedHistory } from "./pages/FeaturedHistory";
@@ -14,19 +15,21 @@ import { FeaturedHistory } from "./pages/FeaturedHistory";
 
 export default function App() {
   return (
-    <AsideProvider>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/dashboard/excluded_snaps" element={<ExcludeSnaps />} />
-          <Route path="/dashboard/editorial_slices" element={<EditorialSlices />} />
-          <Route path="/dashboard/editorial_slice/:id" element={<SliceDetails />} />
-          <Route path="/dashboard/settings" element={<Settings />} />
-          <Route path="/dashboard/featured" element={<FeaturedSnaps />} />
-          <Route path="/dashboard/featured_history" element={<FeaturedHistory />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
-    </AsideProvider>
+    <AuthProvider>
+      <AsideProvider>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/dashboard/excluded_snaps" element={<ExcludeSnaps />} />
+            <Route path="/dashboard/editorial_slices" element={<EditorialSlices />} />
+            <Route path="/dashboard/editorial_slice/:id" element={<SliceDetails />} />
+            <Route path="/dashboard/settings" element={<Settings />} />
+            <Route path="/dashboard/featured" element={<FeaturedSnaps />} />
+            <Route path="/dashboard/featured_history" element={<FeaturedHistory />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </AsideProvider>
+    </AuthProvider>
   );
 }
