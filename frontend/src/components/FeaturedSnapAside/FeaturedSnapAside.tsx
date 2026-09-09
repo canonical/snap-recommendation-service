@@ -24,6 +24,7 @@ import {
     describeSnapFacts,
     describeSource,
     explainRole,
+    pickedManually,
     snapValidation,
     validationBadge,
     type DetailRow,
@@ -154,13 +155,16 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
     const ranking = describeRanking(reason);
     const roleExplanation = explainRole(reason);
     const source = describeSource(snap);
+    const manualPick = pickedManually(snap);
+
+    const addedAt = snap.is_snapshot ? snap.picked_at : snap.featured_at;
     const badge = validationBadge(snapValidation(snap));
     const unrecorded = source === null;
 
     const featuringFacts: DetailRow[] = [
         { label: "Source", detail: source ?? "Not recorded" },
-        ...(snap.featured_at
-            ? [{ label: "Added", detail: formatDateTime(snap.featured_at) }]
+        ...(addedAt
+            ? [{ label: "Added", detail: formatDateTime(addedAt) }]
             : []),
         ...ranking,
     ];
@@ -216,7 +220,7 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
                             <Chip
                                 value={source ?? "Not recorded"}
                                 appearance={
-                                    snap.is_manual ? "caution" : "information"
+                                    manualPick ? "caution" : "information"
                                 }
                                 isDense
                                 isReadOnly
@@ -235,9 +239,20 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
                             </p>
                         )}
 
-                        {snap.is_manual && (
+                        {snap.is_snapshot && (
+                            <p className="u-text--muted">
+                                Already on the list at this point. This edit
+                                did not choose it.
+                                {snap.picked_manually === true &&
+                                    " It was originally added manually."}
+                                {snap.picked_manually === false &&
+                                    " It was originally chosen by the automated run."}
+                            </p>
+                        )}
+
+                        {manualPick && (
                             <p>
-                                Picked manually so the automated conditions below
+                                Picked manually, so the automated conditions
                                 were not applied.
                             </p>
                         )}
@@ -247,36 +262,38 @@ export function FeaturedSnapAside({ snap }: { snap: FeaturedSnapSubject }) {
                         <FactList rows={featuringFacts} />
                     </Section>
 
-                    <Section title="Conditions">
-                        {!reason?.gates && (
-                            <p className="p-text--small u-text--muted">
-                                Thresholds are the current defaults. This run did
-                                not record its own.
-                            </p>
-                        )}
-                        <ConditionList conditions={conditions} />
+                    {manualPick === false && (
+                        <Section title="Conditions">
+                            {!reason?.gates && (
+                                <p className="p-text--small u-text--muted">
+                                    Thresholds are the current defaults. This run did
+                                    not record its own.
+                                </p>
+                            )}
+                            <ConditionList conditions={conditions} />
 
-                        {listRules.length > 0 && (
-                            <Accordion
-                                sections={[
-                                    {
-                                        key: "list-rules",
-                                        title: "Rules that decided this slot",
-                                        content: (
-                                            <FactList
-                                                rows={listRules.map((rule) => ({
-                                                    label: rule.required
-                                                        ? "Required"
-                                                        : "Preferred",
-                                                    detail: rule.label,
-                                                }))}
-                                            />
-                                        ),
-                                    },
-                                ]}
-                            />
-                        )}
-                    </Section>
+                            {listRules.length > 0 && (
+                                <Accordion
+                                    sections={[
+                                        {
+                                            key: "list-rules",
+                                            title: "Rules that decided this slot",
+                                            content: (
+                                                <FactList
+                                                    rows={listRules.map((rule) => ({
+                                                        label: rule.required
+                                                            ? "Required"
+                                                            : "Preferred",
+                                                        detail: rule.label,
+                                                    }))}
+                                                />
+                                            ),
+                                        },
+                                    ]}
+                                />
+                            )}
+                        </Section>
+                    )}
 
                     <Section title="Featured history">
                         <HistoryTimeline snapId={snap.snap_id} />

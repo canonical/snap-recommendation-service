@@ -106,26 +106,32 @@ def post_featured_snaps():
             "actor": publisher.get("email"),
             "nickname": publisher.get("nickname"),
         }
+        previous = set(previous_ids)
         events = [
-            {"snap_id": snap_id, "selection_reason": reason}
+            {
+                "snap_id": snap_id,
+                "selection_reason": reason,
+                "is_snapshot": snap_id in previous,
+            }
             for snap_id in snap_ids
         ]
-        try:
-            record_featured_history(events, is_manual=True)
-        except Exception:
-            # Keep the store and history all-or-nothing: revert the live list to
-            # what it was before this edit so neither side sticks.
-            rollback_featured_snaps(previous_ids, token)
-            flask.current_app.logger.exception(
-                "Failed to record featured history; reverted featured snaps to previous state"
-            )
-            return flask.make_response(
-                {
-                    "success": False,
-                    "message": "Featured update rolled back due to an internal error.",
-                },
-                500,
-            )
+        if events:
+            try:
+                record_featured_history(events, is_manual=True)
+            except Exception:
+                # Keep the store and history all-or-nothing: revert the live list to
+                # what it was before this edit so neither side sticks.
+                rollback_featured_snaps(previous_ids, token)
+                flask.current_app.logger.exception(
+                    "Failed to record featured history; reverted featured snaps to previous state"
+                )
+                return flask.make_response(
+                    {
+                        "success": False,
+                        "message": "Featured update rolled back due to an internal error.",
+                    },
+                    500,
+                )
 
         return flask.make_response({"success": True}, 200)
     finally:

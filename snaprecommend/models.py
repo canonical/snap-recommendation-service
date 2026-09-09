@@ -123,6 +123,9 @@ class FeaturedHistory(db.Model):
     selection_reason: Mapped[Optional[JSON]] = mapped_column(
         JSON, nullable=True
     )
+    is_snapshot: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
 
     __table_args__ = (
         Index("ix_featured_history_snap_id_featured_at", "snap_id", "featured_at"),

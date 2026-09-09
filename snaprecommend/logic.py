@@ -250,6 +250,7 @@ def record_featured_history(
             featured_at=featured_at,
             is_manual=is_manual,
             selection_reason=event.get("selection_reason"),
+            is_snapshot=event.get("is_snapshot", False),
         )
         for event in events
     ]
@@ -287,19 +288,70 @@ def get_latest_featured_events(snap_ids: list[str]) -> dict[str, dict]:
             .label("rank"),
         )
         .where(FeaturedHistory.snap_id.in_(snap_ids))
+        .where(FeaturedHistory.is_snapshot.is_(False))
         .subquery()
     )
 
-    rows = db.session.execute(select(ranked).where(ranked.c.rank == 1)).all()
+    rows = db.session.execute(select(ranked).where(ranked.c.rank <= 2)).all()
 
-    return {
-        row.snap_id: {
-            "featured_at": _isoformat_utc(row.featured_at),
-            "is_manual": row.is_manual,
-            "selection_reason": row.selection_reason,
-        }
-        for row in rows
-    }
+    picks: dict[str, dict] = {}
+    previous: dict[str, str] = {}
+
+    for row in rows:
+        if row.rank == 1:
+            picks[row.snap_id] = {
+                "featured_at": _isoformat_utc(row.featured_at),
+                "is_manual": row.is_manual,
+                "selection_reason": row.selection_reason,
+                "previous_featured_at": None,
+            }
+        else:
+            previous[row.snap_id] = _isoformat_utc(row.featured_at)
+
+    for snap_id, pick in picks.items():
+        pick["previous_featured_at"] = previous.get(snap_id)
+
+    return _with_last_update(snap_ids, picks)
+
+
+def _with_last_update(snap_ids: list[str], picks: dict[str, dict]) -> dict:
+    latest = (
+        select(
+            FeaturedHistory.snap_id,
+            FeaturedHistory.featured_at,
+            FeaturedHistory.is_manual,
+            FeaturedHistory.selection_reason,
+            func.row_number()
+            .over(
+                partition_by=FeaturedHistory.snap_id,
+                order_by=(
+                    FeaturedHistory.featured_at.desc(),
+                    FeaturedHistory.id.desc(),
+                ),
+            )
+            .label("rank"),
+        )
+        .where(FeaturedHistory.snap_id.in_(snap_ids))
+        .subquery()
+    )
+
+    events = dict(picks)
+
+    for row in db.session.execute(select(latest).where(latest.c.rank == 1)):
+        event = events.setdefault(
+            row.snap_id,
+            {
+                "featured_at": None,
+                "is_manual": None,
+                "selection_reason": None,
+                "previous_featured_at": None,
+            },
+        )
+        event["updated_at"] = _isoformat_utc(row.featured_at)
+        event["updated_manually"] = row.is_manual
+        event["updated_reason"] = row.selection_reason
+
+    return events
 
 
 def _isoformat_utc(value: datetime) -> str:
@@ -328,14 +380,55 @@ def _current_categories(snap_ids: list[str]) -> dict[str, list[str]]:
     return {row.snap_id: category_slugs(row.categories) for row in rows}
 
 
+def _pick_origins(rows: list[FeaturedHistory]) -> dict[int, FeaturedHistory]:
+    snapshot_ids = {row.snap_id for row in rows if row.is_snapshot}
+    if not snapshot_ids:
+        return {}
+
+    picks = (
+        db.session.query(FeaturedHistory)
+        .filter(FeaturedHistory.snap_id.in_(snapshot_ids))
+        .filter(FeaturedHistory.is_snapshot.is_(False))
+        .order_by(FeaturedHistory.featured_at.asc(), FeaturedHistory.id.asc())
+        .all()
+    )
+
+    by_snap: dict[str, list[FeaturedHistory]] = {}
+    for pick in picks:
+        by_snap.setdefault(pick.snap_id, []).append(pick)
+
+    origins = {}
+    for row in rows:
+        if not row.is_snapshot:
+            continue
+        earlier = [
+            pick
+            for pick in by_snap.get(row.snap_id, [])
+            if pick.featured_at <= row.featured_at
+        ]
+        if earlier:
+            origins[row.id] = earlier[-1]
+
+    return origins
+
+
 def _featured_history_event(
-    row: FeaturedHistory, categories: dict[str, list[str]]
+    row: FeaturedHistory,
+    categories: dict[str, list[str]],
+    origins: dict[int, FeaturedHistory] | None = None,
 ) -> dict:
+    origin = (origins or {}).get(row.id)
+
     return {
         "snap_id": row.snap_id,
         "featured_at": _isoformat_utc(row.featured_at),
         "is_manual": row.is_manual,
-        "selection_reason": row.selection_reason,
+        "is_snapshot": row.is_snapshot,
+        "selection_reason": (
+            origin.selection_reason if origin else row.selection_reason
+        ),
+        "picked_at": _isoformat_utc(origin.featured_at) if origin else None,
+        "picked_manually": origin.is_manual if origin else None,
         "title": row.title,
         "name": row.name,
         "publisher": row.publisher,
@@ -367,9 +460,12 @@ def get_featured_history(snap_ids: list[str]) -> dict[str, list[dict]]:
     if not snap_ids:
         return {}
 
-    rows = _featured_history_query().filter(
-        FeaturedHistory.snap_id.in_(snap_ids)
-    ).all()
+    rows = (
+        _featured_history_query()
+        .filter(FeaturedHistory.snap_id.in_(snap_ids))
+        .filter(FeaturedHistory.is_snapshot.is_(False))
+        .all()
+    )
 
     categories = _current_categories([row.snap_id for row in rows])
 
@@ -388,7 +484,10 @@ def get_all_featured_history(limit: int = 200) -> list[dict]:
     """
     rows = _featured_history_query(keep_position_order=True).limit(limit).all()
     categories = _current_categories([row.snap_id for row in rows])
-    return [_featured_history_event(row, categories) for row in rows]
+    origins = _pick_origins(rows)
+    return [
+        _featured_history_event(row, categories, origins) for row in rows
+    ]
 
 
 def add_pipeline_step_log(step_name: str, status: bool, message: str = ""):
