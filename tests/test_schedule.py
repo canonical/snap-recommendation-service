@@ -58,6 +58,10 @@ def test_due_when_never_run(app):
     assert featured_selection_due() is True
 
 
+def test_not_due_before_first_run_schedule(app):
+    assert selection_due(_utc(2026, 9, 2)) is False
+
+
 def test_not_due_between_occurrences(app):
     set_setting("featured_last_updated", _utc(2026, 8, 3).isoformat())
     assert selection_due(_utc(2026, 8, 26)) is False

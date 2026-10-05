@@ -737,45 +737,70 @@ def test_run_selection_gates_follow_settings(app):
     assert gates["category_cap"] == 2
 
 
-def test_notify_webhook_normalizes_url_and_formats_success_text(mock_post=None):
-    from unittest.mock import MagicMock, patch
-
+def test_notify_webhook_normalizes_url_and_sends_success_payload():
     from collector.featured_selector import _notify_webhook
 
+    payload = {
+        "success": True,
+        "snaps": [{"name": "test-snap", "snap_id": "123"}],
+    }
     with patch("collector.featured_selector.requests.post") as mock_post:
-        mock_post.return_value = MagicMock(raise_for_status=lambda: None)
-
         _notify_webhook(
-            "webbot.canonical.com",
-            {"success": True, "snaps": [{"name": "test-snap", "snap_id": "123"}]},
+            " webbot.canonical.com/webhooks/snap-selection ",
+            payload,
         )
 
-        args, kwargs = mock_post.call_args
-        assert args[0] == "https://webbot.canonical.com"
-        assert "test-snap" in kwargs["json"]["text"]
+        mock_post.assert_called_once_with(
+            "https://webbot.canonical.com/webhooks/snap-selection",
+            json=payload,
+            timeout=10,
+        )
+        mock_post.return_value.raise_for_status.assert_called_once_with()
 
 
-def test_notify_webhook_formats_failure_text():
-    from unittest.mock import MagicMock, patch
-
+def test_notify_webhook_sends_failure_payload():
     from collector.featured_selector import _notify_webhook
 
+    payload = {"success": False, "error": "boom"}
     with patch("collector.featured_selector.requests.post") as mock_post:
-        mock_post.return_value = MagicMock(raise_for_status=lambda: None)
+        _notify_webhook(
+            "https://webbot.canonical.com/webhooks/snap-selection",
+            payload,
+        )
 
-        _notify_webhook("https://webbot.canonical.com", {"success": False, "error": "boom"})
+        mock_post.assert_called_once_with(
+            "https://webbot.canonical.com/webhooks/snap-selection",
+            json=payload,
+            timeout=10,
+        )
+        mock_post.return_value.raise_for_status.assert_called_once_with()
 
-        _, kwargs = mock_post.call_args
-        assert "boom" in kwargs["json"]["text"]
 
-
-def test_notify_webhook_handles_request_exception():
-    from unittest.mock import patch
-
+def test_notify_webhook_handles_request_exception(caplog):
     from collector.featured_selector import _notify_webhook
 
     with patch("collector.featured_selector.requests.post", side_effect=Exception("down")):
-        # Should not raise
         _notify_webhook("webbot.canonical.com", {"success": False, "error": "fail"})
 
+    assert "Failed to notify webhook at https://webbot.canonical.com: down" in caplog.text
 
+
+def test_notify_webhook_handles_http_error(caplog):
+    from requests import HTTPError
+    from collector.featured_selector import _notify_webhook
+
+    with patch("collector.featured_selector.requests.post") as mock_post:
+        mock_post.return_value.raise_for_status.side_effect = HTTPError("400 Bad Request")
+        _notify_webhook("webbot.canonical.com", {"success": False, "error": "fail"})
+
+    assert "Failed to notify webhook at https://webbot.canonical.com: 400 Bad Request" in caplog.text
+
+
+@pytest.mark.parametrize("webhook_url", ["", "   "])
+def test_notify_webhook_skips_empty_url(webhook_url):
+    from collector.featured_selector import _notify_webhook
+
+    with patch("collector.featured_selector.requests.post") as mock_post:
+        _notify_webhook(webhook_url, {"success": False, "error": "fail"})
+
+        mock_post.assert_not_called()

@@ -66,15 +66,27 @@ def selection_due(now: datetime | None = None) -> bool:
     Return whether the featured selection is due to run.
 
     It is due when a scheduled occurrence has passed since the last recorded
-    run, or when it has never run.
+    run, or when it has never run and the current occurrence has arrived.
     """
     now = _as_utc(now or datetime.now(timezone.utc))
     last_run = get_last_featured_run()
     schedule = describe_schedule()
 
     if last_run is None:
+        scheduled = previous_occurrence(now)
+        current_month_occurrence = _first_monday_of_month(now)
+        if now < current_month_occurrence:
+            logger.info(
+                "Featured selection has never run; next scheduled run is %s "
+                "(schedule: %s). Not due yet.",
+                current_month_occurrence,
+                schedule,
+            )
+            return False
         logger.info(
-            "Featured selection has never run; due now (schedule: %s).",
+            "Featured selection has never run; scheduled run %s has passed "
+            "(schedule: %s). Due now.",
+            scheduled,
             schedule,
         )
         return True
