@@ -21,7 +21,6 @@ featured_blueprint = flask.Blueprint("featured", __name__)
 
 
 @featured_blueprint.route("/")
-@login_required
 def featured_snaps():
     featured = get_featured_snaps()
     return flask.jsonify(featured), 200
