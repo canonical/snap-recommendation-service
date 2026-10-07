@@ -86,7 +86,6 @@ def account():
 
 
 @api_blueprint.route("/stats")
-@login_required
 def stats():
     last_24_hours = datetime.now(timezone.utc) - timedelta(hours=24)
 
@@ -107,7 +106,6 @@ def stats():
 
 
 @api_blueprint.route("/categories")
-@login_required
 def categories():
     categories = get_all_categories()
     return [
@@ -121,7 +119,6 @@ def categories():
 
 
 @api_blueprint.route("/category/<string:id>")
-@login_required
 def category(id: str):
     category = RecommendationCategory.query.filter_by(id=id).first()
 
@@ -134,7 +131,6 @@ def category(id: str):
 
 
 @api_blueprint.route("/slices")
-@login_required
 def slices():
     slices = get_all_slices()
 
@@ -149,7 +145,6 @@ def slices():
 
 
 @api_blueprint.route("/slice/<string:id>")
-@login_required
 def slice(id: str):
     slice = EditorialSlice.query.filter_by(id=id).first()
 
@@ -171,7 +166,6 @@ def slice(id: str):
 
 
 @api_blueprint.route("/snaps")
-@login_required
 def popular_snaps():
     limit = flask.request.args.get("limit", 10)
     category = flask.request.args.get("category")
@@ -556,7 +550,6 @@ def exclude_snap():
 
 
 @api_blueprint.route("/recently-updated", methods=["GET"])
-@login_required
 def recenty_updated():
     page = int(flask.request.args.get("page", 1))
     size = int(flask.request.args.get("size", 10))
