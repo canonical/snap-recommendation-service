@@ -14,7 +14,7 @@ from collector.ratings.collect_ratings import get_ratings, ratings_login
 
 METRICS_BATCH_SIZE = 15
 RATINGS_BATCH_SIZE = 20
-RELEASES_URL = "http://api.snapcraft.io/api/v1/snaps/search?fields=revision"
+RELEASES_URL = "https://api.snapcraft.io/api/v1/snaps/search?fields=revision"
 METRICS_URL = "https://dashboard.snapcraft.io/dev/api/snaps/metrics"
 
 MACAROON = os.environ.get(MACAROON_ENV_PATH)

@@ -27,7 +27,7 @@ FIELDS = (
     "sections",
 )
 
-URL = f"http://api.snapcraft.io/api/v1/snaps/search?fields={','.join(FIELDS)}&scope=wide&confinement=strict,classic"
+URL = f"https://api.snapcraft.io/api/v1/snaps/search?fields={','.join(FIELDS)}&scope=wide&confinement=strict,classic"
 
 
 logger = logging.getLogger("collector")

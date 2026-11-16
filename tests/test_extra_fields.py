@@ -1,6 +1,7 @@
 import pytest
 from unittest.mock import MagicMock, patch
 from collector.extra_fields import (
+    RELEASES_URL,
     calculate_latest_active_devices,
     fetch_metrics_from_api,
     process_and_update_snap_metrics,
@@ -27,6 +28,12 @@ def sample_snap():
         name="test-snap",
         active_devices=0,
         reaches_min_threshold=True,
+    )
+
+
+def test_releases_url_uses_https():
+    assert RELEASES_URL == (
+        "https://api.snapcraft.io/api/v1/snaps/search?fields=revision"
     )
 
 
