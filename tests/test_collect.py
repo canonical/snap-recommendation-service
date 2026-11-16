@@ -62,7 +62,7 @@ def test_get_snap_page(mock_get):
     assert len(snaps) == 2
     assert has_next is True
     mock_get.assert_called_once_with(
-        "http://api.snapcraft.io/api/v1/snaps/search?fields=snap_id,package_name,last_updated,date_published,summary,description,title,version,publisher,revision,links,media,developer_validation,license,sections&scope=wide&confinement=strict,classic&page=1"
+        "https://api.snapcraft.io/api/v1/snaps/search?fields=snap_id,package_name,last_updated,date_published,summary,description,title,version,publisher,revision,links,media,developer_validation,license,sections&scope=wide&confinement=strict,classic&page=1"
     )
 
 
