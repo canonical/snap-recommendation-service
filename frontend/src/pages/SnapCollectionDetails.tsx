@@ -108,16 +108,15 @@ export function SnapCollectionDetails() {
         </Row>
       )}
 
-      {error ||
-        (operationError && (
-          <Row>
-            <Col size={12}>
-              <Notification severity="negative">
-                {error || operationError}
-              </Notification>
-            </Col>
-          </Row>
-        ))}
+      {(error || operationError) && (
+        <Row>
+          <Col size={12}>
+            <Notification severity="negative">
+              {error || operationError}
+            </Notification>
+          </Col>
+        </Row>
+      )}
 
       {loading ? (
         <Row>
