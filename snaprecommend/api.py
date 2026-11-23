@@ -306,10 +306,14 @@ def remove_snap_from_collection(collection_id):
 
     snap = get_snap_by_name(snap_name)
 
-    if snap:
-        remove_snap_from_snap_collection(collection_id, snap.snap_id)
-    else:
+    if not snap:
         return {"error": "Snap not found"}, 404
+
+    try:
+        remove_snap_from_snap_collection(collection_id, snap.snap_id)
+    except ValueError:
+        return {"error": "Snap not found in collection"}, 404
+
     return flask.jsonify({"status": "success"}), 200
 
 
