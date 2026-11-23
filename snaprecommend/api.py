@@ -248,8 +248,9 @@ def snap_collection(collection_id):
 )
 @login_required
 def delete_collection(collection_id):
-    deleted = delete_snap_collection(collection_id)
-    if not deleted:
+    try:
+        delete_snap_collection(collection_id)
+    except ValueError:
         return {"error": "Collection not found"}, 404
     return flask.jsonify({"status": "success"}), 200
 
