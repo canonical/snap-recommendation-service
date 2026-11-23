@@ -14,7 +14,7 @@ export const CategoryList = ({ category, label }: { category: string, label: str
     const { sendRequest, error: excludeError } = useApi();
 
     const excludeSnap = async (snap: Snap) => {
-        await sendRequest("/api/exclude_snap", {
+        const ok = await sendRequest("/api/exclude_snap", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -23,6 +23,7 @@ export const CategoryList = ({ category, label }: { category: string, label: str
                 "snap_id": snap.snap_id
             }),
         });
+        if (!ok) return;
         await refetch();
     }
 

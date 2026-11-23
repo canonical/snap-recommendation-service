@@ -13,7 +13,7 @@ export function CreateSnapCollectionAside({
   const { sendRequest, error } = useApi();
 
   const createSnapCollection = async (name: string, description: string) => {
-    await sendRequest("/api/snap-collection", {
+    const ok = await sendRequest("/api/snap-collection", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -23,6 +23,7 @@ export function CreateSnapCollectionAside({
         description: description,
       }),
     });
+    if (!ok) return;
     await refetch();
     close();
   };

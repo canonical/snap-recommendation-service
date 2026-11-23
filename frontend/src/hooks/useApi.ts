@@ -7,7 +7,7 @@ export function useApi<T>() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const sendRequest = async (path: string, options?: RequestInit) => {
+    const sendRequest = async (path: string, options?: RequestInit): Promise<boolean> => {
         setLoading(true);
         setError(null);
 
@@ -23,9 +23,11 @@ export function useApi<T>() {
             const parsedResult = await response.json();
             setData(parsedResult);
             setLoading(false);
+            return true;
         } catch {
             setError("An error occurred.");
             setLoading(false);
+            return false;
         }
     }
 

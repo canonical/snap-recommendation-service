@@ -32,7 +32,7 @@ export function SnapCollectionDetails() {
   }, [operationError]);
 
   const handleUpdate = async (name: string, description: string) => {
-    await sendRequest(`/api/snap-collection/${id}`, {
+    const ok = await sendRequest(`/api/snap-collection/${id}`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -43,12 +43,13 @@ export function SnapCollectionDetails() {
       }),
     });
 
+    if (!ok) return;
     await refetch();
     setSuccessText(`Collection '${name}' updated successfully.`);
   };
 
   const handleAddSnap = async (snap: SearchSnap) => {
-    await sendRequest(`/api/snap-collection/${id}/snaps`, {
+    const ok = await sendRequest(`/api/snap-collection/${id}/snaps`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -57,19 +58,21 @@ export function SnapCollectionDetails() {
         name: snap.package.name,
       }),
     });
+    if (!ok) return;
     await refetch();
     setSuccessText(`'${snap.package.display_name}' added to the collection.`);
   };
 
   const handleDeleteSnapCollection = async () => {
-    await sendRequest(`/api/snap-collection/${id}`, {
+    const ok = await sendRequest(`/api/snap-collection/${id}`, {
       method: "DELETE",
     });
+    if (!ok) return;
     navigate("/dashboard/snap-collections", { replace: true });
   };
 
   const handleDeleteSnap = async (snapName: string) => {
-    await sendRequest(`/api/snap-collection/${id}/remove_snap`, {
+    const ok = await sendRequest(`/api/snap-collection/${id}/remove_snap`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -78,6 +81,7 @@ export function SnapCollectionDetails() {
         name: snapName,
       }),
     });
+    if (!ok) return;
     await refetch();
     setSuccessText(`'${snapName}' deleted from the '${id}'.`);
   };
