@@ -3,8 +3,8 @@ import Dashboard from "./pages/Dashboard";
 import { Layout } from "./components";
 import NotFound from "./pages/NotFound";
 import { ExcludeSnaps } from "./pages/ExcludeSnaps";
-import { EditorialSlices } from "./pages/EditorialSlices";
-import { SliceDetails } from "./pages/SliceDetails";
+import { SnapCollections } from "./pages/SnapCollections";
+import { SnapCollectionDetails } from "./pages/SnapCollectionDetails";
 import { AsideProvider } from "./contexts/AsideContext/AsideProvider";
 import { AuthProvider } from "./contexts/AuthContext/AuthProvider";
 import { Settings } from "./pages/Settings";
@@ -21,8 +21,8 @@ export default function App() {
           <Route element={<Layout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/excluded_snaps" element={<ExcludeSnaps />} />
-            <Route path="/dashboard/editorial_slices" element={<EditorialSlices />} />
-            <Route path="/dashboard/editorial_slice/:id" element={<SliceDetails />} />
+            <Route path="/dashboard/snap-collections" element={<SnapCollections />} />
+            <Route path="/dashboard/snap-collection/:id" element={<SnapCollectionDetails />} />
             <Route path="/dashboard/settings" element={<Settings />} />
             <Route path="/dashboard/featured" element={<FeaturedSnaps />} />
             <Route path="/dashboard/featured_history" element={<FeaturedHistory />} />
