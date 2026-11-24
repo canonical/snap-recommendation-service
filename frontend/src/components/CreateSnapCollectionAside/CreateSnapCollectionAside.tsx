@@ -8,7 +8,7 @@ export function CreateSnapCollectionAside({
   refetch,
 }: {
   close: () => void;
-  refetch: () => Promise<void>;
+  refetch: () => Promise<unknown>;
 }) {
   const { sendRequest, error } = useApi();
 
