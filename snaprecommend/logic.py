@@ -9,8 +9,8 @@ from snaprecommend.models import (
     Snap,
     SnapRecommendationScore,
     RecommendationCategory,
-    EditorialSlice,
-    EditorialSliceSnap,
+    SnapCollection,
+    SnapCollectionSnap,
     FeaturedHistory,
     PipelineStepLog,
     PipelineSteps,
@@ -113,12 +113,12 @@ def get_excluded_snaps() -> list[Snap]:
     return db.session.query(Snap).filter(Snap.excluded.is_(True)).all()
 
 
-def get_all_snap_collections() -> list[EditorialSlice]:
+def get_all_snap_collections() -> list[SnapCollection]:
     """
     Returns all snap collections.
     """
 
-    collections = db.session.query(EditorialSlice).all()
+    collections = db.session.query(SnapCollection).all()
 
     return collections
 
@@ -131,10 +131,10 @@ def get_snap_collection_snaps(collection_id: str) -> list[Snap]:
     snaps = (
         db.session.query(Snap)
         .join(
-            EditorialSliceSnap,
-            Snap.snap_id == EditorialSliceSnap.snap_id,
+            SnapCollectionSnap,
+            Snap.snap_id == SnapCollectionSnap.snap_id,
         )
-        .filter(EditorialSliceSnap.editorial_slice_id == collection_id)
+        .filter(SnapCollectionSnap.snap_collection_id == collection_id)
     ).all()
 
     return snaps

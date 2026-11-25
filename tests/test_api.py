@@ -11,7 +11,7 @@ from snaprecommend.api import (
     update_featured_settings,
 )
 from snaprecommend.featuredsnaps.api import post_featured_snaps
-from snaprecommend.models import EditorialSlice, RecommendationCategory, Snap
+from snaprecommend.models import SnapCollection, RecommendationCategory, Snap
 from tests.mock_data import mock_snap
 
 
@@ -203,12 +203,12 @@ def test_categories_endpoint(mock_get_all_categories, client):
 @patch("snaprecommend.api.get_all_snap_collections")
 def test_collections_endpoint(mock_get_all_snap_collections, client):
     mock_collections = [
-        EditorialSlice(
+        SnapCollection(
             id="collection1",
             name="Collection 1",
             description="Description 1",
         ),
-        EditorialSlice(
+        SnapCollection(
             id="collection2", name="Collection 2", description="Description 2"
         ),
     ]
@@ -231,10 +231,10 @@ def test_collections_endpoint(mock_get_all_snap_collections, client):
     mock_get_all_snap_collections.assert_called_once()
 
 
-@patch("snaprecommend.api.EditorialSlice.query")
+@patch("snaprecommend.api.SnapCollection.query")
 @patch("snaprecommend.api.get_snap_collection_snaps")
 def test_collection_endpoint(mock_get_snap_collection_snaps, mock_query, client):
-    mock_collection = EditorialSlice(
+    mock_collection = SnapCollection(
         id="collection1", name="Collection 1", description="Description 1"
     )
     mock_query.filter_by.return_value.first.return_value = mock_collection
@@ -275,7 +275,7 @@ def test_collection_endpoint(mock_get_snap_collection_snaps, mock_query, client)
     mock_get_snap_collection_snaps.assert_called_once_with("collection1")
 
 
-@patch("snaprecommend.api.EditorialSlice.query")
+@patch("snaprecommend.api.SnapCollection.query")
 def test_collection_not_found(mock_query, client):
     mock_query.filter_by.return_value.first.return_value = None
 

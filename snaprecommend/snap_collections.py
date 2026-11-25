@@ -1,4 +1,4 @@
-from snaprecommend.models import Snap, EditorialSlice, EditorialSliceSnap
+from snaprecommend.models import Snap, SnapCollection, SnapCollectionSnap
 from snaprecommend import db
 from sqlalchemy import func
 from snaprecommend.utils import slugify
@@ -9,30 +9,30 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def get_snap_collection_by_id(collection_id: str) -> EditorialSlice:
+def get_snap_collection_by_id(collection_id: str) -> SnapCollection:
     """
-    Returns an snap collection by its ID.
+    Returns a snap collection by its ID.
     """
     try:
-        return db.session.query(EditorialSlice).filter_by(id=collection_id).first()
+        return db.session.query(SnapCollection).filter_by(id=collection_id).first()
     except Exception as e:
         logger.error(f"Error fetching snap collection {collection_id}: {e}")
         raise
 
 
-def get_snap_collection_with_snaps(collection_id: str) -> EditorialSlice:
+def get_snap_collection_with_snaps(collection_id: str) -> SnapCollection:
     """
-    Returns an snap collection by its ID with the snaps included.
+    Returns a snap collection by its ID with the snaps included.
     """
     try:
         snap_collection = (
-            db.session.query(EditorialSlice).filter_by(id=collection_id).first()
+            db.session.query(SnapCollection).filter_by(id=collection_id).first()
         )
         if snap_collection:
             snap_collection.snaps = (
                 db.session.query(Snap)
-                .join(EditorialSliceSnap)
-                .filter_by(editorial_slice_id=collection_id)
+                .join(SnapCollectionSnap)
+                .filter_by(snap_collection_id=collection_id)
                 .all()
             )
         return snap_collection
@@ -43,21 +43,21 @@ def get_snap_collection_with_snaps(collection_id: str) -> EditorialSlice:
         raise
 
 
-def get_all_snap_collections_with_counts() -> list[EditorialSlice]:
+def get_all_snap_collections_with_counts() -> list[SnapCollection]:
     """
     Returns all snap collections with the count of snaps.
     """
     try:
         snap_collections = (
             db.session.query(
-                EditorialSlice,
-                func.count(EditorialSliceSnap.snap_id).label("snaps_count"),
+                SnapCollection,
+                func.count(SnapCollectionSnap.snap_id).label("snaps_count"),
             )
             .outerjoin(
-                EditorialSliceSnap,
-                EditorialSlice.id == EditorialSliceSnap.editorial_slice_id,
+                SnapCollectionSnap,
+                SnapCollection.id == SnapCollectionSnap.snap_collection_id,
             )
-            .group_by(EditorialSlice.id)
+            .group_by(SnapCollection.id)
             .all()
         )
 
@@ -76,12 +76,12 @@ def create_snap_collection(name: str, description: str = None):
     """
     try:
         collection_id = slugify(name)
-        if db.session.query(EditorialSlice).filter_by(id=collection_id).first():
+        if db.session.query(SnapCollection).filter_by(id=collection_id).first():
             raise ValueError(
                 f"Snap collection with id '{collection_id}' already exists."
             )
 
-        snap_collection = EditorialSlice(
+        snap_collection = SnapCollection(
             id=collection_id, name=name, description=description
         )
         db.session.add(snap_collection)
@@ -95,11 +95,11 @@ def create_snap_collection(name: str, description: str = None):
 
 def update_snap_collection(collection_id: str, name: str, description: str = None):
     """
-    Updates an snap collection.
+    Updates a snap collection.
     """
     try:
         snap_collection = (
-            db.session.query(EditorialSlice).filter_by(id=collection_id).first()
+            db.session.query(SnapCollection).filter_by(id=collection_id).first()
         )
         if not snap_collection:
             raise ValueError(
@@ -118,11 +118,11 @@ def update_snap_collection(collection_id: str, name: str, description: str = Non
 
 def add_snap_to_snap_collection(collection_id: str, snap_id: str):
     """
-    Adds a snap to an snap collection.
+    Adds a snap to a snap collection.
     """
     try:
-        snap_collection_snap = EditorialSliceSnap(
-            editorial_slice_id=collection_id, snap_id=snap_id
+        snap_collection_snap = SnapCollectionSnap(
+            snap_collection_id=collection_id, snap_id=snap_id
         )
         db.session.add(snap_collection_snap)
         db.session.commit()
@@ -137,12 +137,12 @@ def add_snap_to_snap_collection(collection_id: str, snap_id: str):
 
 def remove_snap_from_snap_collection(collection_id: str, snap_id: str):
     """
-    Removes a snap from an snap collection.
+    Removes a snap from a snap collection.
     """
     try:
         snap_collection_snap = (
-            db.session.query(EditorialSliceSnap)
-            .filter_by(editorial_slice_id=collection_id, snap_id=snap_id)
+            db.session.query(SnapCollectionSnap)
+            .filter_by(snap_collection_id=collection_id, snap_id=snap_id)
             .first()
         )
         if not snap_collection_snap:
@@ -163,11 +163,11 @@ def remove_snap_from_snap_collection(collection_id: str, snap_id: str):
 
 def delete_snap_collection(collection_id: str):
     """
-    Deletes an snap collection.
+    Deletes a snap collection.
     """
     try:
         snap_collection = (
-            db.session.query(EditorialSlice).filter_by(id=collection_id).first()
+            db.session.query(SnapCollection).filter_by(id=collection_id).first()
         )
         if not snap_collection:
             raise ValueError(
