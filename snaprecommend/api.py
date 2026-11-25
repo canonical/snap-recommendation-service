@@ -17,25 +17,25 @@ from snaprecommend.auth.decorators import (
     login_required,
     no_store,
 )
-from snaprecommend.editorials import (
-    add_snap_to_editorial_slice,
-    create_editorial_slice,
-    delete_editorial_slice,
-    get_all_editorial_slices,
-    get_editorial_slice_with_snaps,
-    remove_snap_from_editorial_slice,
-    update_editorial_slice,
+from snaprecommend.snap_collections import (
+    add_snap_to_snap_collection,
+    create_snap_collection,
+    delete_snap_collection,
+    get_all_snap_collections_with_counts,
+    get_snap_collection_with_snaps,
+    remove_snap_from_snap_collection,
+    update_snap_collection,
 )
 from snaprecommend.logic import (
     exclude_snap as exclude_snap_globally,
 )
 from snaprecommend.logic import (
     get_all_categories,
-    get_all_slices,
+    get_all_snap_collections,
     get_category_top_snaps,
     get_excluded_snaps,
     get_most_recent_pipeline_step_logs,
-    get_slice_snaps,
+    get_snap_collection_snaps,
     get_snap_by_name,
 )
 from snaprecommend.logic import (
@@ -130,34 +130,34 @@ def category(id: str):
     return format_response(snaps)
 
 
-@api_blueprint.route("/slices")
-def slices():
-    slices = get_all_slices()
+@api_blueprint.route("/collections")
+def collections():
+    snap_collections = get_all_snap_collections()
 
     return [
         {
-            "id": slice.id,
-            "name": slice.name,
-            "description": slice.description,
+            "id": snap_collection.id,
+            "name": snap_collection.name,
+            "description": snap_collection.description,
         }
-        for slice in slices
+        for snap_collection in snap_collections
     ]
 
 
-@api_blueprint.route("/slice/<string:id>")
-def slice(id: str):
-    slice = EditorialSlice.query.filter_by(id=id).first()
+@api_blueprint.route("/collection/<string:id>")
+def collection(id: str):
+    collection = EditorialSlice.query.filter_by(id=id).first()
 
-    if slice is None:
-        return {"error": "Slice not found"}, 404
+    if collection is None:
+        return {"error": "Collection not found"}, 404
 
-    snaps = get_slice_snaps(id)
+    snaps = get_snap_collection_snaps(id)
 
     response = {
-        "slice": {
-            "id": slice.id,
-            "name": slice.name,
-            "description": slice.description,
+        "collection": {
+            "id": collection.id,
+            "name": collection.name,
+            "description": collection.description,
         },
         "snaps": [serialize_snap(snap) for snap in snaps],
     }
@@ -197,118 +197,123 @@ def include_snap():
     return flask.jsonify({"status": "success"}), 200
 
 
-def serialize_editorial_slice(editorial_slice):
+def serialize_snap_collection(snap_collection):
     return {
-        "name": editorial_slice.name,
-        "id": editorial_slice.id,
-        "description": editorial_slice.description,
-        "snaps_count": editorial_slice.snaps_count,
+        "name": snap_collection.name,
+        "id": snap_collection.id,
+        "description": snap_collection.description,
+        "snaps_count": snap_collection.snaps_count,
     }
 
 
-@api_blueprint.route("/editorial_slices")
+@api_blueprint.route("/snap-collections")
 @login_required
-def editorial_slices():
-    slices = get_all_editorial_slices()
-    return flask.jsonify([serialize_editorial_slice(slice) for slice in slices],), 200
+def snap_collections():
+    collections = get_all_snap_collections_with_counts()
+    return flask.jsonify([serialize_snap_collection(collection) for collection in collections],), 200
 
 
-@api_blueprint.route("/editorial_slice", methods=["POST"])
+@api_blueprint.route("/snap-collection", methods=["POST"])
 @login_required
-def create_slice():
+def create_collection():
     data = flask.request.get_json()
     name = data.get("name")
     description = data.get("description")
 
     try:
-        create_editorial_slice(name, description)
+        create_snap_collection(name, description)
     except ValueError:
-        return flask.jsonify({"status": "failed", "error": "Slice cannot be created."}), 500
+        return flask.jsonify({"status": "failed", "error": "Collection cannot be created."}), 500
 
     return flask.jsonify({"status": "success"}), 200
 
 
-@api_blueprint.route("/editorial_slice/<string:slice_id>")
+@api_blueprint.route("/snap-collection/<string:collection_id>")
 @login_required
-def editorial_slice(slice_id):
-    slice = get_editorial_slice_with_snaps(slice_id)
-    if not slice:
-        return {"error": "Slice not found"}, 404
+def snap_collection(collection_id):
+    collection = get_snap_collection_with_snaps(collection_id)
+    if not collection:
+        return {"error": "Collection not found"}, 404
 
     return flask.jsonify({
-        "id": slice.id,
-        "name": slice.name,
-        "description": slice.description,
-        "snaps": [serialize_snap(snap) for snap in slice.snaps]
+        "id": collection.id,
+        "name": collection.name,
+        "description": collection.description,
+        "snaps": [serialize_snap(snap) for snap in collection.snaps]
     }), 200
 
 
 @api_blueprint.route(
-    "/editorial_slice/<string:slice_id>", methods=["DELETE"]
+    "/snap-collection/<string:collection_id>", methods=["DELETE"]
 )
 @login_required
-def delete_slice(slice_id):
-    deleted = delete_editorial_slice(slice_id)
-    if not deleted:
-        return {"error": "Slice not found"}, 404
+def delete_collection(collection_id):
+    try:
+        delete_snap_collection(collection_id)
+    except ValueError:
+        return {"error": "Collection not found"}, 404
     return flask.jsonify({"status": "success"}), 200
 
 
 @api_blueprint.route(
-    "/editorial_slice/<string:slice_id>", methods=["POST"]
+    "/snap-collection/<string:collection_id>", methods=["POST"]
 )
 @login_required
-def edit_slice(slice_id):
+def edit_collection(collection_id):
     data = flask.request.get_json()
     name = data.get("name")
     description = data.get("description")
 
     try:
-        update_editorial_slice(slice_id, name, description)
+        update_snap_collection(collection_id, name, description)
     except ValueError:
-        return flask.jsonify({"status": "failed", "error": "Slice cannot be created."}), 500
+        return flask.jsonify({"status": "failed", "error": "Collection cannot be updated."}), 500
 
     return flask.jsonify({"status": "success"}), 200
 
 
 @api_blueprint.route(
-    "/editorial_slice/<string:slice_id>/snaps", methods=["POST"]
+    "/snap-collection/<string:collection_id>/snaps", methods=["POST"]
 )
 @login_required
-def add_snap_to_slice(slice_id):
+def add_snap_to_collection(collection_id):
     data = flask.request.get_json()
     snap_name = data.get("name")
-    slice = get_editorial_slice_with_snaps(slice_id)
+    collection = get_snap_collection_with_snaps(collection_id)
 
-    if not slice:
-        return {"error": "Slice not found"}, 404
+    if not collection:
+        return {"error": "Collection not found"}, 404
 
     snap = get_snap_by_name(snap_name)
 
     if snap:
-        if snap.snap_id in [s.snap_id for s in slice.snaps]:
+        if snap.snap_id in [s.snap_id for s in collection.snaps]:
             return flask.jsonify({"status": "success"}), 200
         else:
-            add_snap_to_editorial_slice(slice_id, snap.snap_id)
+            add_snap_to_snap_collection(collection_id, snap.snap_id)
             return flask.jsonify({"status": "success"}), 200
     else:
         return {"error": "Snap not found"}, 404
 
 
 @api_blueprint.route(
-    "/editorial_slice/<string:slice_id>/remove_snap", methods=["POST"]
+    "/snap-collection/<string:collection_id>/remove_snap", methods=["POST"]
 )
 @login_required
-def remove_snap_from_slice(slice_id):
+def remove_snap_from_collection(collection_id):
     data = flask.request.get_json()
     snap_name = data.get("name")
 
     snap = get_snap_by_name(snap_name)
 
-    if snap:
-        remove_snap_from_editorial_slice(slice_id, snap.snap_id)
-    else:
+    if not snap:
         return {"error": "Snap not found"}, 404
+
+    try:
+        remove_snap_from_snap_collection(collection_id, snap.snap_id)
+    except ValueError:
+        return {"error": "Snap not found in collection"}, 404
+
     return flask.jsonify({"status": "success"}), 200
 
 

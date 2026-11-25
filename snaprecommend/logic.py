@@ -113,19 +113,19 @@ def get_excluded_snaps() -> list[Snap]:
     return db.session.query(Snap).filter(Snap.excluded.is_(True)).all()
 
 
-def get_all_slices() -> list[EditorialSlice]:
+def get_all_snap_collections() -> list[EditorialSlice]:
     """
-    Returns all editorial slices.
+    Returns all snap collections.
     """
 
-    slices = db.session.query(EditorialSlice).all()
+    collections = db.session.query(EditorialSlice).all()
 
-    return slices
+    return collections
 
 
-def get_slice_snaps(slice: str) -> list[Snap]:
+def get_snap_collection_snaps(collection_id: str) -> list[Snap]:
     """
-    Returns the snaps for a given slice.
+    Returns the snaps for a given snap collection.
     """
 
     snaps = (
@@ -134,7 +134,7 @@ def get_slice_snaps(slice: str) -> list[Snap]:
             EditorialSliceSnap,
             Snap.snap_id == EditorialSliceSnap.snap_id,
         )
-        .filter(EditorialSliceSnap.editorial_slice_id == slice)
+        .filter(EditorialSliceSnap.editorial_slice_id == collection_id)
     ).all()
 
     return snaps

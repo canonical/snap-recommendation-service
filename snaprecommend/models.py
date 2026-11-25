@@ -134,8 +134,8 @@ class FeaturedHistory(db.Model):
 
 class EditorialSlice(db.Model):
     """
-    This table is used to store editorial slices.
-    Editorial slices are hand-picked collections of snaps.
+    This table is used to store snap collections.
+    Snap collections are hand-picked collections of snaps.
     """
 
     id: Mapped[str] = mapped_column(String, primary_key=True)
@@ -145,7 +145,7 @@ class EditorialSlice(db.Model):
 
 class EditorialSliceSnap(db.Model):
     """
-    This table is used to store the snaps that are part of each editorial slice.
+    This table is used to store the snaps that are part of each snap collection.
     """
 
     editorial_slice_id: Mapped[str] = mapped_column(

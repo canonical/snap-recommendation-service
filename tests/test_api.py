@@ -200,54 +200,54 @@ def test_categories_endpoint(mock_get_all_categories, client):
     mock_get_all_categories.assert_called_once()
 
 
-@patch("snaprecommend.api.get_all_slices")
-def test_slices_endpoint(mock_get_all_slices, client):
-    mock_slices = [
+@patch("snaprecommend.api.get_all_snap_collections")
+def test_collections_endpoint(mock_get_all_snap_collections, client):
+    mock_collections = [
         EditorialSlice(
-            id="slice1",
-            name="Slice 1",
+            id="collection1",
+            name="Collection 1",
             description="Description 1",
         ),
         EditorialSlice(
-            id="slice2", name="Slice 2", description="Description 2"
+            id="collection2", name="Collection 2", description="Description 2"
         ),
     ]
-    mock_get_all_slices.return_value = mock_slices
+    mock_get_all_snap_collections.return_value = mock_collections
 
-    response = client.get("/slices")
+    response = client.get("/collections")
     assert response.status_code == 200
     assert response.json == [
         {
-            "id": "slice1",
-            "name": "Slice 1",
+            "id": "collection1",
+            "name": "Collection 1",
             "description": "Description 1",
         },
         {
-            "id": "slice2",
-            "name": "Slice 2",
+            "id": "collection2",
+            "name": "Collection 2",
             "description": "Description 2",
         },
     ]
-    mock_get_all_slices.assert_called_once()
+    mock_get_all_snap_collections.assert_called_once()
 
 
 @patch("snaprecommend.api.EditorialSlice.query")
-@patch("snaprecommend.api.get_slice_snaps")
-def test_slice_endpoint(mock_get_slice_snaps, mock_query, client):
-    mock_slice = EditorialSlice(
-        id="slice1", name="Slice 1", description="Description 1"
+@patch("snaprecommend.api.get_snap_collection_snaps")
+def test_collection_endpoint(mock_get_snap_collection_snaps, mock_query, client):
+    mock_collection = EditorialSlice(
+        id="collection1", name="Collection 1", description="Description 1"
     )
-    mock_query.filter_by.return_value.first.return_value = mock_slice
+    mock_query.filter_by.return_value.first.return_value = mock_collection
 
     mock_snaps = [mock_snap()]
-    mock_get_slice_snaps.return_value = mock_snaps
+    mock_get_snap_collection_snaps.return_value = mock_snaps
 
-    response = client.get("/slice/slice1")
+    response = client.get("/collection/collection1")
     assert response.status_code == 200
     assert response.json == {
-        "slice": {
-            "id": "slice1",
-            "name": "Slice 1",
+        "collection": {
+            "id": "collection1",
+            "name": "Collection 1",
             "description": "Description 1",
         },
         "snaps": [
@@ -271,17 +271,17 @@ def test_slice_endpoint(mock_get_slice_snaps, mock_query, client):
             }
         ],
     }
-    mock_query.filter_by.assert_called_once_with(id="slice1")
-    mock_get_slice_snaps.assert_called_once_with("slice1")
+    mock_query.filter_by.assert_called_once_with(id="collection1")
+    mock_get_snap_collection_snaps.assert_called_once_with("collection1")
 
 
 @patch("snaprecommend.api.EditorialSlice.query")
-def test_slice_not_found(mock_query, client):
+def test_collection_not_found(mock_query, client):
     mock_query.filter_by.return_value.first.return_value = None
 
-    response = client.get("/slice/nonexistent_id")
+    response = client.get("/collection/nonexistent_id")
     assert response.status_code == 404
-    assert response.json == {"error": "Slice not found"}
+    assert response.json == {"error": "Collection not found"}
     mock_query.filter_by.assert_called_once_with(id="nonexistent_id")
 
 

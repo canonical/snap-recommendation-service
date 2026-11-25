@@ -9,7 +9,7 @@ export function ExcludeSnaps() {
     const { sendRequest, error: includeError } = useApi();
 
     const includeSnap = async (snap: Snap) => {
-        await sendRequest("/api/include_snap", {
+        const ok = await sendRequest("/api/include_snap", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -18,6 +18,7 @@ export function ExcludeSnaps() {
                 "snap_id": snap.snap_id
             }),
         });
+        if (!ok) return;
         await refetch();
     }
 

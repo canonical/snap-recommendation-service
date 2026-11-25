@@ -11,7 +11,7 @@ export function Settings() {
 
 
     const runPipeline = async (stepId: string) => {
-        await sendRequest("/api/run_pipeline_step", {
+        const ok = await sendRequest("/api/run_pipeline_step", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -21,6 +21,7 @@ export function Settings() {
             }),
         })
 
+        if (!ok) return;
         await refetch();
     }
 

@@ -30,7 +30,7 @@ def app():
                 id="popular", name="Popular", description="Popular snaps",
             ),
             EditorialSlice(
-                id="test-slice", name="Test slice", description="Test snaps",
+                id="test-collection", name="Test collection", description="Test snaps",
             ),
         ])
         db.session.commit()
@@ -44,8 +44,8 @@ def app():
     "/api/stats",
     "/api/categories",
     "/api/category/popular",
-    "/api/slices",
-    "/api/slice/test-slice",
+    "/api/collections",
+    "/api/collection/test-collection",
     "/api/snaps",
     "/api/recently-updated",
     "/featured/",
@@ -71,8 +71,8 @@ def test_json_get_endpoints_are_public(app, path):
 
 @pytest.mark.parametrize("method,path", [
     ("GET", "/api/excluded_snaps"),
-    ("GET", "/api/editorial_slices"),
-    ("GET", "/api/editorial_slice/test-slice"),
+    ("GET", "/api/snap-collections"),
+    ("GET", "/api/snap-collection/test-collection"),
     ("GET", "/api/settings"),
     ("GET", "/api/featured/settings"),
     ("GET", "/api/collected_snaps/search?q=test"),
@@ -80,11 +80,11 @@ def test_json_get_endpoints_are_public(app, path):
     ("GET", "/featured/history/test-snap"),
     ("POST", "/api/include_snap"),
     ("POST", "/api/exclude_snap"),
-    ("POST", "/api/editorial_slice"),
-    ("POST", "/api/editorial_slice/test-slice"),
-    ("DELETE", "/api/editorial_slice/test-slice"),
-    ("POST", "/api/editorial_slice/test-slice/snaps"),
-    ("POST", "/api/editorial_slice/test-slice/remove_snap"),
+    ("POST", "/api/snap-collection"),
+    ("POST", "/api/snap-collection/test-collection"),
+    ("DELETE", "/api/snap-collection/test-collection"),
+    ("POST", "/api/snap-collection/test-collection/snaps"),
+    ("POST", "/api/snap-collection/test-collection/remove_snap"),
     ("POST", "/api/run_pipeline_step"),
     ("POST", "/api/featured/select"),
     ("PATCH", "/api/featured/settings"),
