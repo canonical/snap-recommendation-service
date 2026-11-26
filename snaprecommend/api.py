@@ -42,7 +42,7 @@ from snaprecommend.logic import (
     include_snap as include_snap_globally,
 )
 from snaprecommend.models import (
-    EditorialSlice,
+    SnapCollection,
     PipelineSteps,
     RecommendationCategory,
     Settings,
@@ -146,7 +146,7 @@ def collections():
 
 @api_blueprint.route("/collection/<string:id>")
 def collection(id: str):
-    collection = EditorialSlice.query.filter_by(id=id).first()
+    collection = SnapCollection.query.filter_by(id=id).first()
 
     if collection is None:
         return {"error": "Collection not found"}, 404

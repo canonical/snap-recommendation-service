@@ -6,7 +6,7 @@ from flask import Flask
 from snaprecommend import db
 from snaprecommend.api import api_blueprint
 from snaprecommend.featuredsnaps.api import featured_blueprint
-from snaprecommend.models import EditorialSlice, RecommendationCategory
+from snaprecommend.models import SnapCollection, RecommendationCategory
 from snaprecommend.packages.api import store_packages_blueprint
 
 
@@ -29,7 +29,7 @@ def app():
             RecommendationCategory(
                 id="popular", name="Popular", description="Popular snaps",
             ),
-            EditorialSlice(
+            SnapCollection(
                 id="test-collection", name="Test collection", description="Test snaps",
             ),
         ])
