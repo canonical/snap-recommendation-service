@@ -3,6 +3,9 @@ import sys
 import os
 from datetime import timedelta, datetime
 from time import sleep
+
+import requests
+
 from collector.collect import collect_initial_snap_data
 from collector.filter import filter_snaps_meeting_minimum_criteria
 from collector.extra_fields import fetch_extra_fields
@@ -110,7 +113,15 @@ def collector_service():
                 return
 
             logger.info("Running initial data collection step...")
-            collect_initial_snap_data()
+            try:
+                collect_initial_snap_data()
+            except requests.RequestException:
+                logger.warning(
+                    "Snap Store ingestion failed; retrying in %s seconds",
+                    INITIAL_STEP_INTERVAL,
+                )
+                sleep(INITIAL_STEP_INTERVAL)
+                continue
 
             # Run the remaining pipeline steps every 12 hours
             run_full_pipeline = not _pipeline_ran_recently()

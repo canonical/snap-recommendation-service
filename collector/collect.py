@@ -31,6 +31,7 @@ URL = f"https://api.snapcraft.io/api/v1/snaps/search?fields={','.join(FIELDS)}&s
 
 
 logger = logging.getLogger("collector")
+STORE_SEARCH_TIMEOUT = (5, 30)  # Connect and read timeouts in seconds.
 
 
 def parse_snap_from_response(snap: dict) -> dict:
@@ -87,7 +88,7 @@ def get_snap_page(page: int) -> Tuple[list, bool]:
     :return: A tuple containing the list of snaps and a
              boolean indicating if there are more pages.
     """
-    response = requests.get(f"{URL}&page={page}")
+    response = requests.get(f"{URL}&page={page}", timeout=STORE_SEARCH_TIMEOUT)
     response.raise_for_status()
     data = response.json()
     snaps = data["_embedded"]["clickindex:package"]

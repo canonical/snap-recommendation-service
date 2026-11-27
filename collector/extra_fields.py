@@ -13,6 +13,7 @@ from collector.ratings.collect_ratings import get_ratings, ratings_login
 
 
 METRICS_BATCH_SIZE = 15
+METRICS_TIMEOUT = (5, 60)  # Connect and read timeouts in seconds.
 RATINGS_BATCH_SIZE = 20
 RELEASES_URL = "https://api.snapcraft.io/api/v1/snaps/search?fields=revision"
 METRICS_URL = "https://dashboard.snapcraft.io/dev/api/snaps/metrics"
@@ -81,6 +82,7 @@ def fetch_metrics_from_api(
                 "Content-Type": "application/json",
             },
             json=request_body,
+            timeout=METRICS_TIMEOUT,
         )
         response.raise_for_status()
         return response.json()
@@ -129,16 +131,20 @@ def fetch_and_update_metrics_for_snaps(snaps: List[Snap], db_session: Session):
     Fetches and updates metrics for a list of snaps in batches.
     """
     start_date, end_date = get_metrics_time_range()
-    for snap_batch in batched(snaps, METRICS_BATCH_SIZE):
+    for batch_number, snap_batch in enumerate(
+        batched(snaps, METRICS_BATCH_SIZE), start=1
+    ):
+        logger.info("Requesting install metrics for batch %d", batch_number)
         try:
             metrics_data = fetch_metrics_from_api(
                 snap_batch, start_date, end_date
             )
+            logger.info("Saving install metrics for batch %d", batch_number)
             process_and_update_snap_metrics(
                 snap_batch, metrics_data, db_session
             )
-        except Exception as ex:
-            logger.error(f"Failed to process batch of snaps: {ex}")
+        except Exception:
+            logger.error("Install metrics batch %d failed", batch_number)
             raise
 
 
@@ -203,4 +209,5 @@ def fetch_extra_fields():
         add_pipeline_step_log(PipelineSteps.EXTRA_FIELDS, True)
     except Exception as e:
         logger.error(f"Error during extra fields update: {e}")
+        db.session.rollback()
         add_pipeline_step_log(PipelineSteps.EXTRA_FIELDS, False, str(e))

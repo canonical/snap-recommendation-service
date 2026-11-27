@@ -12,6 +12,7 @@ import os
 logger = logging.getLogger("ratings_collector")
 
 RATINGS_ADDRESS = os.getenv("FLASK_RATINGS_BACKEND")
+RATINGS_RPC_TIMEOUT = 15  # Seconds per RPC.
 
 USER_ID = sha256(b"snaprecommend").hexdigest()
 
@@ -26,7 +27,7 @@ def ratings_login():
                 id=USER_ID
             )
 
-            auth_response = stub.Authenticate(auth_request)
+            auth_response = stub.Authenticate(auth_request, timeout=RATINGS_RPC_TIMEOUT)
             token = auth_response.token
 
             if not token:
@@ -71,7 +72,7 @@ def get_ratings(snap_ids: list[str], token: str) -> dict[str, dict]:
 
             # Make the gRPC call
             bulk_response = stub.GetBulkRatings(
-                bulk_request, metadata=metadata
+                bulk_request, metadata=metadata, timeout=RATINGS_RPC_TIMEOUT
             )
 
             # Process the response into the expected format
