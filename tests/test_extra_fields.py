@@ -1,4 +1,5 @@
 import pytest
+import requests
 from unittest.mock import MagicMock, patch
 from collector.extra_fields import (
     RELEASES_URL,
@@ -11,7 +12,7 @@ from collector.extra_fields import (
     update_snap_metrics,
     fetch_extra_fields,
 )
-from snaprecommend.models import Snap
+from snaprecommend.models import PipelineSteps, Snap
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 
@@ -59,6 +60,7 @@ def test_fetch_metrics_from_api(mock_post, sample_snap):
     result = fetch_metrics_from_api([sample_snap], "2023-01-01", "2023-01-31")
     assert result == {"metrics": []}
     mock_post.assert_called_once()
+    assert mock_post.call_args.kwargs["timeout"] == (5, 60)
 
 
 def test_process_and_update_snap_metrics(mock_session, sample_snap):
@@ -127,11 +129,36 @@ def test_update_snap_metrics(
     mock_fetch_and_update_metrics_for_snaps.assert_called_once()
 
 
+@patch("collector.extra_fields.update_snap_ratings")
 @patch("collector.extra_fields.update_snap_metrics")
 @patch("collector.extra_fields.add_pipeline_step_log")
 def test_fetch_extra_fields(
-    mock_add_pipeline_step_log, mock_update_snap_metrics
+    mock_add_pipeline_step_log, mock_update_snap_metrics, mock_update_snap_ratings
 ):
     fetch_extra_fields()
     mock_update_snap_metrics.assert_called_once()
-    mock_add_pipeline_step_log.assert_called_once()
+    mock_update_snap_ratings.assert_called_once()
+    mock_add_pipeline_step_log.assert_called_once_with(PipelineSteps.EXTRA_FIELDS, True)
+
+
+@patch("collector.extra_fields.db")
+@patch("collector.extra_fields.add_pipeline_step_log")
+@patch("collector.extra_fields.update_snap_ratings")
+@patch("collector.extra_fields.fetch_eligible_snaps")
+@patch("collector.extra_fields.requests.post")
+def test_metrics_timeout_records_failure(
+    mock_post, mock_fetch_eligible, mock_ratings, mock_step_log, mock_db,
+    sample_snap, caplog,
+):
+    mock_fetch_eligible.return_value = [sample_snap]
+    mock_post.side_effect = requests.ReadTimeout("metrics timed out")
+
+    fetch_extra_fields()
+
+    mock_post.assert_called_once()
+    mock_db.session.rollback.assert_called_once()
+    mock_step_log.assert_called_once_with(
+        PipelineSteps.EXTRA_FIELDS, False, "metrics timed out"
+    )
+    mock_ratings.assert_not_called()
+    assert "Install metrics batch 1 failed" in caplog.text
